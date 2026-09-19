@@ -15,6 +15,7 @@
     "test:watch": "vitest",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "verify": "node scripts/verify-site.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build"
   },
   "dependencies": {
@@ -31,6 +32,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.3.5",
     "eslint-config-prettier": "^10.1.8",
+    "playwright-core": "^1.63.0",
     "prettier": "^3.9.8",
     "prettier-plugin-tailwindcss": "^0.8.1",
     "tailwindcss": "^4",

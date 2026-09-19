@@ -1,0 +1,228 @@
+// Drives the site in headless Microsoft Edge and checks what a visitor would see:
+// response headers, both themes, no flash on reload, navigation, horizontal
+// overflow on desktop and phone sizes, and browser console errors. It also saves
+// full-page screenshots to look at afterwards.
+//
+//   node scripts/verify-site.mjs                           # http://localhost:3000
+//   node scripts/verify-site.mjs https://zerocorps.org live
+//
+// The second argument is a label: screenshots go to .verify/<label>/ (gitignored).
+// Start the server first for local runs. Exits non-zero if any check fails.
+// Uses the installed Edge through playwright-core, so no browser is downloaded.
+// Extend the checks whenever a milestone adds pages or flows.
+
+import { mkdirSync } from "node:fs";
+import { join } from "node:path";
+import { chromium } from "playwright-core";
+
+const base = (process.argv[2] ?? "http://localhost:3000").replace(/\/$/, "");
+const label = process.argv[3] ?? "local";
+const shots = join(import.meta.dirname, "..", ".verify", label);
+mkdirSync(shots, { recursive: true });
+
+const MISSING_PAGE = "/this-page-does-not-exist";
+const problems = [];
+const note = (ok, message) => {
+  console.log(`${ok ? "PASS" : "FAIL"}  ${message}`);
+  if (!ok) problems.push(message);
+};
+
+const browser = await chromium.launch({ channel: "msedge", headless: true });
+
+/** Reports console errors, page errors and failed requests as problems. */
+function watch(page, tag) {
+  page.on("console", (message) => {
+    // Visiting a missing page on purpose logs the 404 for the document itself.
+    if (page.url().endsWith(MISSING_PAGE) && message.text().includes("404")) return;
+    if (message.type() !== "error" && message.type() !== "warning") return;
+    console.log(`  [console.${message.type()}] (${tag}) ${message.text().slice(0, 300)}`);
+    if (message.type() === "error") {
+      problems.push(`console error on ${tag}: ${message.text().slice(0, 200)}`);
+    }
+  });
+  page.on("pageerror", (error) => {
+    console.log(`  [pageerror] (${tag}) ${error.message}`);
+    problems.push(`page error on ${tag}: ${error.message}`);
+  });
+  page.on("requestfailed", (request) => {
+    console.log(`  [requestfailed] (${tag}) ${request.url()} ${request.failure()?.errorText}`);
+    problems.push(`request failed on ${tag}: ${request.url()}`);
+  });
+}
+
+// ── 1. Headers and metadata routes ──────────────────────────────────────────
+{
+  const context = await browser.newContext();
+  const headers = (await context.request.get(`${base}/`)).headers();
+  console.log("\n== response headers on / ==");
+  for (const name of [
+    "content-security-policy",
+    "x-content-type-options",
+    "x-frame-options",
+    "referrer-policy",
+    "cross-origin-opener-policy",
+    "permissions-policy",
+    "strict-transport-security",
+    "x-powered-by",
+  ]) {
+    console.log(`  ${name}: ${headers[name] ?? "(absent)"}`);
+  }
+  note(Boolean(headers["content-security-policy"]), "CSP header present");
+  note(headers["x-powered-by"] === undefined, "X-Powered-By header removed");
+  note(headers["x-frame-options"] === "DENY", "X-Frame-Options is DENY");
+
+  for (const path of ["/robots.txt", "/sitemap.xml", "/icon.svg"]) {
+    const response = await context.request.get(`${base}${path}`);
+    note(response.status() === 200, `${path} -> ${response.status()}`);
+  }
+  const missing = await context.request.get(`${base}${MISSING_PAGE}`);
+  note(missing.status() === 404, `unknown path -> ${missing.status()}`);
+  await context.close();
+}
+
+// ── 2. Theme: default, toggle, persistence, no flash ────────────────────────
+{
+  console.log("\n== theme behaviour ==");
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  watch(page, "theme-flow");
+
+  const firstResponse = await page.goto(`${base}/`, { waitUntil: "networkidle" });
+  const tls = await firstResponse.securityDetails();
+  if (tls) {
+    const days = Math.round((tls.validTo - Date.now() / 1000) / 86400);
+    console.log(`  certificate: "${tls.subjectName}", ${tls.protocol}, ${days} days left`);
+    note(days > 0, "certificate is valid");
+  }
+
+  const theme = () => page.getAttribute("html", "data-theme");
+  const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+
+  note((await theme()) === "dark", "first visit renders the dark theme");
+  const darkBackground = await background();
+
+  await page.getByRole("button", { name: "Switch colour theme" }).click();
+  note((await theme()) === "light", "toggle switches to light");
+  note(darkBackground !== (await background()), "the background actually changes");
+
+  const cookie = (await context.cookies()).find((entry) => entry.name === "zc-theme");
+  note(cookie?.value === "light", `cookie zc-theme=${cookie?.value}, sameSite=${cookie?.sameSite}`);
+
+  // Reload. Record the attribute the instant the DOM is parsed, before React
+  // hydrates, and again once everything has settled.
+  await page.addInitScript(() => {
+    document.addEventListener("DOMContentLoaded", () => {
+      window.__themeAtParse = document.documentElement.getAttribute("data-theme");
+    });
+  });
+  await page.reload({ waitUntil: "networkidle" });
+  await page.waitForTimeout(500);
+  const atParse = await page.evaluate(() => window.__themeAtParse);
+  note(atParse === "light", `saved theme applied before hydration (at parse: ${atParse})`);
+  note((await theme()) === "light", "saved theme survives hydration");
+
+  // The HTML the server sends must stay the static dark default.
+  const html = await (await context.request.get(`${base}/`)).text();
+  note(/<html[^>]*data-theme="dark"/.test(html), "server HTML carries the dark default (static)");
+
+  await page.getByRole("link", { name: "Enter the Academy" }).first().click();
+  await page.waitForURL("**/academy");
+  note((await theme()) === "light", "theme persists across client-side navigation");
+  await context.close();
+}
+
+// ── 3. Navigation ───────────────────────────────────────────────────────────
+{
+  console.log("\n== navigation ==");
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  watch(page, "nav-flow");
+
+  await page.goto(`${base}/`, { waitUntil: "networkidle" });
+  const otherLinks = await page.evaluate(() =>
+    [...document.querySelectorAll("main a")]
+      .map((anchor) => anchor.getAttribute("href"))
+      .filter((href) => href !== "/academy"),
+  );
+  note(
+    otherLinks.length === 0,
+    `every link in the home page body goes to /academy (others: ${JSON.stringify(otherLinks)})`,
+  );
+
+  await page.getByRole("link", { name: "Enter the Academy" }).first().click();
+  await page.waitForURL("**/academy");
+  note(await page.getByRole("heading", { level: 1 }).isVisible(), "/academy shows its heading");
+
+  await page.getByRole("link", { name: "Sign up" }).click();
+  await page.waitForURL("**/sign-up");
+  note(
+    await page.getByRole("heading", { level: 1, name: "Sign up" }).isVisible(),
+    "/sign-up renders",
+  );
+
+  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
+  await page.getByRole("link", { name: "Sign in" }).click();
+  await page.waitForURL("**/sign-in");
+  note(
+    await page.getByRole("heading", { level: 1, name: "Sign in" }).isVisible(),
+    "/sign-in renders",
+  );
+  note((await page.title()).includes("ZeroCorps"), `page title: "${await page.title()}"`);
+
+  await page.goto(`${base}/`, { waitUntil: "networkidle" });
+  await page.keyboard.press("Tab");
+  const focused = await page.evaluate(() => document.activeElement?.textContent?.trim());
+  note(focused === "Skip to content", `first Tab focuses the skip link ("${focused}")`);
+  await context.close();
+}
+
+// ── 4. Screenshots: both themes, desktop and phone ──────────────────────────
+{
+  console.log("\n== screenshots ==");
+  const { hostname } = new URL(base);
+  const devices = [
+    ["desktop", { width: 1440, height: 900 }],
+    ["mobile", { width: 390, height: 844 }],
+  ];
+  const pages = [
+    ["home", "/"],
+    ["academy", "/academy"],
+    ["sign-up", "/sign-up"],
+    ["404", MISSING_PAGE],
+  ];
+
+  for (const [device, viewport] of devices) {
+    for (const theme of ["dark", "light"]) {
+      const context = await browser.newContext({
+        viewport,
+        deviceScaleFactor: device === "mobile" ? 2 : 1,
+        reducedMotion: "reduce",
+      });
+      await context.addCookies([{ name: "zc-theme", value: theme, domain: hostname, path: "/" }]);
+      const page = await context.newPage();
+      watch(page, `${device}-${theme}`);
+
+      for (const [name, path] of pages) {
+        await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
+        const overflow = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        note(overflow <= 0, `${device}/${theme} ${path}: no horizontal overflow (${overflow}px)`);
+        await page.screenshot({
+          path: join(shots, `${name}-${device}-${theme}.png`),
+          fullPage: true,
+        });
+      }
+      await context.close();
+    }
+  }
+}
+
+await browser.close();
+console.log(
+  problems.length === 0
+    ? "\nALL CHECKS PASSED"
+    : `\n${problems.length} PROBLEM(S):\n - ${problems.join("\n - ")}`,
+);
+console.log(`screenshots: ${shots}`);
+process.exit(problems.length === 0 ? 0 : 1);

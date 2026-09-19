@@ -99,4 +99,10 @@ npm run typecheck   # next typegen + tsc
 npm run lint
 npm run test
 npm run format      # prettier --write
+npm run verify      # headless-browser checks and screenshots (start a server first)
 ```
+
+`npm run verify` drives the real app in headless Edge. Run it at the end of every
+milestone and look at the screenshots in `.verify/`. The `verify-site` skill in
+`.claude/skills/` has the full procedure. Pass a URL to check the live site:
+`npm run verify -- https://zerocorps.org live`.

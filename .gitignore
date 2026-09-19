@@ -5,6 +5,8 @@
 
 # testing
 /coverage
+# screenshots from scripts/verify-site.mjs
+/.verify/
 
 # next.js
 /.next/
