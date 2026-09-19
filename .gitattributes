@@ -1,0 +1,14 @@
+# Store and check out text files with LF endings on every platform,
+# so Windows, macOS, Linux and the Docker build all see identical files.
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.avif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

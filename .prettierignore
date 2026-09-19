@@ -1,0 +1,11 @@
+.next
+node_modules
+coverage
+package-lock.json
+next-env.d.ts
+
+# The owner's brief is kept verbatim.
+docs/BRIEF.md
+
+# Lessons are written in Obsidian; Prettier's MDX handling would rewrite them.
+content

@@ -1,0 +1,156 @@
+@import "tailwindcss";
+
+/*
+ * Theme system
+ * ────────────
+ * Exactly two themes, switched by the `data-theme` attribute on <html>.
+ * Dark is the default and is what the server renders.
+ *
+ * Every colour in the app comes from the semantic tokens below. Tailwind's
+ * built-in palette is removed (see `--color-*: initial`), so a class like
+ * `bg-red-500` does not exist: use `bg-danger`. That is what keeps both themes
+ * complete: a colour that is not a token cannot be used.
+ *
+ * Token values are plain 6-digit hex on purpose. `src/styles/tokens.test.ts`
+ * parses this file and fails if any text/background pair drops below WCAG AA
+ * contrast (4.5:1) in either theme, so the accent can be swapped safely.
+ */
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
+
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  /* Surfaces */
+  --bg: #08090b;
+  --surface: #0e1013;
+  --raised: #15181d;
+  --line: #1f242b;
+  --line-strong: #2e353e;
+
+  /* Text */
+  --fg: #eceef1;
+  --muted: #9ba4af;
+  --subtle: #7c8693;
+
+  /* Brand accent: cold cyan. Never red, green or amber, which carry meaning. */
+  --accent: #5ce1f0;
+  --accent-fg: #031a1e;
+
+  /* Status */
+  --danger: #ff6b66;
+  --success: #3dd68c;
+  --warning: #f5b83d;
+
+  /* Activity ramp: one hue, more activity = brighter on a dark surface. */
+  --heat-0: #171b20;
+  --heat-1: #134a55;
+  --heat-2: #17707f;
+  --heat-3: #1f9fb3;
+  --heat-4: #5ce1f0;
+
+  /* A glow reads as light on a dark surface and as a smudge on a light one. */
+  --chart-glow: drop-shadow(0 0 10px color-mix(in oklab, var(--accent) 45%, transparent));
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --raised: #eef0f3;
+  --line: #e1e5ea;
+  --line-strong: #c9cfd7;
+
+  --fg: #0b0d10;
+  --muted: #4b5563;
+  --subtle: #5f6875;
+
+  --accent: #0b6b7d;
+  --accent-fg: #ffffff;
+
+  --danger: #c22b2b;
+  --success: #17703f;
+  --warning: #8a5a00;
+
+  /* Same hue, selected separately: more activity = darker on a light surface. */
+  --heat-0: #e6e9ee;
+  --heat-1: #8dd6e2;
+  --heat-2: #4dbdce;
+  --heat-3: #1891a6;
+  --heat-4: #0b6b7d;
+
+  --chart-glow: none;
+}
+
+@theme inline {
+  --color-*: initial;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-raised: var(--raised);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-subtle: var(--subtle);
+
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+
+  --color-heat-0: var(--heat-0);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SFMono-Regular", monospace;
+}
+
+@layer base {
+  html {
+    background-color: var(--bg);
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--fg);
+    font-family: var(--font-sans);
+  }
+
+  ::selection {
+    background-color: color-mix(in oklab, var(--accent) 35%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+/* Soft accent wash behind the hero. Decorative only. */
+@utility hero-glow {
+  background-image: radial-gradient(
+    60% 55% at 50% 0%,
+    color-mix(in oklab, var(--accent) 13%, transparent),
+    transparent 70%
+  );
+}
+
+/* Faint square grid that fades out toward the edges. Decorative only. */
+@utility grid-fade {
+  background-image:
+    linear-gradient(to right, var(--line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(70% 60% at 50% 0%, black 20%, transparent 75%);
+}

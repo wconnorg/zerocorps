@@ -1,0 +1,50 @@
+# dependencies
+/node_modules
+/.pnp
+.pnp.*
+
+# testing
+/coverage
+
+# next.js
+/.next/
+/out/
+
+# production
+/build
+
+# env files: never commit real secrets. Only the example is tracked.
+.env
+.env.*
+!.env.example
+
+# keys and certificates
+*.pem
+*.key
+
+# debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
+
+# editors and OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Obsidian vault state (lessons are written in Obsidian; its workspace files are local)
+.obsidian/
+
+# local-only Claude Code settings
+.claude/settings.local.json
