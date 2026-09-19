@@ -78,6 +78,29 @@ relevant section with a date; do not rewrite history.
   carry meaning in a trading product: red (danger, loss), green (success, gain)
   and amber (warning).
 
+## Deployment (set up 2026-09-19)
+
+- **Pipeline.** The public GitHub repository `wconnorg/zerocorps` is connected to
+  Vercel through Vercel's Git integration. **A push to `main` is a production
+  deploy to zerocorps.org.** Pushes to any other branch create preview deploys.
+  The owner does the pushing.
+- **Canonical origin is `https://zerocorps.org`** (the apex). `www` redirects to
+  it. `NEXT_PUBLIC_APP_URL` must be set to that value in Vercel for both the
+  Production and Preview environments. If it is missing the build stops, by
+  design (see `src/env.ts`).
+- **DNS stays at Namecheap. Do not move the nameservers.** The same zone carries
+  the owner's Proton Mail setup: two MX records, the SPF and
+  `protonmail-verification` TXT records, three `protonmail*._domainkey` CNAMEs
+  and a DMARC policy of `p=quarantine`. Only the apex `A` records and the `www`
+  CNAME belong to the website.
+- **Email sending in milestone 2 must respect that DMARC policy.** Resend's DKIM
+  and return-path records are added next to Proton's, never in place of them, and
+  mail from `@zerocorps.org` must pass DKIM alignment or it will be quarantined.
+- **Commits use the owner's GitHub noreply address**, because the repository is
+  public. It is set in this repository's local git config.
+- Before this, zerocorps.org served a GitHub Pages site ("ZeroCorps LLC") from
+  `zero-corps.github.io`.
+
 ## Better Auth findings that shape the design
 
 Verified against the Better Auth **1.7.5** documentation and plugin source on
