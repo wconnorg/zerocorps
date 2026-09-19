@@ -30,16 +30,19 @@ Read these before doing anything:
   or a placeholder only.
 - Update the status table below when a milestone is finished.
 
-| #   | Milestone                                                | Status                       |
-| --- | -------------------------------------------------------- | ---------------------------- |
-| 1   | Skeleton, theme system, home ad page, `/academy` landing | Built, awaiting owner's test |
-| 2   | Auth                                                     | Not started                  |
-| 3   | Onboarding                                               | Not started                  |
-| 4   | Dashboard and settings                                   | Not started                  |
-| 5   | Phone and 2FA                                            | Not started                  |
-| 6   | Discord link and unlink                                  | Not started                  |
-| 7   | Academy: MDX lessons, progress, rank, heatmap            | Not started                  |
-| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started                  |
+| #   | Milestone                                                | Status               |
+| --- | -------------------------------------------------------- | -------------------- |
+| 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel |
+| 2   | Auth                                                     | Not started          |
+| 3   | Onboarding                                               | Not started          |
+| 4   | Dashboard and settings                                   | Not started          |
+| 5   | Phone and 2FA                                            | Not started          |
+| 6   | Discord link and unlink                                  | Not started          |
+| 7   | Academy: MDX lessons, progress, rank, heatmap            | Not started          |
+| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started          |
+
+Deployment, DNS and the launch checklist are described in DECISIONS.md. A push to
+`main` deploys to production, so never push without being asked.
 
 ## Hard rules (from the brief; never trade these away)
 

@@ -82,12 +82,26 @@ relevant section with a date; do not rewrite history.
 
 - **Pipeline.** The public GitHub repository `wconnorg/zerocorps` is connected to
   Vercel through Vercel's Git integration. **A push to `main` is a production
-  deploy to zerocorps.org.** Pushes to any other branch create preview deploys.
-  The owner does the pushing.
-- **Canonical origin is `https://zerocorps.org`** (the apex). `www` redirects to
-  it. `NEXT_PUBLIC_APP_URL` must be set to that value in Vercel for both the
-  Production and Preview environments. If it is missing the build stops, by
-  design (see `src/env.ts`).
+  deploy.** Pushes to any other branch create preview deploys, which Vercel keeps
+  behind its own login. Nothing is pushed until the owner has tested it.
+- **The site is live at `https://zerocorps.vercel.app`.** zerocorps.org still
+  serves the owner's older GitHub Pages site, and stays that way until the owner
+  decides to launch the new site on it. Until then the Vercel address doubles as
+  the place to test each milestone on real infrastructure.
+- **`NEXT_PUBLIC_APP_URL` in Vercel must always be the address visitors actually
+  use**: `https://zerocorps.vercel.app` now, `https://zerocorps.org` after launch.
+  It is set for both the Production and Preview environments, and the build stops
+  without it, by design (see `src/env.ts`). From milestone 2 a wrong value breaks
+  sign-in, because cookies, origin checks and the links in emails all use it.
+- **Launch checklist**, for the day the domain moves:
+  1. In Vercel, add `zerocorps.org` as the primary domain and `www.zerocorps.org`
+     redirecting to it.
+  2. At Namecheap, replace the four GitHub Pages `A` records and the `www` CNAME
+     with the values Vercel shows. Touch nothing else in the zone.
+  3. Set `NEXT_PUBLIC_APP_URL` to `https://zerocorps.org` and redeploy.
+  4. Update every place the old address was registered: the Discord OAuth
+     redirect URL, and Agent Zero's base URL for the internal API.
+  5. Redirect `zerocorps.vercel.app` to the domain so search engines see one site.
 - **DNS stays at Namecheap. Do not move the nameservers.** The same zone carries
   the owner's Proton Mail setup: two MX records, the SPF and
   `protonmail-verification` TXT records, three `protonmail*._domainkey` CNAMEs
@@ -98,8 +112,8 @@ relevant section with a date; do not rewrite history.
   mail from `@zerocorps.org` must pass DKIM alignment or it will be quarantined.
 - **Commits use the owner's GitHub noreply address**, because the repository is
   public. It is set in this repository's local git config.
-- Before this, zerocorps.org served a GitHub Pages site ("ZeroCorps LLC") from
-  `zero-corps.github.io`.
+- The older site still on zerocorps.org is a GitHub Pages site titled "ZeroCorps
+  LLC", served from `zero-corps.github.io`.
 
 ## Better Auth findings that shape the design
 
