@@ -84,36 +84,26 @@ relevant section with a date; do not rewrite history.
   Vercel through Vercel's Git integration. **A push to `main` is a production
   deploy.** Pushes to any other branch create preview deploys, which Vercel keeps
   behind its own login. Nothing is pushed until the owner has tested it.
-- **The site is live at `https://zerocorps.vercel.app`.** zerocorps.org still
-  serves the owner's older GitHub Pages site, and stays that way until the owner
-  decides to launch the new site on it. Until then the Vercel address doubles as
-  the place to test each milestone on real infrastructure.
-- **`NEXT_PUBLIC_APP_URL` in Vercel must always be the address visitors actually
-  use**: `https://zerocorps.vercel.app` now, `https://zerocorps.org` after launch.
-  It is set for both the Production and Preview environments, and the build stops
-  without it, by design (see `src/env.ts`). From milestone 2 a wrong value breaks
-  sign-in, because cookies, origin checks and the links in emails all use it.
-- **Launch checklist**, for the day the domain moves:
-  1. In Vercel, add `zerocorps.org` as the primary domain and `www.zerocorps.org`
-     redirecting to it.
-  2. At Namecheap, replace the four GitHub Pages `A` records and the `www` CNAME
-     with the values Vercel shows. Touch nothing else in the zone.
-  3. Set `NEXT_PUBLIC_APP_URL` to `https://zerocorps.org` and redeploy.
-  4. Update every place the old address was registered: the Discord OAuth
-     redirect URL, and Agent Zero's base URL for the internal API.
-  5. Redirect `zerocorps.vercel.app` to the domain so search engines see one site.
-- **DNS stays at Namecheap. Do not move the nameservers.** The same zone carries
-  the owner's Proton Mail setup: two MX records, the SPF and
-  `protonmail-verification` TXT records, three `protonmail*._domainkey` CNAMEs
-  and a DMARC policy of `p=quarantine`. Only the apex `A` records and the `www`
-  CNAME belong to the website.
-- **Email sending in milestone 2 must respect that DMARC policy.** Resend's DKIM
-  and return-path records are added next to Proton's, never in place of them, and
-  mail from `@zerocorps.org` must pass DKIM alignment or it will be quarantined.
+- **The site is live at `https://zerocorps.org`.** The owner moved the domain to
+  Vercel on 2026-09-19, before milestone 2, replacing an older GitHub Pages site.
+  HTTPS is issued and renewed by Vercel. The same deployment also answers at
+  `https://zerocorps.vercel.app`; redirecting that address to the domain is still
+  to do, so search engines see one site.
+- **`www.zerocorps.org` is deliberately not set up.** The owner chose to leave it
+  out. Every registered URL (OAuth redirects, links in emails, the bot's base URL)
+  uses the address without `www`.
+- **`NEXT_PUBLIC_APP_URL` in Vercel is `https://zerocorps.org`** for both the
+  Production and Preview environments, and the build stops without it, by design
+  (see `src/env.ts`). It must always be the address visitors actually use: from
+  milestone 2 a wrong value breaks sign-in, because cookies, origin checks and the
+  links in emails are all built from it.
+- **There is no separate staging site.** Every push to `main` changes the public
+  site, which is one more reason nothing is pushed until the owner has tested it.
+- **DNS stays at Namecheap. Do not move the nameservers.** [DNS.md](DNS.md) lists
+  every record, including the Proton Mail records that were removed by accident
+  during the move and need restoring before Proton is used again.
 - **Commits use the owner's GitHub noreply address**, because the repository is
   public. It is set in this repository's local git config.
-- The older site still on zerocorps.org is a GitHub Pages site titled "ZeroCorps
-  LLC", served from `zero-corps.github.io`.
 
 ## Better Auth findings that shape the design
 
