@@ -71,7 +71,7 @@ function watch(page, tag) {
   note(headers["x-powered-by"] === undefined, "X-Powered-By header removed");
   note(headers["x-frame-options"] === "DENY", "X-Frame-Options is DENY");
 
-  for (const path of ["/robots.txt", "/sitemap.xml", "/icon.svg"]) {
+  for (const path of ["/robots.txt", "/sitemap.xml", "/icon.png"]) {
     const response = await context.request.get(`${base}${path}`);
     note(response.status() === 200, `${path} -> ${response.status()}`);
   }

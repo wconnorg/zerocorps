@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
+import { BrandName } from "@/components/site/wordmark";
 import { site } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -39,7 +40,7 @@ export default function AcademyLandingPage() {
         <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-6 pt-24 pb-20 text-center lg:pt-32">
           <p className="font-mono text-xs tracking-[0.22em] text-accent">ACADEMY</p>
           <h1 className="mt-6 text-5xl/[1.05] font-semibold tracking-tight text-balance sm:text-6xl/[1.03]">
-            {site.academy}
+            <BrandName /> Academy
           </h1>
           <p className="mt-6 max-w-xl text-lg/8 text-pretty text-muted">
             A structured path from your first chart to a repeatable process. Create an account to

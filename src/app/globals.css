@@ -23,33 +23,34 @@
 [data-theme="dark"] {
   color-scheme: dark;
 
-  /* Surfaces */
-  --bg: #08090b;
-  --surface: #0e1013;
-  --raised: #15181d;
-  --line: #1f242b;
-  --line-strong: #2e353e;
+  /* Surfaces: black, warmed a touch towards red */
+  --bg: #050505;
+  --surface: #0c0a0a;
+  --raised: #151111;
+  --line: #241b1c;
+  --line-strong: #3a2a2c;
 
   /* Text */
-  --fg: #eceef1;
-  --muted: #9ba4af;
-  --subtle: #7c8693;
+  --fg: #f2eded;
+  --muted: #a89c9d;
+  --subtle: #918385;
 
-  /* Brand accent: cold cyan. Never red, green or amber, which carry meaning. */
-  --accent: #5ce1f0;
-  --accent-fg: #031a1e;
+  /* Brand accent: blood red (the owner's choice, 2026-09-20). Bright enough to read as
+     text on black; text ON it is black, because white on this red is too faint. */
+  --accent: #ff3b47;
+  --accent-fg: #0a0000;
 
-  /* Status */
-  --danger: #ff6b66;
+  /* Status. Danger is orange so it cannot be mistaken for the red brand accent. */
+  --danger: #ff8a4c;
   --success: #3dd68c;
-  --warning: #f5b83d;
+  --warning: #f5c542;
 
   /* Activity ramp: one hue, more activity = brighter on a dark surface. */
-  --heat-0: #171b20;
-  --heat-1: #134a55;
-  --heat-2: #17707f;
-  --heat-3: #1f9fb3;
-  --heat-4: #5ce1f0;
+  --heat-0: #1a1214;
+  --heat-1: #66161f;
+  --heat-2: #80151f;
+  --heat-3: #c21f2d;
+  --heat-4: #ff3b47;
 
   /* A glow reads as light on a dark surface and as a smudge on a light one. */
   --chart-glow: drop-shadow(0 0 10px color-mix(in oklab, var(--accent) 45%, transparent));
@@ -58,29 +59,29 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  --bg: #f6f7f9;
+  --bg: #f7f4f4;
   --surface: #ffffff;
-  --raised: #eef0f3;
-  --line: #e1e5ea;
-  --line-strong: #c9cfd7;
+  --raised: #f0eaea;
+  --line: #e6dddd;
+  --line-strong: #d1c4c5;
 
-  --fg: #0b0d10;
-  --muted: #4b5563;
-  --subtle: #5f6875;
+  --fg: #0d0909;
+  --muted: #574a4b;
+  --subtle: #6b5d5f;
 
-  --accent: #0b6b7d;
+  --accent: #b00020;
   --accent-fg: #ffffff;
 
-  --danger: #c22b2b;
+  --danger: #a83a00;
   --success: #17703f;
-  --warning: #8a5a00;
+  --warning: #7a5600;
 
   /* Same hue, selected separately: more activity = darker on a light surface. */
-  --heat-0: #e6e9ee;
-  --heat-1: #8dd6e2;
-  --heat-2: #4dbdce;
-  --heat-3: #1891a6;
-  --heat-4: #0b6b7d;
+  --heat-0: #ece6e6;
+  --heat-1: #f0b3b8;
+  --heat-2: #e06b75;
+  --heat-3: #c42c3a;
+  --heat-4: #b00020;
 
   --chart-glow: none;
 }
@@ -153,4 +154,11 @@
     linear-gradient(to bottom, var(--line) 1px, transparent 1px);
   background-size: 56px 56px;
   mask-image: radial-gradient(70% 60% at 50% 0%, black 20%, transparent 75%);
+}
+
+/* The mark is an image used as a mask, so it is painted in the current text colour. */
+.zero-mark {
+  background-color: currentColor;
+  -webkit-mask: url("/brand/zero-mark.png") center / contain no-repeat;
+  mask: url("/brand/zero-mark.png") center / contain no-repeat;
 }

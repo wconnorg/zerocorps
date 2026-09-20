@@ -74,7 +74,8 @@ relevant section with a date; do not rewrite history.
 ### Brand (placeholders the owner will replace)
 
 - Text wordmark, near-black interface, one accent colour, placeholder copy.
-- The accent is a cold cyan, chosen so it never collides with the colours that
+- _Superseded on 2026-09-20: the brand is now black and red; see "Brand and landing page"._
+  The accent is a cold cyan, chosen so it never collides with the colours that
   carry meaning in a trading product: red (danger, loss), green (success, gain)
   and amber (warning).
 
@@ -558,6 +559,30 @@ entry here differs from one above, this one is newer and wins.
 - **The owner wants to change the logo and the colours.** Colours are the tokens in
   `src/app/globals.css` (the contrast test must keep passing); the logo is
   `ZeroMark` in `src/components/site/wordmark.tsx` and `src/app/icon.svg`.
+
+### Brand and landing page, decided by the owner (2026-09-20)
+
+- **The colours are black and red in both themes.** This replaces the cold-cyan accent
+  and the earlier rule that the accent is never red. Because the brand is now red,
+  **`danger` is orange**, so an error can never be mistaken for the brand. On the dark
+  theme the text on a red button is black: white on that red fails the contrast test.
+- **The logo is the owner's hand-drawn slashed zero.** `public/brand/zero-mark.png` is
+  the mark alone, used as a CSS mask so it takes the text colour in both themes;
+  `src/app/icon.png` is the browser-tab icon. The source image is only 224 pixels
+  wide, so a vector version is wanted before it is used large.
+- **In the name, "Zero" is the text colour and "Corps" is red** (`BrandName` and
+  `Wordmark` in `src/components/site/wordmark.tsx`).
+- **The landing page leads with the quotation "Forced evolution."**, credited by
+  initials only, and one line: "We build trading solutions to empower the industry."
+  The closing "Start at zero" section was removed.
+- **Wanted next, NOT built, each needs a plan and the owner's answers first:**
+  - a deeper, better-presented replacement for the "Built like a curriculum" section;
+  - **a trading journal with risk-to-reward tools**, as a product in its own right.
+    It is not in the brief; it needs its own milestone, schema and privacy thinking;
+  - **polished animation across the site.** Constraints already known: no third-party
+    script origins (CSP), the marketing pages stay static, and `prefers-reduced-motion`
+    is respected;
+  - "Powered by ZeroCorps" on the course pages, in milestone 7 when they exist.
 
 ### Where milestone 2 stands (keep this current; last updated 2026-09-20)
 

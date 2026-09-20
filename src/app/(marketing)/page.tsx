@@ -1,5 +1,6 @@
 import { ActivityPreview } from "@/components/marketing/activity-preview";
 import { ProgressChart } from "@/components/marketing/progress-chart";
+import { BrandName } from "@/components/site/wordmark";
 import { ButtonLink } from "@/components/ui/button";
 
 // Placeholder copy throughout: edit freely.
@@ -57,13 +58,25 @@ export default function HomePage() {
 
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-6 pt-20 pb-24 lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:pt-28 lg:pb-32">
           <div>
-            <p className="font-mono text-xs tracking-[0.22em] text-accent">ZEROCORPS ACADEMY</p>
-            <h1 className="mt-6 text-5xl/[1.05] font-semibold tracking-tight text-balance sm:text-6xl/[1.03]">
-              Learn to trade with a system, not a hunch.
-            </h1>
-            <p className="mt-6 max-w-xl text-lg/8 text-pretty text-muted">
-              A structured trading curriculum. Work through the lessons in order, earn ranks as you
-              progress, and unlock the ZeroCorps Discord as you go.
+            <p className="font-mono text-xs tracking-[0.22em] text-muted">
+              <BrandName uppercase /> ACADEMY
+            </p>
+            <figure className="mt-6">
+              <blockquote className="text-5xl/[1.05] font-semibold tracking-tight text-balance sm:text-7xl/[1.02]">
+                <span aria-hidden="true" className="text-accent">
+                  &ldquo;
+                </span>
+                Forced evolution.
+                <span aria-hidden="true" className="text-accent">
+                  &rdquo;
+                </span>
+              </blockquote>
+              <figcaption className="mt-5 font-mono text-sm tracking-[0.22em] text-subtle">
+                &mdash; J. B. D.
+              </figcaption>
+            </figure>
+            <p className="mt-8 max-w-xl text-lg/8 text-pretty text-muted">
+              We build trading solutions to empower the industry.
             </p>
             <div className="mt-10">
               <AcademyCta />
@@ -103,18 +116,6 @@ export default function HomePage() {
             </p>
           </div>
           <ActivityPreview />
-        </div>
-      </section>
-
-      <section className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center px-6 py-24 text-center lg:py-28">
-          <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">Start at zero.</h2>
-          <p className="mt-5 max-w-md text-base/7 text-muted">
-            Everyone does. Create an account and open the first lesson.
-          </p>
-          <div className="mt-9">
-            <AcademyCta />
-          </div>
         </div>
       </section>
     </>
