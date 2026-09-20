@@ -539,6 +539,26 @@ entry here differs from one above, this one is newer and wins.
 3. The release tasks follow one at a time: Resend, DNS, the Vercel variables, the
    GitHub security settings, the legal drafts, and `allowlist` mode on the live site.
 
+### Decided by the owner during local testing (2026-09-20)
+
+- **The owner tested milestone 2 on the laptop and it works:** sign-up by code,
+  sign-in, sign-out, password reset and the invite-only refusal.
+- **The live site stays in private beta (`SIGNUP_MODE=allowlist`) for a long while**, at
+  least until the whole course is finished. The owner invites friends by adding their
+  addresses to `SIGNUP_ALLOWLIST` in Vercel and redeploying. `open` is not the plan
+  for the milestone 2 release any more.
+- **An owner-only dev panel, later, not built now.** Once auth is proven on the live
+  site: a page only the owner's account can open, holding the milestone 4 health view
+  and, after milestone 9, a way into the brain export. The owner is identified by an
+  environment variable, never by an address written in this public repository, and
+  the check is by user id on the server on every request. Managing the invite list
+  from that panel, without a redeploy, belongs there too.
+- **The sign-up felt slow on the laptop** ("sending your code" and the step after it).
+  To be measured against a production build before release; see the open items.
+- **The owner wants to change the logo and the colours.** Colours are the tokens in
+  `src/app/globals.css` (the contrast test must keep passing); the logo is
+  `ZeroMark` in `src/components/site/wordmark.tsx` and `src/app/icon.svg`.
+
 ### Where milestone 2 stands (keep this current; last updated 2026-09-20)
 
 A new session starts here. Milestone 2 is **built on `dev` and waiting for the
