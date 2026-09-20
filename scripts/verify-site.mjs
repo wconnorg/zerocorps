@@ -156,9 +156,10 @@ function watch(page, tag) {
 
   await page.getByRole("link", { name: "Sign up" }).click();
   await page.waitForURL("**/sign-up");
+  const signUpHeading = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
   note(
-    await page.getByRole("heading", { level: 1, name: "Sign up" }).isVisible(),
-    "/sign-up renders",
+    ["Create your account", "Sign-ups open soon"].includes(signUpHeading ?? ""),
+    `/sign-up renders ("${signUpHeading}")`,
   );
 
   await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
@@ -177,7 +178,85 @@ function watch(page, tag) {
   await context.close();
 }
 
-// ── 4. Screenshots: both themes, desktop and phone ──────────────────────────
+// ── 4. Accounts: what a signed-out visitor can and cannot reach ─────────────
+// Nothing here creates an account or signs anyone in: there is ONE database, shared with
+// the live site. The owner tests the sign-up itself by hand.
+{
+  console.log("\n== accounts ==");
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  watch(page, "accounts");
+
+  const signInHeaders = (await context.request.get(`${base}/sign-in`)).headers();
+  const csp = signInHeaders["content-security-policy"] ?? "";
+  note(
+    csp.includes("frame-ancestors 'none'"),
+    "/sign-in cannot be framed (frame-ancestors 'none')",
+  );
+  note(
+    csp.includes("form-action 'self'"),
+    "/sign-in forms can only post to this site (form-action 'self')",
+  );
+
+  await page.goto(`${base}/dashboard`, { waitUntil: "networkidle" });
+  note(
+    new URL(page.url()).pathname === "/sign-in" &&
+      new URL(page.url()).searchParams.get("next") === "/dashboard",
+    `/dashboard sends a signed-out visitor to sign in (${new URL(page.url()).pathname}${new URL(page.url()).search})`,
+  );
+  note(await page.getByLabel("Email address").isVisible(), "/sign-in shows the form");
+  note(
+    (await page.getByLabel("Password", { exact: true }).getAttribute("autocomplete")) ===
+      "current-password",
+    "the password field is marked for password managers",
+  );
+
+  await page.goto(`${base}/reset-password`, { waitUntil: "networkidle" });
+  note(
+    await page.getByText("This reset link is incomplete").isVisible(),
+    "/reset-password without a token explains itself",
+  );
+
+  await page.goto(`${base}/sign-up/verify`, { waitUntil: "networkidle" });
+  note(
+    await page.getByRole("link", { name: "Start again" }).isVisible(),
+    "/sign-up/verify without a sign-up in progress offers to start again",
+  );
+
+  for (const path of ["/terms", "/privacy"]) {
+    await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
+    note(
+      await page.getByText("Draft.", { exact: true }).isVisible(),
+      `${path} is marked as a draft`,
+    );
+  }
+
+  const cron = await context.request.get(`${base}/api/cron/cleanup`);
+  note(
+    cron.status() === 401,
+    `the cleanup route refuses a caller without the secret (${cron.status()})`,
+  );
+  const wrongSecret = await context.request.get(`${base}/api/cron/cleanup`, {
+    headers: { authorization: "Bearer not-the-secret" },
+  });
+  note(wrongSecret.status() === 401, `...and one with the wrong secret (${wrongSecret.status()})`);
+
+  const securityTxt = await context.request.get(`${base}/.well-known/security.txt`);
+  note(
+    [200, 404].includes(securityTxt.status()),
+    `security.txt answers (${securityTxt.status()}: ${securityTxt.status() === 200 ? "published" : "no SECURITY_CONTACT set here"})`,
+  );
+  if (securityTxt.status() === 200) {
+    const body = await securityTxt.text();
+    note(
+      /^Contact: /m.test(body) && /^Expires: /m.test(body),
+      "security.txt has Contact and Expires",
+    );
+  }
+  await context.close();
+}
+
+// ── 5. Screenshots: both themes, desktop and phone ──────────────────────────
 {
   console.log("\n== screenshots ==");
   const { hostname } = new URL(base);
@@ -189,6 +268,12 @@ function watch(page, tag) {
     ["home", "/"],
     ["academy", "/academy"],
     ["sign-up", "/sign-up"],
+    ["sign-up-verify", "/sign-up/verify"],
+    ["sign-in", "/sign-in"],
+    ["forgot-password", "/forgot-password"],
+    ["reset-password", "/reset-password"],
+    ["terms", "/terms"],
+    ["privacy", "/privacy"],
     ["404", MISSING_PAGE],
   ];
 

@@ -541,66 +541,57 @@ entry here differs from one above, this one is newer and wins.
 
 ### Where milestone 2 stands (keep this current; last updated 2026-09-20)
 
-A new session starts here. Milestone 2 is **in progress on `dev`**; `main` holds
-only milestone 1 and the docs.
+A new session starts here. Milestone 2 is **built on `dev` and waiting for the
+owner's local testing**; `main` holds only milestone 1 and the docs. `dev` has not
+been pushed.
 
-**Done and proven** (typecheck, lint, 100 tests, production build):
+**Built and proven** (typecheck, lint, 168 tests, production build, `npm run verify`):
 
-- `main` was pushed on 2026-09-20 and `dev` branched from it. `vercel.json` on `dev`
-  stops Vercel building that branch. `dev` has not been pushed.
-- The environment schema (`src/env-schema.ts`, read by `src/env.ts`) with every
-  milestone 2 key, and the owner's tools `npm run env:check` and `env:secrets`. The
-  owner's `.env.local` is complete: `env:check` passes.
-- Both database URLs work: `npm run db:check` passed on 2026-09-20 (Postgres 17, both
-  still as the owner role `postgres`). It also showed that the pooler's TLS
-  certificate is signed by Supabase's own authority; pinning that CA is an open item
-  in [SECURITY.md](SECURITY.md).
-- The schema (`src/db/schema.ts`) and the first two migrations in `drizzle/`:
-  `0000_app_role` (the role, no password, no login) and `0001_auth_core` (Better
-  Auth's five tables, row-level security and the `zerocorps_app` policy on each).
-  **Both were applied to the real database on 2026-09-20**, after an encrypted backup
-  and a passing restore drill.
-- **The app role is live.** The owner gave `zerocorps_app` its password by hand,
-  `DATABASE_URL` connects as it (built by `npm run env:app-url`, never by hand), and
-  `npm run db:check-role` passed every line on 2026-09-20 with nothing to review: the
-  role cannot create, alter or drop, and sees only the app's tables.
-- `createAuth(deps)` in `src/lib/auth/create-auth.ts`: the core Better Auth
-  configuration (findings 8 to 27). The tests run sign-in, reset and sign-out through
-  it on a Postgres inside the test process, as the owner and as `zerocorps_app`.
-- The guarded database commands: `db:check`, `db:backup`, `db:restore:check`,
-  `db:migrate`, `db:check-role`. The last three and the backup need a person at a
-  terminal, so only the owner can run them.
+- **Environment:** `src/env-schema.ts` (read by `src/env.ts`) with every milestone 2
+  key, and the owner's tools `env:check`, `env:secrets` and `env:app-url`. The owner's
+  `.env.local` is complete.
+- **Database:** migrations `0000_app_role` and `0001_auth_core` were applied to the
+  real database on 2026-09-20 after an encrypted backup and a passing restore drill.
+  The app connects as `zerocorps_app`, and `npm run db:check-role` passed every line
+  with nothing to review. The guarded commands are `db:check`, `db:backup`,
+  `db:restore:check`, `db:migrate`, `db:check-role`, `db:cleanup-test-accounts` and
+  `sessions:revoke-all`; the ones that change anything need a person at a terminal.
+- **Sign-up by emailed code** (`src/lib/auth/email-code-signup.ts`), a local Better
+  Auth plugin, with the attack tests the owner specified, the atomicity test, both
+  cross-site tests, and `SIGNUP_MODE` enforced at the start and at the code check. A
+  mutation check proved the cross-site test fails without the CSRF middleware.
+- **Around it:** per-address limits (`limits.ts`), the daily email cap, the event log
+  with `app_env` (`events.ts`), known devices and the new-device alert, the session
+  hook that stores a coarse IP prefix and a browser family, "a reset forgets every
+  known device", and the daily cleanup (`cleanup.ts`, `/api/cron/cleanup`).
+- **Email:** `sendEmail()` (console and `.outbox/` on the laptop, Resend through
+  `fetch`, the laptop-only allowlist) and the five messages, sent through Next's
+  `after()`.
+- **Pages:** `/sign-up` in its three modes, `/sign-up/verify`, `/sign-in`,
+  `/forgot-password`, `/reset-password`, a protected placeholder `/dashboard`, the
+  "temporarily unavailable" state, the `/terms` and `/privacy` drafts, and
+  `/.well-known/security.txt`. The marketing and auth pages are still static.
 
-**Waiting on the owner:** nothing right now. The next thing the owner runs is the
-second migration, when the sign-up plugin's tables are ready: `npm run db:backup` →
-`npm run db:restore:check` → `npm run db:migrate`, one command at a time.
+**Waiting on the owner, one step at a time:**
 
-**Still to build for milestone 2**, in this order:
+1. **The second migration**, `0002_email_code_signup` (four new tables, nothing
+   existing is touched): `npm run db:backup` → `npm run db:restore:check` →
+   `npm run db:migrate` → `npm run db:check-role`. Until it is applied, sign-up and
+   sign-in fail closed on the laptop, because the limiter's table does not exist yet.
+2. **Local testing.** In `.env.local`: `SIGNUP_MODE=allowlist`, and the owner's test
+   addresses in both `SIGNUP_ALLOWLIST` and `EMAIL_ALLOWLIST`. Codes and links are read
+   from `.outbox/`. Afterwards `npm run db:cleanup-test-accounts` removes them.
+3. Then the release tasks, one at a time (see "Sequence" above).
 
-1. The email-code sign-up as a local Better Auth plugin, with its attack tests, the
-   atomicity test and `SIGNUP_MODE` enforced at start and at verify. Its tables
-   (`pending_signups`, `known_devices`, `auth_events` with an `app_env` column, and the
-   per-address counters) go into a **second** migration, written only once those
-   tests pass, because a column can never be dropped.
-2. Per-address limits, the event log, the known-device cookie and the new-device
-   email, the session hook that reduces the stored IP and user agent, and "a reset
-   forgets every known device".
-3. `sendEmail()` (console and outbox, Resend through `fetch`, the allowlist) with the
-   five emails, sent through Next's `after()` wired to
-   `advanced.backgroundTasks.handler`.
-4. The route handler for `/api/auth`, the auth client, and the pages: `/sign-up` in
-   its three modes, the code screen, `/sign-in`, `/forgot-password`,
-   `/reset-password`, a protected placeholder `/dashboard`, and the friendly
-   "temporarily unavailable" state when the database cannot be reached.
-5. The daily cleanup route with `CRON_SECRET` and its cron entry in `vercel.json`,
-   `/.well-known/security.txt`, the `/terms` and `/privacy` drafts, the revoke-sessions
-   command and the test-account cleanup command.
-6. `npm run verify` extended to the new pages and flows, the status table in
-   AGENTS.md, and the milestone commit.
+**Open questions for the owner:** pinning Supabase's CA certificate so the database
+link is verified and not only encrypted ([SECURITY.md](SECURITY.md)); and the
+already-registered path keeping a password-less row (finding 28), which differs from
+the letter of "no pending row".
 
-**Housekeeping:** the work so far sits in one checkpoint commit on `dev`, made for
-safety at the owner's request. Squash it into the single milestone commit before
-`dev` is merged into `main`.
+**Housekeeping:** the work sits in a few checkpoint commits on `dev`, made for safety
+at the owner's request. Squash them into the single milestone commit before `dev` is
+merged into `main`. The status table in AGENTS.md changes to "Done" only after the
+owner's testing.
 
 ## Better Auth findings that shape the design
 
@@ -768,6 +759,41 @@ Added on 2026-09-20 while proving the schema:
     (`access_token`, `refresh_token`, `id_token` and their expiry times) because the
     library's model requires them and the schema check would fail without them. No
     social provider is ever configured, so they stay `NULL`; a test asserts that no
-    row holds a token and that every account is a `credential` account. A reset token is single-use, `onPasswordReset` is the hook for
+    row holds a token and that every account is a `credential` account.
+
+Added on 2026-09-20 while building the email-code sign-up:
+
+28. **An address that already has an account DOES get a pending row, without a
+    password. This departs from the letter of "no pending row", on purpose, and is
+    the owner's to confirm.** The spec asks for two things that pull apart: "no
+    pending row" and "the same code screen, no enumeration". Without a row there is
+    nothing to count attempts, cooldowns or expiry against, so the code screen would
+    answer differently: five wrong codes on a real sign-up end in "too many attempts",
+    and on a registered address they never would. Six requests would then reveal who
+    has an account. So the row is created either way, with `password_hash` NULL for a
+    registered address. Such a row can never create anything: the verify step treats
+    a NULL hash as a wrong code even when the code is right, which a test proves by
+    finding the never-sent code by brute force with the server's secret. No password
+    hash is stored for that address, and it receives the "you already have an
+    account" email instead of a code. Both paths do the same work: one password hash,
+    one lookup, one row, one email, one cookie.
+29. **A resend replaces the code and does not give attempts back.** Only a hash of the
+    code is stored, so the same code cannot be sent twice. Five attempts per sign-up
+    means five however many codes it sends; with three sends that is still five
+    guesses, not fifteen.
+30. **Headers set in an after-hook reach the response**, cookies included
+    (`api/dispatch.mjs`, `mergeResponseHeaders`), and `context.returned` holds the
+    endpoint's error when it failed. That is how the sign-in hook sets the
+    known-device cookie and logs a failure without knowing whose it was. One upsert
+    decides whether a browser is new, so two sign-ins at once cannot both alert.
+31. **`after()` accepts a promise and is supported in route handlers** (Next's bundled
+    docs). On a serverless host it relies on the platform's `waitUntil`; a self-hosted
+    Node server needs nothing extra. It is wired to
+    `advanced.backgroundTasks.handler`, so every email Better Auth or our plugin hands
+    to `runInBackgroundOrAwait` goes out after the response. Without a handler (in the
+    tests) the send is awaited instead, which keeps the tests deterministic.
+32. **`createUser` takes a second, required argument** in 1.7.5, the provisioning
+    source. The plugin passes `{ method: "email-password" }`, the same value the stock
+    sign-up declares. A reset token is single-use, `onPasswordReset` is the hook for
     the "password changed" email, and `revokeSessionsOnPasswordReset` removes every
     session the user has.

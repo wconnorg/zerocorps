@@ -57,7 +57,7 @@ possible.
 | #   | Milestone                                                | Status               |
 | --- | -------------------------------------------------------- | -------------------- |
 | 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel |
-| 2   | Auth                                                     | In progress on `dev` |
+| 2   | Auth                                                     | Built, owner testing |
 | 3   | Onboarding                                               | Not started          |
 | 4   | Dashboard and settings                                   | Not started          |
 | 5   | Phone and 2FA                                            | Not started          |
@@ -71,8 +71,8 @@ It says what is done, what is waiting on the owner and what is left to build.
 
 Deployment, environments, DNS and the release checklist are described in
 DECISIONS.md. A push to `main` deploys to production, so never push without being
-asked. `SIGNUPS_OPEN` is a server-side kill switch; only the owner changes it in
-production.
+asked. `SIGNUP_MODE` (`closed`, `allowlist`, `open`) is a server-side kill switch;
+only the owner changes it in production.
 
 ## Hard rules (from the brief; never trade these away)
 
@@ -118,8 +118,8 @@ production.
 - **Theme**: `data-theme` on `<html>`, dark by default, saved in the `zc-theme`
   cookie and applied by an inline script before first paint. Do not read that
   cookie in a layout on the server: it would make every page dynamic.
-- **Environment variables** are declared in `src/env.ts` and listed in
-  `.env.example`. A test fails if the two lists differ. A key becomes required in
+- **Environment variables** are declared in `src/env-schema.ts` (parsed once by
+  `src/env.ts`) and listed in `.env.example`. A test fails if the two lists differ. A key becomes required in
   the milestone that first needs it. Import `env` instead of reading `process.env`.
 - **Security headers** come from `src/lib/security-headers.ts`. Add new CSP
   origins there and nowhere else.
@@ -168,6 +168,8 @@ npm run db:backup          # encrypted backup, verified by decrypting it again
 npm run db:restore:check   # restores the newest backup into a throwaway Postgres
 npm run db:migrate         # the ONLY way to change the schema: host + pending list,
                            # backup from the last hour required, typed confirmation
+npm run db:cleanup-test-accounts   # deletes the accounts of the addresses in EMAIL_ALLOWLIST
+npm run sessions:revoke-all        # signs everyone out (runbook in docs/SECURITY.md)
 ```
 
 `npm run check` and `next dev` validate `.env.local` on start. If it is incomplete,
