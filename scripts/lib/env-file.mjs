@@ -9,7 +9,8 @@ import { fileURLToPath } from "node:url";
 import { parseEnv } from "node:util";
 
 export const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
-export const ENV_FILE = join(ROOT, ".env.local");
+// ZC_ENV_FILE exists so these tools can be tried against a fake file. Leave it unset.
+export const ENV_FILE = process.env.ZC_ENV_FILE ?? join(ROOT, ".env.local");
 
 /** Returns the parsed file, or exits with a plain message if there is no file. */
 export function readEnvFile() {

@@ -230,12 +230,13 @@ so that no secret is ever committed. To switch it on:
    that it is not left among the saved or private snippets. The statement can also
    sit in the project's Postgres logs for a short while. Only your Supabase account
    can read those, which is one more reason that account has 2FA.
-4. In `.env.local`, change `DATABASE_URL` in exactly two places and nowhere else:
-   - the username, from `postgres.<project-ref>` to `zerocorps_app.<project-ref>`
-     (the part after the dot stays as it is);
-   - the password, to the one you just set.
-     The host, the port `6543` and `/postgres` do not change.
-     `DATABASE_URL_MIGRATIONS` does not change at all: it keeps the owner role.
+4. **Do not edit the connection string by hand.** Close `.env.local` in your editor
+   and run `npm run env:app-url -- --ask`. It asks for the role's password (hidden)
+   and writes `DATABASE_URL` for you: the host and project ref are copied from
+   `DATABASE_URL_MIGRATIONS`, which `npm run db:check` has already proven, the role is
+   `zerocorps_app` and the port is `6543`. It shows nothing, and it does not touch
+   `DATABASE_URL_MIGRATIONS`, which keeps the owner role. (Hand-editing went wrong the
+   first time: an example host from the instructions ended up in the real file.)
 5. `npm run db:check` should now say `connected as role "zerocorps_app"`.
 6. `npm run db:check-role` must pass every line. It proves the role cannot create,
    alter or drop, holds no special attribute, and sees only the app's tables.

@@ -157,6 +157,8 @@ npm run verify      # headless-browser checks and screenshots (start a server fi
 
 npm run env:check          # which keys in .env.local are filled, blank or malformed (names only)
 npm run env:secrets        # fills the BLANK secrets in .env.local; never shows a value
+npm run env:app-url        # builds DATABASE_URL from the proven migrations URL (-- --ask
+                           # prompts for the role password); nobody hand-edits a URL
 npm run db:check           # tests both database URLs: PASS or the kind of failure (read-only)
 npm run db:generate        # schema change -> SQL file in drizzle/ (offline; read the SQL)
 npm run db:check-role      # proves zerocorps_app cannot create, alter or drop (read-only)

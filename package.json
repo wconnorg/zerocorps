@@ -20,6 +20,7 @@
     "audit:report": "node scripts/audit-report.mjs",
     "env:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/env-check.mjs",
     "env:secrets": "node scripts/env-secrets.mjs",
+    "env:app-url": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/env-app-url.mjs",
     "db:generate": "drizzle-kit generate",
     "db:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-check.mjs",
     "db:backup": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-backup.mjs",

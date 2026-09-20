@@ -558,7 +558,12 @@ only milestone 1 and the docs.
 - The schema (`src/db/schema.ts`) and the first two migrations in `drizzle/`:
   `0000_app_role` (the role, no password, no login) and `0001_auth_core` (Better
   Auth's five tables, row-level security and the `zerocorps_app` policy on each).
-  **Neither has been applied to the real database yet.**
+  **Both were applied to the real database on 2026-09-20**, after an encrypted backup
+  and a passing restore drill.
+- **The app role is live.** The owner gave `zerocorps_app` its password by hand,
+  `DATABASE_URL` connects as it (built by `npm run env:app-url`, never by hand), and
+  `npm run db:check-role` passed every line on 2026-09-20 with nothing to review: the
+  role cannot create, alter or drop, and sees only the app's tables.
 - `createAuth(deps)` in `src/lib/auth/create-auth.ts`: the core Better Auth
   configuration (findings 8 to 27). The tests run sign-in, reset and sign-out through
   it on a Postgres inside the test process, as the owner and as `zerocorps_app`.
@@ -566,10 +571,9 @@ only milestone 1 and the docs.
   `db:migrate`, `db:check-role`. The last three and the backup need a person at a
   terminal, so only the owner can run them.
 
-**Waiting on the owner, one command at a time, reporting each result:**
-`npm run db:backup` → `npm run db:restore:check` → `npm run db:migrate` → the
-one-statement role script in [SECURITY.md](SECURITY.md) ("Give the app role its
-password") and the two edits to `DATABASE_URL` → `npm run db:check-role`.
+**Waiting on the owner:** nothing right now. The next thing the owner runs is the
+second migration, when the sign-up plugin's tables are ready: `npm run db:backup` →
+`npm run db:restore:check` → `npm run db:migrate`, one command at a time.
 
 **Still to build for milestone 2**, in this order:
 
