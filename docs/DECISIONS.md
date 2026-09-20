@@ -168,11 +168,13 @@ from one above, this one is newer and wins.
   endpoints, not only in the UI. When `false`, `/sign-up` shows a "signups open soon"
   state with the Discord invite as the call to action, and sign-in still works. The
   owner intends it to be `true` in production once milestone 2 is released and
-  tested.
+  tested. _Replaced on 2026-09-20 by the three-way `SIGNUP_MODE`; see "Approved on
+  2026-09-20"._
 - **Release order**, for every merge of `dev` into `main`:
   1. The owner sets any new Production variables in Vercel. Startup validation
      fails the build otherwise, which is deliberate.
-  2. `npm run db:migrate:prod`. Migrations are additive and backward-compatible, so
+  2. `npm run db:migrate` (named `db:migrate:prod` before 2026-09-20, when there
+     were to be two databases). Migrations are additive and backward-compatible, so
      the old code keeps working until the new code is live.
   3. Merge `dev` into `main`; push when the owner says "push".
   4. `npm run verify` against the live site, then the owner does a real sign-up on
@@ -182,11 +184,14 @@ from one above, this one is newer and wins.
 
 - **Two Supabase projects: `zerocorps-prod` and `zerocorps-dev`.** The laptop uses
   `zerocorps-dev`; the live site uses `zerocorps-prod`. The Data API is disabled on
-  both. Row-level security is on for every table, without `FORCE`.
+  both. Row-level security is on for every table, without `FORCE`. _Superseded on
+  2026-09-20: there is one database; see "One shared database" below. Wherever this
+  file mentions `zerocorps-dev` or `zerocorps-prod`, read "the database"._
 - **Migrations never run from Vercel.** `DATABASE_URL_MIGRATIONS` exists only on the
   owner's laptop.
 - **Migrations go to dev first.** Applying them to production is a separate,
   explicitly named script that refuses to run without a typed confirmation.
+  _Superseded on 2026-09-20 with the rest of the two-database plan._
 - **Only the owner puts connection strings in `.env.local`.** They are never asked
   for in chat and never printed.
 
@@ -397,6 +402,202 @@ here so nobody re-proposes them without knowing why.
   not be able to pause, the hosting plan must permit commercial use before anything
   is sold, and bot protection is reconsidered if rate limits prove too weak.
 
+## Approved on 2026-09-20 (milestone 2 go-ahead)
+
+The owner approved the revised milestone 2 plan with the decisions below. Where an
+entry here differs from one above, this one is newer and wins.
+
+### One shared database
+
+- **There is a single Supabase project, shared by the laptop and the live site.**
+  There is no `zerocorps-dev`. The owner accepts the risk of keeping it shared after
+  public launch, until the self-hosting phase. A separate development database is
+  recorded in [SECURITY.md](SECURITY.md) as a recommended control the owner has
+  declined for now.
+- Because of that, every one of these guardrails is mandatory:
+  - **Automated tests use PGlite only** (Postgres running inside the test process)
+    and never read `DATABASE_URL`.
+  - **No destructive commands against the database, ever:** no `drizzle-kit push`, no
+    drops, no truncates. Migrations are additive and go through one guarded command,
+    `npm run db:migrate`, which shows the target host and the pending migrations and
+    needs a typed confirmation.
+  - **An encrypted backup comes before every migration, without exception.** The
+    migrate command refuses to run unless a backup file from the last hour exists.
+  - **Local test accounts use only the owner's own addresses**, and a cleanup command
+    removes the accounts (and their events) that match that allowlist.
+  - **Reverting a git push restores code, never data.** Only a backup restores data,
+    so the restore runbook is kept tested.
+- **Laptop and Vercel hold different `BETTER_AUTH_SECRET`, `HMAC_SECRET` and
+  `CRON_SECRET` values**, even though they share the database. What that means in
+  practice:
+  - Accounts are portable: a password hash does not depend on any secret, so an
+    account made on the laptop can sign in on the live site and the other way round.
+    It also means a test address used on the laptop is taken on the live site until
+    the cleanup command removes it.
+  - Sessions, sign-ups in progress and the known-device cookie belong to the site
+    that issued them. Signing in on the live site with an account made on the laptop
+    sends a new-device email, as it should.
+  - Per-address limits and the daily email cap count separately on each side, because
+    the address is hashed with a different key. Testing on the laptop never uses up
+    the live site's allowance.
+  - Event-log hashes written by one side cannot be matched by the other. Each event
+    therefore records which side wrote it (`app_env`), so the laptop's test noise can
+    be told apart from real activity and left out of the milestone 4 health view.
+  - **For milestone 5:** Better Auth encrypts TOTP secrets and backup codes with
+    `BETTER_AUTH_SECRET`. An account that switches on 2FA on one side cannot complete
+    2FA on the other. Test 2FA on one side per account.
+
+### Sign-up modes
+
+- **`SIGNUP_MODE` is `closed`, `allowlist` or `open`**, and replaces `SIGNUPS_OPEN`.
+  It defaults to `closed`.
+- In `allowlist` mode the form shows a "private beta, invited addresses only" note.
+  Only addresses in `SIGNUP_ALLOWLIST` can start a sign-up; every other address gets
+  the same polite message.
+- The mode is enforced on the server, at the start of a sign-up and again when the
+  code is checked. Sign-in works in every mode.
+- The owner tests on the live site in `allowlist` mode first, then sets production
+  to `open` once milestone 2 is released and tested.
+
+### The app's database role
+
+- **The app connects as `zerocorps_app`, a role with no DDL rights**, from milestone
+  2 onwards. With one shared database this role is the main protection against a
+  destructive mistake, so it is required, not optional.
+- **Access comes from explicit row-level-security policies for that role, not from
+  the `BYPASSRLS` attribute.** `BYPASSRLS` is role-wide: it would switch off row-level
+  security on every table in the database, including tables added later and
+  Supabase's own. A policy is per table and sits in the migration that creates the
+  table, so a new table is closed to the app until a migration opens it. (Supabase's
+  `postgres` role also cannot hand out `BYPASSRLS`, but that is not the reason.)
+- The role is created by a migration **without a password and unable to log in**, so
+  no secret is ever committed. The owner then gives it a password by hand, once, with
+  a one-statement script. The owner deletes the saved query from the Supabase SQL
+  editor afterwards.
+- **Every migration that adds a table** enables row-level security on it and adds
+  the policy for `zerocorps_app`. `ALTER DEFAULT PRIVILEGES` grants the role
+  `SELECT, INSERT, UPDATE, DELETE` on tables the migration role creates, so a
+  forgotten grant cannot break the app; a test asserts that every table has
+  row-level security and the policy, and runs the app's queries as that role.
+- `DATABASE_URL` uses `zerocorps_app.<project-ref>` and that role's password.
+  `DATABASE_URL_MIGRATIONS` keeps the owner role and stays on the laptop only.
+- **`npm run db:check-role`** proves the role cannot create, alter or drop, holds no
+  special attributes, belongs to no other role, and can read nothing outside the
+  app's own tables.
+- The `brain_reader` role in milestone 9 follows the same procedure.
+
+### Answers on the content-security policy, contact details and pausing
+
+- **A nonce-based CSP is built at the start of milestone 4**, not in milestone 2. The
+  current policy and the reason for it are recorded in [SECURITY.md](SECURITY.md) as
+  the baseline. The auth pages already send `frame-ancestors 'none'` and
+  `form-action 'self'`, which need no nonce.
+- **`security.txt` takes its contact from `SECURITY_CONTACT`.** For now that is the
+  repository's GitHub private-vulnerability-reporting address, not an email address,
+  because the domain may have no working inbox and a published address must not
+  bounce. The privacy draft takes its contact from `PRIVACY_CONTACT` by the same
+  rule. **"A working contact channel exists" is a release gate.**
+- **DNS checklist 1 is on hold** until the owner decides between Proton and mail
+  forwarding.
+- **Database pausing on the Free plan is accepted for now.** The upgrade trigger is
+  recorded in the ledger: before the owner promotes the academy publicly or takes any
+  money, whichever comes first. Until then the daily cron touches the database every
+  day, and if the database cannot be reached the auth routes show a friendly
+  "temporarily unavailable" page.
+
+### Confirmed choices
+
+- A separate `HMAC_SECRET`; a keyed hash of the IP address plus a readable coarse
+  prefix in the event log, mentioned in the privacy draft; security emails counted by
+  the daily cap but never blocked by it; Better Auth's `name` mapped to
+  `display_name`; the accepted trade-off that a per-address limit lets someone
+  briefly block sign-up for an address they know.
+- **The backup file:** the key is derived from the passphrase with scrypt and a
+  random salt, the data is encrypted with AES-256-GCM, and the file header carries a
+  format version.
+
+### Additions
+
+- **Work that happens after the response uses Next's `after()`**, which also works
+  when self-hosted, with Better Auth's `advanced.backgroundTasks.handler` wired to
+  it. A bare promise that nobody awaits can be frozen when a serverless function
+  returns, and the email would never be sent. The owner's real sign-up at release is
+  the proof.
+- **Atomicity test:** with the adapter's `transaction: true`, a failure forced late
+  in the success path (at session creation, for example) must leave no user, account
+  or known-device row behind, and the pending row must still work.
+- **One normalised form of an email address, trim + lowercase,** shared by
+  `pending_signups`, the counters, the allowlists and Better Auth.
+- **A completed password reset also forgets every known device** for that user.
+- **For milestone 4, not built now:** an owner-only health view with 24-hour counts
+  of sign-ups, failed sign-ins, code failures, rate-limit hits and email send errors.
+
+### Sequence
+
+1. The first migration, then the app-role script, then `npm run db:check-role`.
+2. Milestone 2 is built on `dev`, then stops for the owner's local testing.
+3. The release tasks follow one at a time: Resend, DNS, the Vercel variables, the
+   GitHub security settings, the legal drafts, and `allowlist` mode on the live site.
+
+### Where milestone 2 stands (keep this current; last updated 2026-09-20)
+
+A new session starts here. Milestone 2 is **in progress on `dev`**; `main` holds
+only milestone 1 and the docs.
+
+**Done and proven** (typecheck, lint, 100 tests, production build):
+
+- `main` was pushed on 2026-09-20 and `dev` branched from it. `vercel.json` on `dev`
+  stops Vercel building that branch. `dev` has not been pushed.
+- The environment schema (`src/env-schema.ts`, read by `src/env.ts`) with every
+  milestone 2 key, and the owner's tools `npm run env:check` and `env:secrets`. The
+  owner's `.env.local` is complete: `env:check` passes.
+- Both database URLs work: `npm run db:check` passed on 2026-09-20 (Postgres 17, both
+  still as the owner role `postgres`). It also showed that the pooler's TLS
+  certificate is signed by Supabase's own authority; pinning that CA is an open item
+  in [SECURITY.md](SECURITY.md).
+- The schema (`src/db/schema.ts`) and the first two migrations in `drizzle/`:
+  `0000_app_role` (the role, no password, no login) and `0001_auth_core` (Better
+  Auth's five tables, row-level security and the `zerocorps_app` policy on each).
+  **Neither has been applied to the real database yet.**
+- `createAuth(deps)` in `src/lib/auth/create-auth.ts`: the core Better Auth
+  configuration (findings 8 to 27). The tests run sign-in, reset and sign-out through
+  it on a Postgres inside the test process, as the owner and as `zerocorps_app`.
+- The guarded database commands: `db:check`, `db:backup`, `db:restore:check`,
+  `db:migrate`, `db:check-role`. The last three and the backup need a person at a
+  terminal, so only the owner can run them.
+
+**Waiting on the owner, one command at a time, reporting each result:**
+`npm run db:backup` → `npm run db:restore:check` → `npm run db:migrate` → the
+one-statement role script in [SECURITY.md](SECURITY.md) ("Give the app role its
+password") and the two edits to `DATABASE_URL` → `npm run db:check-role`.
+
+**Still to build for milestone 2**, in this order:
+
+1. The email-code sign-up as a local Better Auth plugin, with its attack tests, the
+   atomicity test and `SIGNUP_MODE` enforced at start and at verify. Its tables
+   (`pending_signups`, `known_devices`, `auth_events` with an `app_env` column, and the
+   per-address counters) go into a **second** migration, written only once those
+   tests pass, because a column can never be dropped.
+2. Per-address limits, the event log, the known-device cookie and the new-device
+   email, the session hook that reduces the stored IP and user agent, and "a reset
+   forgets every known device".
+3. `sendEmail()` (console and outbox, Resend through `fetch`, the allowlist) with the
+   five emails, sent through Next's `after()` wired to
+   `advanced.backgroundTasks.handler`.
+4. The route handler for `/api/auth`, the auth client, and the pages: `/sign-up` in
+   its three modes, the code screen, `/sign-in`, `/forgot-password`,
+   `/reset-password`, a protected placeholder `/dashboard`, and the friendly
+   "temporarily unavailable" state when the database cannot be reached.
+5. The daily cleanup route with `CRON_SECRET` and its cron entry in `vercel.json`,
+   `/.well-known/security.txt`, the `/terms` and `/privacy` drafts, the revoke-sessions
+   command and the test-account cleanup command.
+6. `npm run verify` extended to the new pages and flows, the status table in
+   AGENTS.md, and the milestone commit.
+
+**Housekeeping:** the work so far sits in one checkpoint commit on `dev`, made for
+safety at the owner's request. Squash it into the single milestone commit before
+`dev` is merged into `main`.
+
 ## Better Auth findings that shape the design
 
 Verified against the Better Auth **1.7.5** documentation and plugin source on
@@ -537,8 +738,32 @@ expires_at > now() RETURNING …`, before the code is compared, so concurrent
     `display_name` column (`user.fields.name`) and created as an empty string, which
     is what Better Auth's own plugins do when they have no name. Onboarding fills
     it in.
-24. **Stock sign-in is already enumeration-safe**: one error for an unknown email
-    and a wrong password, a password hash on both paths to even out timing, and the
-    CSRF middleware. A reset token is single-use, `onPasswordReset` is the hook for
+24. **Stock sign-in is already enumeration-safe** (re-confirmed line by line on
+    2026-09-20, `api/routes/sign-in.mjs` 315 to 335): an unknown email, or a user
+    with no password, runs one full password hash, which costs the same scrypt work
+    as verifying a real one, and then throws `INVALID_EMAIL_OR_PASSWORD`; a wrong
+    password throws the identical error. "Email not verified" can only be reached
+    after the password has verified. The endpoint uses the CSRF middleware.
+
+Added on 2026-09-20 while proving the schema:
+
+25. **Better Auth switches its origin and CSRF checks off by itself under test.**
+    `skipOriginCheck` defaults to `true` whenever `NODE_ENV` is `test`, and with it
+    the CSRF check is skipped too (`context/create-context.mjs`, line 211). Our first
+    cross-site test passed for that reason and proved nothing. Both
+    `advanced.disableOriginCheck` and `advanced.disableCSRFCheck` are therefore set to
+    `false` explicitly: the tests run against the real checks, and no environment
+    variable can switch them off in production.
+26. **Better Auth checks the Drizzle schema against its own model on the first
+    request** and throws on a mismatch (`advanced.database.validateSchema`, on by
+    default). It stays on. The tests build a Postgres inside the test process from
+    the real migration files and run sign-in, reset and sign-out through it, once as
+    the owner and once as `zerocorps_app`, so a wrong or missing column, grant or
+    policy is caught before a migration ever reaches the one real database.
+27. **The `accounts` table carries Better Auth's OAuth token columns**
+    (`access_token`, `refresh_token`, `id_token` and their expiry times) because the
+    library's model requires them and the schema check would fail without them. No
+    social provider is ever configured, so they stay `NULL`; a test asserts that no
+    row holds a token and that every account is a `credential` account. A reset token is single-use, `onPasswordReset` is the hook for
     the "password changed" email, and `revokeSessionsOnPasswordReset` removes every
     session the user has.

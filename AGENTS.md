@@ -41,6 +41,15 @@ possible.
   parties as possible and will self-host later.
 - **Never ask for, print or log secrets or connection strings.** Only the owner
   puts them in `.env.local` and in the host's settings.
+- **There is ONE database, shared by the laptop and the live site. Treat
+  `.env.local` as production.** Never run `drizzle-kit push`. Never drop or
+  truncate, and never delete rows except through the documented commands (the daily
+  purge, the test-account cleanup, the revoke-sessions runbook). Migrations are
+  additive and go through `npm run db:migrate` only,
+  which the owner runs in a terminal (it needs a typed confirmation and a backup
+  from the last hour). Tests use PGlite and never read `DATABASE_URL`. Never
+  connect to the real database to try something out. The rules and the reasons are
+  in DECISIONS.md under "One shared database".
 - Items under "Design for later, do NOT build now" in the brief get schema room
   or a placeholder only.
 - Update the status table below when a milestone is finished.
@@ -48,7 +57,7 @@ possible.
 | #   | Milestone                                                | Status               |
 | --- | -------------------------------------------------------- | -------------------- |
 | 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel |
-| 2   | Auth                                                     | Not started          |
+| 2   | Auth                                                     | In progress on `dev` |
 | 3   | Onboarding                                               | Not started          |
 | 4   | Dashboard and settings                                   | Not started          |
 | 5   | Phone and 2FA                                            | Not started          |
@@ -56,6 +65,9 @@ possible.
 | 7   | Academy: MDX lessons, progress, rank, heatmap            | Not started          |
 | 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started          |
 | 9   | Brain export for the owner's Obsidian vault              | Not started          |
+
+**A milestone in progress: read "Where milestone 2 stands" in DECISIONS.md first.**
+It says what is done, what is waiting on the owner and what is left to build.
 
 Deployment, environments, DNS and the release checklist are described in
 DECISIONS.md. A push to `main` deploys to production, so never push without being
@@ -113,7 +125,23 @@ production.
   origins there and nowhere else.
 - **Links are type-checked** (`typedRoutes`). Wrap `next/link` the way
   `ButtonLink` does.
-- **Tests** sit next to the code as `*.test.ts` and run with Vitest.
+- **Tests** sit next to the code as `*.test.ts` and run with Vitest. Anything that
+  needs a database uses `createTestDatabase()` from `src/test/test-database.ts`: a
+  Postgres inside the test process, built from the real files in `drizzle/`. Tests
+  never import `@/env`, the real database client or the `postgres` driver; a test
+  fails if one does.
+- **The database schema** is `src/db/schema.ts`. A change is proven in the tests
+  first, then turned into SQL with `npm run db:generate` (offline). Every new table
+  needs `appAccess()` in its definition, which adds row-level security and the policy
+  for `zerocorps_app`; a test fails without it. A migration can never be undone, so
+  read the generated SQL before committing it.
+- **Auth is built by `createAuth(deps)`** in `src/lib/auth/create-auth.ts`, which
+  takes everything as arguments and reads no environment variable, so tests run the
+  real configuration.
+- **The owner's command-line tools** live in `scripts/` as `.mjs` files that load
+  tested TypeScript modules from `src/lib/` directly (Node strips the types). Those
+  modules must import with explicit `.ts` extensions and never use the `@/` alias.
+  The tools never print a value from `.env.local`.
 - Copy on the marketing pages is placeholder text for the owner to edit.
 
 ## Commands
@@ -126,7 +154,22 @@ npm run lint
 npm run test
 npm run format      # prettier --write
 npm run verify      # headless-browser checks and screenshots (start a server first)
+
+npm run env:check          # which keys in .env.local are filled, blank or malformed (names only)
+npm run env:secrets        # fills the BLANK secrets in .env.local; never shows a value
+npm run db:check           # tests both database URLs: PASS or the kind of failure (read-only)
+npm run db:generate        # schema change -> SQL file in drizzle/ (offline; read the SQL)
+npm run db:check-role      # proves zerocorps_app cannot create, alter or drop (read-only)
+
+# Owner only. These need a person at a terminal and refuse to run otherwise:
+npm run db:backup          # encrypted backup, verified by decrypting it again
+npm run db:restore:check   # restores the newest backup into a throwaway Postgres
+npm run db:migrate         # the ONLY way to change the schema: host + pending list,
+                           # backup from the last hour required, typed confirmation
 ```
+
+`npm run check` and `next dev` validate `.env.local` on start. If it is incomplete,
+the message names the keys; `npm run env:check` explains each one.
 
 `npm run verify` drives the real app in headless Edge. Run it at the end of every
 milestone and look at the screenshots in `.verify/`. The `verify-site` skill in
