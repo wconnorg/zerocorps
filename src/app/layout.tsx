@@ -30,7 +30,9 @@ export const metadata: Metadata = {
     description: site.description,
     url: "/",
   },
-  twitter: { card: "summary" },
+  // "summary_large_image" is what makes Discord, iMessage and others show the image large.
+  // The image itself is src/app/opengraph-image.png (and twitter-image.png), by file convention.
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

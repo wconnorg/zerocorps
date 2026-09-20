@@ -575,6 +575,10 @@ entry here differs from one above, this one is newer and wins.
 - **The landing page leads with the quotation "Forced evolution."**, credited by
   initials only, and one line: "We build trading solutions to empower the industry."
   The closing "Start at zero" section was removed.
+- **Link previews carry the logo.** `src/app/opengraph-image.png` and `twitter-image.png`
+  (1200 by 630, generated from the mark) with the `summary_large_image` card, so Discord,
+  iMessage, WhatsApp and Android Messages show it. It appears once `dev` is released;
+  Discord caches previews, so an old link may need `?v=2` added to refresh.
 - **Wanted next, NOT built, each needs a plan and the owner's answers first:**
   - a deeper, better-presented replacement for the "Built like a curriculum" section;
   - **a trading journal with risk-to-reward tools**, as a product in its own right.
