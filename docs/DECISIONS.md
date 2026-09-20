@@ -618,6 +618,32 @@ entry here differs from one above, this one is newer and wins.
   empower the industry." It lives once, in `src/config/site.ts`, and feeds the landing
   page, the search-result description and the link preview.
 
+### Email DNS, decided by the owner (2026-09-20)
+
+Where an entry here differs from "Email and DNS" above, this one is newer and wins.
+
+- **Resend's records use its newer format ("Resend Forge"):** a DKIM `TXT` at
+  `resend._domainkey` and two CNAMEs, `send` → `send.forge.rmta.net` and `rsend` →
+  `rsend.forge.rmta.net`. There is no `MX` and no SPF `TXT` of ours, which replaces the
+  expectation recorded on 2026-09-19. A CNAME cannot share its name with any other
+  record, so nothing else is ever added at `send` or `rsend`.
+- **The two CNAMEs are a delegation of trust.** Resend publishes the SPF and bounce
+  `MX` that receiving servers read under our names. It is in the hosting ledger, and
+  the runbook "Stop using Resend" in [SECURITY.md](SECURITY.md) deletes both CNAMEs
+  the day Resend is dropped, so they never dangle.
+- **The zone's single `_dmarc` record is `v=DMARC1; p=none;`, added now**, without
+  waiting for Proton. This replaces "Proton's DMARC record stays the single DMARC
+  record": the record belongs to the zone, not to a mail host. When Proton returns it
+  will suggest its own; **we keep ONE and never add a second.** The policy is tightened
+  by editing that record once every sender passes.
+- **Proton is delayed until about 2026-09-24, so DNS checklist 1 stays on hold.** The
+  milestone 2 release does not wait for it.
+- The owner added the four records on 2026-09-20. They were confirmed the same day on
+  two public resolvers and on Namecheap's authoritative server, and both CNAME targets
+  publish an SPF record and a bounce `MX`. Resend's public Forge page does not list
+  the `rmta.net` hostnames, so the targets were checked another way: the address block
+  in `send`'s SPF is registered at ARIN to Resend. [DNS.md](DNS.md) has the values.
+
 ### Where milestone 2 stands (keep this current; last updated 2026-09-20)
 
 A new session starts here. Milestone 2 is **built on `dev`, tested by the owner on
@@ -659,10 +685,12 @@ passed: sign-up by code, sign-in, sign-out, password reset and the invite-only r
 
 1. `npm run db:cleanup-test-accounts`, so the owner's test addresses are free again on
    the live site.
-2. Resend: the account, a sending-only API key restricted to `zerocorps.org`, and DNS
-   checklist 2 in [DNS.md](DNS.md). The key goes into Vercel only, never into chat.
-3. **Proposed, the owner's to confirm:** one `_dmarc` record at `p=none`, without
-   waiting for the Proton decision. The reasoning is in [DNS.md](DNS.md).
+2. Resend. **Done 2026-09-20:** the account, the domain, and DNS checklist 2 in
+   [DNS.md](DNS.md), verified by lookup. **Still to do:** the owner presses Verify in
+   Resend, then creates a sending-only API key restricted to `zerocorps.org`. The key
+   goes into Vercel only, never into chat.
+3. **Done 2026-09-20:** the single `_dmarc` record at `p=none`, confirmed and added by
+   the owner without waiting for the Proton decision.
 4. `PRIVACY_CONTACT` and `SECURITY_CONTACT`: a channel that works today.
 5. The Production variables in Vercel, with secrets that differ from the laptop's.
 6. GitHub: Dependabot alerts, secret scanning with push protection, private
