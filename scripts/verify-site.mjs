@@ -89,7 +89,8 @@ function watch(page, tag) {
 
   const firstResponse = await page.goto(`${base}/`, { waitUntil: "networkidle" });
   const tls = await firstResponse.securityDetails();
-  if (tls) {
+  // Plain http has no certificate, but some browser builds still return an empty object.
+  if (base.startsWith("https:") && tls?.validTo) {
     const days = Math.round((tls.validTo - Date.now() / 1000) / 86400);
     console.log(`  certificate: "${tls.subjectName}", ${tls.protocol}, ${days} days left`);
     note(days > 0, "certificate is valid");

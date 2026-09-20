@@ -18,14 +18,29 @@ Read these before doing anything:
 - [docs/BRIEF.md](docs/BRIEF.md) is the owner's brief and the contract for the build.
 - [docs/DECISIONS.md](docs/DECISIONS.md) records what the owner approved afterwards.
   Where the two differ, DECISIONS.md wins.
+- [docs/SECURITY.md](docs/SECURITY.md) holds the threat model, the hosting
+  assumptions ledger and the runbooks. **Add a ledger line whenever new code relies
+  on something Vercel or Supabase does for us.**
+
+The owner's priorities, in order: security first; boring, standard auth with no
+novel flows or crypto; as few third parties as possible; as little personal data as
+possible.
 
 ## Working agreement
 
 - Build **one milestone at a time**. Reply with a plan and questions before
   writing code for a milestone, then **stop for the owner's testing** when it is
   done. Do not start the next milestone in the same pass.
-- Make **one local commit at the end of each milestone. Never push.** The owner
-  pushes after testing.
+- **Work on the `dev` branch. `main` is production.** `dev` is merged into `main`
+  once per milestone, and only when the owner says so, following the release order
+  in DECISIONS.md. There is no staging site: `dev` is pushed to GitHub as a backup
+  and Vercel does not build it.
+- Make **one local commit at the end of each milestone. Never push** unless the
+  owner says "push".
+- **Ask before adding any new external service.** The owner wants as few third
+  parties as possible and will self-host later.
+- **Never ask for, print or log secrets or connection strings.** Only the owner
+  puts them in `.env.local` and in the host's settings.
 - Items under "Design for later, do NOT build now" in the brief get schema room
   or a placeholder only.
 - Update the status table below when a milestone is finished.
@@ -40,9 +55,12 @@ Read these before doing anything:
 | 6   | Discord link and unlink                                  | Not started          |
 | 7   | Academy: MDX lessons, progress, rank, heatmap            | Not started          |
 | 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started          |
+| 9   | Brain export for the owner's Obsidian vault              | Not started          |
 
-Deployment, DNS and the launch checklist are described in DECISIONS.md. A push to
-`main` deploys to production, so never push without being asked.
+Deployment, environments, DNS and the release checklist are described in
+DECISIONS.md. A push to `main` deploys to production, so never push without being
+asked. `SIGNUPS_OPEN` is a server-side kill switch; only the owner changes it in
+production.
 
 ## Hard rules (from the brief; never trade these away)
 
@@ -69,6 +87,14 @@ Deployment, DNS and the launch checklist are described in DECISIONS.md. A push t
   findings so far are in DECISIONS.md.
 - **The repo may go public.** No secrets, real emails or phone numbers in code,
   tests, fixtures or commit messages.
+- **Fail closed.** If a security check cannot run (the rate limiter, the database,
+  a code comparison), the request is refused. A check is never skipped.
+- **Never log** passwords, codes, tokens, secrets or full email addresses.
+- **People are never recognised, blocked or trusted by IP address.** Shared
+  addresses (VPNs, mobile carriers, campuses) are normal. IP limits are loose abuse
+  throttles; the tight limits are per email address and per pending sign-up.
+- **Custom security code stays small, isolated and tested against attacks**, not
+  only happy paths. Prefer what Better Auth already does safely.
 
 ## Conventions
 
