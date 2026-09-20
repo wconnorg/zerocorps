@@ -166,9 +166,122 @@ export const rateLimits = pgTable(
   ],
 );
 
+// ── The email-code sign-up and what surrounds it (our own tables) ────────────
+
+/**
+ * A sign-up that is waiting for its emailed code. NOTHING is written to `users` until
+ * the code is correct. The row's id travels in a signed, httpOnly cookie, so a code is
+ * only ever accepted from the browser that started the sign-up, never by email alone.
+ *
+ * Rows for one address are independent: starting another never cancels an earlier one.
+ *
+ * `passwordHash` is NULL for an address that already has an account. Such a row can
+ * never create anything. It exists so the code screen behaves identically (attempts,
+ * resend cooldown, expiry) whether or not the address is registered; the address gets
+ * a "you already have an account" email instead of a code.
+ */
+export const pendingSignups = pgTable(
+  "pending_signups",
+  {
+    id: id(),
+    email: text("email").notNull(),
+    passwordHash: text("password_hash"),
+    /** HMAC of "<row id>:<code>" with HMAC_SECRET. The code itself is never stored. */
+    codeHash: text("code_hash").notNull(),
+    /** Short and not secret. Shown on the code screen and in the email, so two emails can be told apart. */
+    reference: text("reference").notNull(),
+    attempts: integer("attempts").notNull().default(0),
+    sendCount: integer("send_count").notNull().default(1),
+    lastSentAt: instant("last_sent_at").notNull().defaultNow(),
+    expiresAt: instant("expires_at").notNull(),
+    termsVersion: text("terms_version").notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index("pending_signups_email_idx").on(table.email),
+    index("pending_signups_expires_at_idx").on(table.expiresAt),
+    appAccess(),
+  ],
+);
+
+/**
+ * Browsers a user has signed in from, so a sign-in from a new one sends an alert. The
+ * cookie holds a random token; only its SHA-256 is stored. "Known" is not "trusted":
+ * this never skips a check.
+ */
+export const knownDevices = pgTable(
+  "known_devices",
+  {
+    id: id(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    deviceHash: text("device_hash").notNull(),
+    /** The browser family, for example "Chrome on Windows". Never the raw header. */
+    userAgent: text("user_agent"),
+    firstSeenAt: instant("first_seen_at").notNull().defaultNow(),
+    lastSeenAt: instant("last_seen_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("known_devices_user_device_unique").on(table.userId, table.deviceHash),
+    appAccess(),
+  ],
+);
+
+/**
+ * The security event log. 90-day retention. It never holds an email address or a raw
+ * IP: the identifier and the IP are keyed hashes, next to a coarse IP prefix.
+ *
+ * `appEnv` says which side wrote the row. The laptop and the live site share this
+ * table but hash with different keys, so this is how test noise is told from real
+ * activity.
+ */
+export const authEvents = pgTable(
+  "auth_events",
+  {
+    id: id(),
+    type: text("type").notNull(),
+    userId: uuid("user_id").references(() => users.id, { onDelete: "cascade" }),
+    identifierHash: text("identifier_hash"),
+    ipHash: text("ip_hash"),
+    ipPrefix: text("ip_prefix"),
+    userAgent: text("user_agent"),
+    /** A short machine-readable reason, such as "wrong_code". Never free text. */
+    detail: text("detail"),
+    appEnv: text("app_env").notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    index("auth_events_created_at_idx").on(table.createdAt),
+    index("auth_events_type_created_at_idx").on(table.type, table.createdAt),
+    index("auth_events_user_id_idx").on(table.userId),
+    index("auth_events_identifier_hash_idx").on(table.identifierHash),
+    appAccess(),
+  ],
+);
+
+/**
+ * Our own limits: per email address, per address + IP, per day. The key is a keyed
+ * hash of the rule and the identifier, so no address sits here in the clear.
+ */
+export const abuseCounters = pgTable(
+  "abuse_counters",
+  {
+    key: text("key").primaryKey(),
+    count: integer("count").notNull(),
+    windowStartedAt: instant("window_started_at").notNull(),
+    expiresAt: instant("expires_at").notNull(),
+  },
+  (table) => [index("abuse_counters_expires_at_idx").on(table.expiresAt), appAccess()],
+);
+
 /**
  * The schema object handed to Better Auth's Drizzle adapter, keyed by Better Auth's
  * own model names. Explicit on purpose: no pluralising magic to get wrong.
+ *
+ * `pendingSignup` and `knownDevice` are here because the sign-up's success path
+ * touches them INSIDE Better Auth's transaction, and only calls made through its
+ * adapter join that transaction (DECISIONS.md, finding 19).
  */
 export const authSchema = {
   user: users,
@@ -176,4 +289,6 @@ export const authSchema = {
   account: accounts,
   verification: verifications,
   rateLimit: rateLimits,
+  pendingSignup: pendingSignups,
+  knownDevice: knownDevices,
 };

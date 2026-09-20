@@ -1,7 +1,8 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestClient } from "../../test/auth-client.ts";
+import { createTestAuth, TEST_BASE_URL, type SentEmail } from "../../test/test-auth.ts";
 import { createTestDatabase, type TestDatabase } from "../../test/test-database.ts";
-import { createAuth, type Auth } from "./create-auth.ts";
+import type { Auth } from "./create-auth.ts";
 
 /**
  * Proves the migrations in `drizzle/` against Better Auth itself, on a Postgres
@@ -9,27 +10,30 @@ import { createAuth, type Auth } from "./create-auth.ts";
  * caught here, before it ever reaches the one real database.
  */
 
-const BASE_URL = "http://localhost:3000";
+const BASE_URL = TEST_BASE_URL;
 const PASSWORD = "correct horse battery staple";
 const NEW_PASSWORD = "a different long passphrase";
 
 let database: TestDatabase;
 let auth: Auth;
-const resetLinks: { to: string; url: string }[] = [];
-const passwordChanged: string[] = [];
+let outbox: SentEmail[];
+
+/** Reset links and "password changed" notices, read from what the mailer recorded. */
+const resetLinks = {
+  find: (match: (entry: { to: string; url: string }) => boolean) =>
+    outbox.filter((email) => email.kind === "password-reset").findLast(match),
+  some: (match: (entry: { to: string }) => boolean) =>
+    outbox.filter((email) => email.kind === "password-reset").some(match),
+};
+const passwordChanged = {
+  get all() {
+    return outbox.filter((email) => email.kind === "password-changed").map((email) => email.to);
+  },
+};
 
 beforeAll(async () => {
   database = await createTestDatabase();
-  auth = createAuth({
-    db: database.db,
-    baseUrl: BASE_URL,
-    secret: "fixture-better-auth-secret-0000000000",
-    trustedIpHeader: "x-forwarded-for",
-    mailer: {
-      sendPasswordReset: async (message) => void resetLinks.push(message),
-      sendPasswordChanged: async ({ to }) => void passwordChanged.push(to),
-    },
-  });
+  ({ auth, outbox } = createTestAuth(database));
 }, 180_000);
 
 afterAll(async () => {
@@ -157,7 +161,7 @@ describe("the core schema, against Better Auth 1.7.5", () => {
     expect(
       (await visitor.post("/reset-password", { token, newPassword: NEW_PASSWORD })).status,
     ).toBe(400);
-    expect(passwordChanged).toContain("reset@example.com");
+    expect(passwordChanged.all).toContain("reset@example.com");
 
     expect((await browser.get("/get-session")).json).toBeNull();
     expect(
@@ -317,7 +321,11 @@ describe("schema invariants that every future migration must keep", () => {
        ORDER BY 1`,
     );
     expect(rows.map((row) => row.table_name)).toEqual([
+      "abuse_counters",
       "accounts",
+      "auth_events",
+      "known_devices",
+      "pending_signups",
       "rate_limits",
       "sessions",
       "users",

@@ -45,6 +45,16 @@ beforeAll(async () => {
     INSERT INTO sessions (user_id, token, expires_at, ip_address, user_agent)
     VALUES ('11111111-1111-4111-8111-111111111111', 'token-one', now() + interval '30 days', '203.0.113.0/24', 'Chrome on Windows');
     INSERT INTO rate_limits (key, count, last_request) VALUES ('203.0.113.7|/sign-in/email', 3, 9007199254740993);
+    INSERT INTO pending_signups (email, password_hash, code_hash, reference, expires_at, terms_version)
+    VALUES ('waiting@example.com', 'salt:hash', 'keyed-hash', 'K7Q2', now() + interval '15 minutes', 'v1'),
+           ('first@example.com', NULL, 'keyed-hash-2', 'M3XP', now() + interval '15 minutes', 'v1');
+    INSERT INTO known_devices (user_id, device_hash, user_agent)
+    VALUES ('11111111-1111-4111-8111-111111111111', 'device-hash', 'Chrome on Windows');
+    INSERT INTO auth_events (type, user_id, identifier_hash, ip_prefix, app_env)
+    VALUES ('signin_succeeded', '11111111-1111-4111-8111-111111111111', NULL, '203.0.113.0/24', 'local'),
+           ('signin_failed', NULL, 'identifier-hash', NULL, 'production');
+    INSERT INTO abuse_counters (key, count, window_started_at, expires_at)
+    VALUES ('limit-key', 2, now(), now() + interval '1 hour');
   `);
 }, 180_000);
 
@@ -53,11 +63,21 @@ afterAll(async () => {
 });
 
 const fingerprintOf = async (client: TestDatabase["client"]) => {
-  const tables = ["users", "accounts", "sessions", "verifications", "rate_limits"];
+  const tables = [
+    "users",
+    "accounts",
+    "sessions",
+    "verifications",
+    "rate_limits",
+    "pending_signups",
+    "known_devices",
+    "auth_events",
+    "abuse_counters",
+  ];
   const result: Record<string, string> = {};
   for (const table of tables) {
     const { rows } = await client.query<{ sum: string }>(
-      `SELECT coalesce(md5(string_agg(to_jsonb(t)::text, '|' ORDER BY t.id)), 'empty') AS sum FROM ${table} t`,
+      `SELECT coalesce(md5(string_agg(to_jsonb(t)::text, '|' ORDER BY to_jsonb(t)::text)), 'empty') AS sum FROM ${table} t`,
     );
     result[table] = rows[0]?.sum ?? "";
   }
@@ -71,13 +91,17 @@ describe("backup: dump, encrypt, decrypt, restore", () => {
       "2026-09-20T09:00:00.000Z",
     );
     expect(summary.tables.map((table) => [table.qualified, table.rows])).toEqual([
+      ["public.abuse_counters", 1],
       ["public.accounts", 1],
+      ["public.auth_events", 2],
+      ["public.known_devices", 1],
+      ["public.pending_signups", 2],
       ["public.rate_limits", 1],
       ["public.sessions", 1],
       ["public.users", 2],
       ["public.verifications", 0],
     ]);
-    expect(summary.migrations).toHaveLength(2);
+    expect(summary.migrations).toHaveLength(3);
 
     const file = encryptBackup(Buffer.from(text, "utf8"), "a long test passphrase", {
       createdAt: summary.createdAt,
@@ -230,7 +254,7 @@ describe("db:check-role", () => {
           "A real CREATE TABLE attempt is refused (rolled back either way)",
           "Cannot TRUNCATE, add triggers to, or add foreign keys to any table",
           "Row-level security is on for every table",
-          "Every table is opened to it by an explicit policy (6 tables)",
+          "Every table is opened to it by an explicit policy (10 tables)",
         ]);
       });
       const { rows } = await source.client.query(
