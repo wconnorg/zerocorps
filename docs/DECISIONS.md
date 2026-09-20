@@ -588,11 +588,41 @@ entry here differs from one above, this one is newer and wins.
     is respected;
   - "Powered by ZeroCorps" on the course pages, in milestone 7 when they exist.
 
+### Release mechanics, decided by the owner (2026-09-20)
+
+- **The checkpoint commits on `dev` are kept. Nothing is squashed.** A squash only
+  tidies history, and it rewrites commits to do it; the owner decided that is not
+  worth the risk.
+- **"One commit per milestone" now means one merge commit on `main`.** `dev` is
+  merged with `git merge --no-ff dev` and a message that names the milestone, so
+  `main` shows one entry per milestone and the checkpoints stay reachable under it.
+  On `dev`, work is committed in checkpoints. Never `--squash`, never a rebase of
+  commits that have been pushed, never a force push.
+- **`backup-dev-before-squash`** is a local branch left from the abandoned squash. It
+  is deleted only after the milestone 2 release has been verified on the live site.
+- **`dev` was pushed to GitHub on 2026-09-20** as the backup that is not on the
+  laptop. Before the push, the commits were checked for env files, the outbox and
+  backup files (none). After it, GitHub's public API listed no deployment, status or
+  check run for the pushed commit: `git.deploymentEnabled` held on the branch's very
+  first push, which Vercel's documentation (checked again the same day) does not
+  spell out. Had it not held, the result would have been a failed preview build, not
+  a change to the live site: only `main` deploys to production.
+- **Vercel's functions run in `cle1` (Cleveland)**, set by `"regions"` in
+  `vercel.json`. The database is in AWS `us-east-2`, which is the same place. Vercel's
+  default is `iad1` (Washington), a short hop away, so the gain on the live site is
+  small but free. The slowness the owner felt on the laptop was put down to the
+  laptop's own distance from the database (about eight round trips per sign-up). If
+  that is right, the live site never paid it. **Not proven yet: the sign-up is timed
+  on the live site after release.** The Hobby plan allows exactly one region.
+- **The site description is the landing page's line**, "We build trading solutions to
+  empower the industry." It lives once, in `src/config/site.ts`, and feeds the landing
+  page, the search-result description and the link preview.
+
 ### Where milestone 2 stands (keep this current; last updated 2026-09-20)
 
-A new session starts here. Milestone 2 is **built on `dev` and waiting for the
-owner's local testing**; `main` holds only milestone 1 and the docs. `dev` has not
-been pushed.
+A new session starts here. Milestone 2 is **built on `dev`, tested by the owner on
+the laptop, and in its release walkthrough**; `main` holds only milestone 1 and the
+docs. `dev` is pushed to GitHub as a backup and is not built by Vercel.
 
 **Built and proven** (typecheck, lint, 168 tests, production build, `npm run verify`):
 
@@ -621,26 +651,38 @@ been pushed.
   "temporarily unavailable" state, the `/terms` and `/privacy` drafts, and
   `/.well-known/security.txt`. The marketing and auth pages are still static.
 
-**Waiting on the owner, one step at a time:**
+**Done by the owner on 2026-09-20:** the second migration, `0002_email_code_signup`,
+is applied (there is one database, so production is migrated too), and local testing
+passed: sign-up by code, sign-in, sign-out, password reset and the invite-only refusal.
 
-1. **The second migration**, `0002_email_code_signup` (four new tables, nothing
-   existing is touched): `npm run db:backup` → `npm run db:restore:check` →
-   `npm run db:migrate` → `npm run db:check-role`. Until it is applied, sign-up and
-   sign-in fail closed on the laptop, because the limiter's table does not exist yet.
-2. **Local testing.** In `.env.local`: `SIGNUP_MODE=allowlist`, and the owner's test
-   addresses in both `SIGNUP_ALLOWLIST` and `EMAIL_ALLOWLIST`. Codes and links are read
-   from `.outbox/`. Afterwards `npm run db:cleanup-test-accounts` removes them.
-3. Then the release tasks, one at a time (see "Sequence" above).
+**The release walkthrough, one step at a time, in this order:**
+
+1. `npm run db:cleanup-test-accounts`, so the owner's test addresses are free again on
+   the live site.
+2. Resend: the account, a sending-only API key restricted to `zerocorps.org`, and DNS
+   checklist 2 in [DNS.md](DNS.md). The key goes into Vercel only, never into chat.
+3. **Proposed, the owner's to confirm:** one `_dmarc` record at `p=none`, without
+   waiting for the Proton decision. The reasoning is in [DNS.md](DNS.md).
+4. `PRIVACY_CONTACT` and `SECURITY_CONTACT`: a channel that works today.
+5. The Production variables in Vercel, with secrets that differ from the laptop's.
+6. GitHub: Dependabot alerts, secret scanning with push protection, private
+   vulnerability reporting.
+7. A fresh encrypted backup and its restore check.
+8. The owner reads `/terms` and `/privacy`.
+9. `git merge --no-ff dev` on `main`; push on the owner's word; `npm run verify`
+   against the live site; the owner's real sign-up in `allowlist` mode, timed.
+10. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
+    AGENTS.md.
 
 **Open questions for the owner:** pinning Supabase's CA certificate so the database
 link is verified and not only encrypted ([SECURITY.md](SECURITY.md)); and the
 already-registered path keeping a password-less row (finding 28), which differs from
 the letter of "no pending row".
 
-**Housekeeping:** the work sits in a few checkpoint commits on `dev`, made for safety
-at the owner's request. Squash them into the single milestone commit before `dev` is
-merged into `main`. The status table in AGENTS.md changes to "Done" only after the
-owner's testing.
+**Housekeeping:** the work sits in checkpoint commits on `dev`, made for safety at the
+owner's request. **They are not squashed** (see "Release mechanics" above): `main`
+gets one `--no-ff` merge commit for the milestone. The status table in AGENTS.md
+changes to "Done" only after the release is verified on the live site.
 
 ## Better Auth findings that shape the design
 

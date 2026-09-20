@@ -99,7 +99,27 @@ Rules that always hold for this zone:
 - **Exactly one `_dmarc` record**, and it is Proton's. Do not add the DMARC record
   Resend suggests, and do not tighten the policy until both senders pass.
 
-### Checklist 2: add the Resend records (owner, by hand, after checklist 1)
+### The `_dmarc` record does not wait for the Proton decision (proposed 2026-09-20)
+
+**Proposed, and the owner's to confirm.** A DMARC record is the domain's policy, not
+a mail host's. Exactly one is needed whichever way the Proton-or-forwarding decision
+goes, and today there is none, so nothing tells a receiving server what to do with
+mail that pretends to come from `zerocorps.org`.
+
+- **Add it after checklist 2, once Resend shows the domain as verified:** Host Records
+  → `TXT Record`, host `_dmarc`, value `v=DMARC1; p=none`, TTL Automatic.
+- **`p=none`, not the old `p=quarantine`, to begin with.** `p=none` cannot send
+  anybody's mail to spam, so it is safe while Proton's SPF and DKIM records are still
+  missing. Large mailbox providers treat a domain that has no DMARC record at all as
+  a worse sign than one that has `p=none`, and a brand-new sending domain needs its
+  sign-up codes to arrive.
+- **No reporting address (`rua`) for now.** Reports need an inbox that works and
+  usually an outside service to read them.
+- It stays the single `_dmarc` record. It is tightened to `p=quarantine` by editing
+  that one record, with a before-and-after note here, once Resend passes and the
+  Proton decision is made and carried out.
+
+### Checklist 2: add the Resend records (owner, by hand; it does not depend on checklist 1)
 
 The values come from Resend's dashboard, because the DKIM key is unique to the
 account. None exist yet: lookups on 2026-09-19 found nothing at `send` or

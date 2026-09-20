@@ -2,6 +2,7 @@ import { ActivityPreview } from "@/components/marketing/activity-preview";
 import { ProgressChart } from "@/components/marketing/progress-chart";
 import { BrandName } from "@/components/site/wordmark";
 import { ButtonLink } from "@/components/ui/button";
+import { site } from "@/config/site";
 
 // Placeholder copy throughout: edit freely.
 
@@ -75,9 +76,7 @@ export default function HomePage() {
                 &mdash; J. B. D.
               </figcaption>
             </figure>
-            <p className="mt-8 max-w-xl text-lg/8 text-pretty text-muted">
-              We build trading solutions to empower the industry.
-            </p>
+            <p className="mt-8 max-w-xl text-lg/8 text-pretty text-muted">{site.description}</p>
             <div className="mt-10">
               <AcademyCta />
             </div>

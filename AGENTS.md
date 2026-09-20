@@ -35,8 +35,9 @@ possible.
   once per milestone, and only when the owner says so, following the release order
   in DECISIONS.md. There is no staging site: `dev` is pushed to GitHub as a backup
   and Vercel does not build it.
-- Make **one local commit at the end of each milestone. Never push** unless the
-  owner says "push".
+- Commit locally on `dev`, in checkpoints. **`main` gets one merge commit per
+  milestone** (`git merge --no-ff dev`). Never squash, never rebase pushed commits,
+  never force-push. **Never push** unless the owner says "push".
 - **Ask before adding any new external service.** The owner wants as few third
   parties as possible and will self-host later.
 - **Never ask for, print or log secrets or connection strings.** Only the owner
@@ -57,7 +58,7 @@ possible.
 | #   | Milestone                                                | Status               |
 | --- | -------------------------------------------------------- | -------------------- |
 | 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel |
-| 2   | Auth                                                     | Built, owner testing |
+| 2   | Auth                                                     | Tested, releasing    |
 | 3   | Onboarding                                               | Not started          |
 | 4   | Dashboard and settings                                   | Not started          |
 | 5   | Phone and 2FA                                            | Not started          |

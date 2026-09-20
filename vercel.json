@@ -5,6 +5,7 @@
       "dev": false
     }
   },
+  "regions": ["cle1"],
   "crons": [
     {
       "path": "/api/cron/cleanup",
