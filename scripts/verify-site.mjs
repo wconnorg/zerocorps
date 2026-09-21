@@ -45,10 +45,29 @@ function watch(page, tag) {
     problems.push(`page error on ${tag}: ${error.message}`);
   });
   page.on("requestfailed", (request) => {
-    console.log(`  [requestfailed] (${tag}) ${request.url()} ${request.failure()?.errorText}`);
+    const errorText = request.failure()?.errorText;
+    // A signed-out visitor who CLICKS a protected link: the server answers the router's
+    // request with a redirect to sign-in, and the browser drops that request to follow it.
+    // That is how it should work. The same failure at any other moment is still a problem
+    // (it would mean the link is being pre-loaded again: a wasted request on every visit).
+    const url = new URL(request.url());
+    if (
+      clickingAProtectedLink &&
+      errorText === "net::ERR_ABORTED" &&
+      url.pathname === "/dashboard" &&
+      url.searchParams.has("_rsc")
+    ) {
+      return console.log(
+        `  [expected] (${tag}) the router's request for /dashboard was redirected`,
+      );
+    }
+    console.log(`  [requestfailed] (${tag}) ${request.url()} ${errorText}`);
     problems.push(`request failed on ${tag}: ${request.url()}`);
   });
 }
+
+/** True only while the script itself clicks a protected link as a signed-out visitor. */
+let clickingAProtectedLink = false;
 
 // ── 1. Headers and metadata routes ──────────────────────────────────────────
 {
@@ -126,8 +145,8 @@ function watch(page, tag) {
   const html = await (await context.request.get(`${base}/`)).text();
   note(/<html[^>]*data-theme="dark"/.test(html), "server HTML carries the dark default (static)");
 
-  await page.getByRole("link", { name: "Enter the Academy" }).first().click();
-  await page.waitForURL("**/academy");
+  await page.getByRole("link", { name: "Terms", exact: true }).first().click();
+  await page.waitForURL("**/terms");
   note((await theme()) === "light", "theme persists across client-side navigation");
   await context.close();
 }
@@ -143,7 +162,7 @@ function watch(page, tag) {
   const otherLinks = await page.evaluate(() =>
     [...document.querySelectorAll("main a")]
       .map((anchor) => anchor.getAttribute("href"))
-      .filter((href) => href !== "/academy" && href !== "/dashboard"),
+      .filter((href) => href !== "/dashboard" && href !== "/academy"),
   );
   note(
     otherLinks.length === 0,
@@ -158,9 +177,39 @@ function watch(page, tag) {
     'the hero button is "Enter the dashboard"',
   );
 
-  await page.getByRole("link", { name: "Enter the Academy" }).first().click();
+  // Both buttons take the same road: a signed-out visitor lands on sign-in, with the way
+  // back to the dashboard remembered, and sign-in offers to create an account.
+  for (const name of ["Enter the dashboard", "Enter the Academy"]) {
+    await page.goto(`${base}/`, { waitUntil: "networkidle" });
+    clickingAProtectedLink = true;
+    await page.getByRole("link", { name }).first().click();
+    await page.waitForURL("**/sign-in**");
+    await page.waitForLoadState("networkidle");
+    clickingAProtectedLink = false;
+    const landed = new URL(page.url());
+    note(
+      landed.pathname === "/sign-in" && landed.searchParams.get("next") === "/dashboard",
+      `"${name}" sends a signed-out visitor to sign in, then back (${landed.pathname}${landed.search})`,
+    );
+  }
+  note(
+    await page.getByRole("link", { name: "Create an account" }).isVisible(),
+    "the sign-in page offers to create an account",
+  );
+
+  // The public page about the Academy is reachable from the home page without an account.
+  await page.goto(`${base}/`, { waitUntil: "networkidle" });
+  await page.getByRole("link", { name: "Learn more about the Academy" }).click();
   await page.waitForURL("**/academy");
   note(await page.getByRole("heading", { level: 1 }).isVisible(), "/academy shows its heading");
+
+  // A link that tries to leave the site through ?next= ends up on the dashboard road.
+  await page.goto(`${base}/sign-in?next=/.//evil.example`, { waitUntil: "networkidle" });
+  note(
+    await page.getByLabel("Email address").isVisible(),
+    "/sign-in?next=/.//evil.example still renders the form (the unsafe path is ignored)",
+  );
+  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
 
   await page.getByRole("link", { name: "Sign up" }).click();
   await page.waitForURL("**/sign-up");

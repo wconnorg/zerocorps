@@ -689,6 +689,25 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
   not a feed." with its three pillars, under an ACADEMY label, with the "Enter the
   Academy" button. "See your consistency." and its calendar preview moved to `/academy`
   unchanged. No new marketing copy was written.
+- **Both buttons take the same road (owner, later the same day).** "Enter the Academy"
+  links to `/dashboard` too, because the Academy lives behind the account as a tile on
+  the dashboard. A signed-out visitor lands on sign-in, which offers "Create an
+  account", and is brought back to the dashboard; a signed-in one goes straight
+  through. Neither link is pre-loaded. `/academy` stays as the public page about the
+  Academy (in the sitemap, and the dashboard's Academy tile leads there until milestone
+  7). A quiet "Learn more" link beside the button leads to it, so a visitor who cannot
+  sign in during the beta can still read about it and search engines reach it.
+- **`?next=` cannot send anyone off the site (fixed before release, 2026-09-21).** The
+  sign-in form is the only reader of `next`, through `safeNextPath`. It rejected full
+  URLs, `//host`, `/\host` and control characters, but it checked the input only:
+  `/.//evil.example` and `/x/..//evil.example` passed, and normalising them produced
+  `//evil.example`, which a browser reads as another site. A phishing link could have
+  used the real sign-in page as its springboard. The result is now checked as well, and
+  must resolve to this site. The attack tests cover it, a mutation check proved they fail
+  without the fix, and `npm run verify` visits such a link. It was never live.
+  `next` is NOT carried through sign-up, the code screen or the reset: those end at
+  `/dashboard`, which is the only protected page today, so nothing is lost. Carrying it
+  belongs with the second protected page (milestone 4), through the same function.
 - **The invite-only note on `/sign-up` links to the Discord** when `DISCORD_INVITE_URL`
   is set ("No invitation yet? Join the Discord."), as the "closed" state already did.
   During the private beta the Discord is where the owner sends people, so
@@ -810,8 +829,9 @@ step by the same number.
    before the release and exactly 1 after the owner's real sign-up. If it is not 0, the
    owner adds the address they tested with to `EMAIL_ALLOWLIST` and runs the cleanup
    again.
-3. The Resend API key: sending access only, restricted to `zerocorps.org`, pasted
-   straight into Vercel as `RESEND_API_KEY` (Production, sensitive). Never into chat.
+3. **Done 2026-09-21 (the owner's report):** the Resend API key, sending access only,
+   restricted to `zerocorps.org`, pasted straight into Vercel as `RESEND_API_KEY`
+   (Production, sensitive). It was never in chat or in `.env.local`.
 4. GitHub: Dependabot alerts, secret scanning with push protection, private
    vulnerability reporting. The reporting page's URL becomes `SECURITY_CONTACT`.
 5. The Production variables in Vercel. Keep `NEXT_PUBLIC_APP_URL`. Add `APP_ENV`,

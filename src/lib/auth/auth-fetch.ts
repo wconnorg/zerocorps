@@ -107,18 +107,27 @@ export async function authFetch<T = Record<string, unknown>>(
   };
 }
 
+const leavesTheSite = (path: string) =>
+  !path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\");
+
 /**
  * Where to go after signing in. Only a path on this site is ever accepted: a full URL,
  * or one that starts with `//` or `/\`, would let a link send someone elsewhere.
+ *
+ * The check runs on what goes in AND on what comes out. Normalising a path can CREATE a
+ * leading `//`: `/.//host` and `/x/..//host` both become `//host`, which a browser reads
+ * as another site. Last, the result must still resolve to this site from any page.
  */
 export function safeNextPath(next: string | null | undefined, fallback = "/dashboard"): string {
-  if (!next || !next.startsWith("/") || next.startsWith("//") || next.startsWith("/\\"))
-    return fallback;
+  if (!next || leavesTheSite(next)) return fallback;
   if (/[\u0000-\u001f\u007f]/.test(next)) return fallback;
   try {
-    const url = new URL(next, "https://zerocorps.invalid");
-    if (url.origin !== "https://zerocorps.invalid") return fallback;
-    return `${url.pathname}${url.search}${url.hash}`;
+    const site = "https://zerocorps.invalid";
+    const url = new URL(next, site);
+    if (url.origin !== site) return fallback;
+    const path = `${url.pathname}${url.search}${url.hash}`;
+    if (leavesTheSite(path) || new URL(path, `${site}/sign-in`).origin !== site) return fallback;
+    return path;
   } catch {
     return fallback;
   }

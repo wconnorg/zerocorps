@@ -30,6 +30,55 @@ describe("safeNextPath", () => {
       expect(safeNextPath(hostile), String(hostile)).toBe("/dashboard");
     }
   });
+
+  it("falls back when normalising the path would CREATE a way off the site", () => {
+    // Each of these starts with a single "/", so it passes a check of the input alone. A
+    // browser drops the dot segments (and reads "\" as "/"), which leaves "//evil.example".
+    for (const hostile of [
+      "/.//evil.example",
+      "/..//evil.example",
+      "/x/..//evil.example",
+      "/././/evil.example",
+      "/.\\/evil.example",
+      "/./\\evil.example",
+      "/x/..\\/evil.example",
+      "/%2e//evil.example",
+      "/.//evil.example/dashboard?x=1#y",
+    ]) {
+      expect(safeNextPath(hostile), hostile).toBe("/dashboard");
+    }
+  });
+
+  it("whatever goes in, the browser stays on this site", () => {
+    const tricky = [
+      "/dashboard",
+      "/academy?lesson=1#top",
+      "/a/../b",
+      "/%2F/evil.example",
+      "/@evil.example",
+      "/?next=//evil.example",
+      "/.//evil.example",
+      "/\t/evil.example",
+      "/ /evil.example",
+      "/..%2f..%2f/evil.example",
+      "////evil.example",
+      "/\\\\evil.example",
+      "https:/evil.example",
+      "/https://evil.example",
+    ];
+    for (const input of tricky) {
+      const path = safeNextPath(input);
+      expect(path.startsWith("/") && !path.startsWith("//"), input).toBe(true);
+      for (const page of ["https://zerocorps.org/sign-in", "https://zerocorps.org/"]) {
+        expect(new URL(path, page).origin, input).toBe("https://zerocorps.org");
+      }
+    }
+  });
+
+  it("keeps an ordinary path, tidied", () => {
+    expect(safeNextPath("/a/../dashboard")).toBe("/dashboard");
+    expect(safeNextPath("/settings/./security?tab=2fa")).toBe("/settings/security?tab=2fa");
+  });
 });
 
 describe("authFetch", () => {

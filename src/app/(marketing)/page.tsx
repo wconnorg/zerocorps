@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { ProgressChart } from "@/components/marketing/progress-chart";
 import { BrandName } from "@/components/site/wordmark";
 import { ButtonLink } from "@/components/ui/button";
@@ -39,9 +40,12 @@ function ArrowRight() {
   );
 }
 
+// The Academy lives behind the account, as a tile on the dashboard. So this button takes
+// the same road as "Enter the dashboard": a signed-out visitor lands on sign-in (which
+// offers "Create an account") and comes back; a signed-in one goes straight through.
 function AcademyCta() {
   return (
-    <ButtonLink href="/academy" size="lg">
+    <ButtonLink href="/dashboard" size="lg" prefetch={false}>
       Enter the Academy
       <ArrowRight />
     </ButtonLink>
@@ -87,7 +91,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* The one Academy section on this page. Everything else about it lives on /academy. */}
+      {/* The one Academy section on this page. The public page about it is /academy. */}
       <section className="border-t border-line">
         <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-24">
           <p className="font-mono text-xs tracking-[0.22em] text-accent">ACADEMY</p>
@@ -103,8 +107,16 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <div className="mt-10">
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
             <AcademyCta />
+            {/* The public page about the Academy: for visitors who cannot sign in yet, and
+                so that search engines reach it. */}
+            <Link
+              href="/academy"
+              className="text-sm text-muted underline underline-offset-4 hover:text-fg"
+            >
+              Learn more<span className="sr-only"> about the Academy</span>
+            </Link>
           </div>
         </div>
       </section>
