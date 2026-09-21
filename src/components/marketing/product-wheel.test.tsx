@@ -30,9 +30,14 @@ describe("the product wheel", () => {
 
   it("says coming soon on the two that lead nowhere, and links only the Academy", () => {
     expect(html.match(/COMING SOON/g)).toHaveLength(2);
-    expect([...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1])).toEqual(["/academy"]);
+    // To a visitor the Academy tile is the way IN, not a page about the Academy.
+    expect([...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1])).toEqual(["/dashboard"]);
     expect(html).not.toContain("ZC /");
   });
+
+  // That the way in is never PRE-loaded cannot be seen here: Next renders no attribute for
+  // `prefetch={false}`. A real browser is what proves it, and `npm run verify` fails on the
+  // aborted request a pre-load would make. It caught exactly that bug once already.
 
   it("can be turned and paused from the keyboard, with named controls", () => {
     for (const name of [
@@ -78,9 +83,20 @@ describe("a product tile's face", () => {
     const [bot, , academy] = PRODUCTS;
     const face = (product: (typeof PRODUCTS)[number], linked: boolean) =>
       renderToStaticMarkup(<ProductFace product={product} heading="h3" linked={linked} />);
-    expect(face(academy, true)).toContain('href="/academy"');
+    expect(face(academy, true)).toContain('href="/dashboard"');
     expect(face(academy, false)).not.toContain("href=");
     expect(face(bot, true)).not.toContain("href=");
+  });
+
+  it("can be sent somewhere else, as the dashboard sends a member who is already in", () => {
+    const [bot, , academy] = PRODUCTS;
+    const sent = renderToStaticMarkup(
+      <ProductFace product={academy} heading="h3" href="/academy" />,
+    );
+    expect(sent).toContain('href="/academy"');
+    expect(sent).not.toContain('href="/dashboard"');
+    // A product with no road of its own stays unlinked, wherever it is drawn.
+    expect(renderToStaticMarkup(<ProductFace product={bot} heading="h3" />)).not.toContain("href=");
   });
 
   it("can go without the watermark, as the products section does", () => {

@@ -16,6 +16,13 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.{ts,tsx}"],
+    // Vitest's default is 5 seconds, which suits a pure unit test. Many tests here start a
+    // whole Postgres (PGlite) inside the process, and on the owner's laptop that alone can
+    // take longer than 5 seconds when anything else is running. Twice on 2026-09-21 a
+    // database test timed out during a release check while the laptop was busy, each time
+    // with nothing wrong in the code. A slow machine must not read as a broken build. The
+    // slowest tests still name their own, longer timeout.
+    testTimeout: 60_000,
     env: {
       DATABASE_URL: UNREACHABLE,
       DATABASE_URL_MIGRATIONS: UNREACHABLE,
