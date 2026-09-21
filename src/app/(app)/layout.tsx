@@ -14,9 +14,10 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 export default function AppLayout({ children }: LayoutProps<"/">) {
   return (
     <>
-      <header className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between px-6">
-        <Wordmark />
-        <div className="flex items-center gap-2">
+      <header className="mx-auto grid h-16 w-full max-w-6xl grid-cols-[1fr_auto_1fr] items-center px-6">
+        <span aria-hidden="true" />
+        <Wordmark markClassName="text-fg" />
+        <div className="flex items-center justify-end gap-2">
           <ThemeToggle />
           <AccountMenu />
         </div>

@@ -741,6 +741,58 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
     and the menu's remaining entries (profile, settings). The shell needs no schema
     change. Its Academy tile leads to `/academy` until milestone 7 builds the lessons.
 
+### The home page's look, decided by the owner while watching it live (2026-09-21)
+
+The owner's direction: a stark corporate look in the manner of Arasaka (black, red,
+sharp edges, restrained motion). Built on `dev` after the milestone 2 release, with the
+owner watching the laptop's dev server and answering as it changed. Not released yet.
+
+- **The hero.** The chart is replaced by a **turning wheel of three product tiles**:
+  ZeroBot, ZeroCharts and ZeroCorps Academy. The quotation and "J.B." are larger and the
+  quotation marks take the text colour (white on the dark theme). The hero's background
+  grid is gone. The chart component is kept, unused: it is Academy material.
+- **Each product has its own tone:** ZeroBot blue, ZeroCharts purple, the Academy the
+  brand red. They are theme tokens (`--tone-bot`, `--tone-charts`) in both themes, held to
+  the same AA contrast test as every other text colour. A tile names its tone with
+  `data-tone`; there are no inline styles.
+- **The tiles:** sharp corners and a plain outline (the owner liked the outline and
+  asked for the corner brackets to go), no index number on top, "COMING SOON" on ZeroBot
+  and ZeroCharts only. The Academy tile says nothing on top and **leads to `/academy`**,
+  which now says "COMING SOON" itself. ZeroBot and ZeroCharts carry one short line each.
+  **Those two lines are placeholder copy written at the owner's request** ("I'll leave it
+  up to you, super short"); the ZeroCharts one is the owner's own pitch cut down. They
+  are the owner's to edit, in `src/components/marketing/products.tsx`.
+- **The motion:** slow and even (a 2.2 second turn, every 8 seconds). Tiles are always
+  solid: one at the side is dimmed by a dark veil and shows no words, because half a
+  name behind the front tile ("OBOT") looked broken; the words fade in at the front. The
+  tiles share one real 3D space, so they pass behind each other; a fixed layer order had
+  made a clicked tile jump on top at once. Nothing is drawn under the wheel: a click at
+  either side brings that tile forward (two invisible zones outside the 3D space catch
+  it, because a tile at the side stands behind the wheel's own plane and the browser
+  gives the click to the wheel). The timer is an invisible element's CSS animation, so
+  resting the pointer on the wheel pauses it exactly, a background tab stops it, and a
+  visitor who asked for reduced motion never gets a wheel that turns by itself. The
+  previous, next, pick-one and pause buttons remain for the keyboard and screen readers,
+  hidden until focused. No library.
+- **The section below the hero is the three products side by side** (the same tiles,
+  without the large faint mark). The three Academy "pillars", the "Enter the Academy"
+  button and the "Learn more" link are gone from the home page; `/academy` keeps its own
+  content and is reached through the Academy tile.
+- **The header:** the logo and the name sit in the middle, on all three headers, and the
+  logo takes the text colour there. The footer's logo stays red.
+- **A lesson about working this way:** the owner saw every half-finished state through
+  hot reload ("you lost the colour scheme"). Changes that belong together should land
+  together, and the owner should be told when a state is ready to judge.
+
+### The test-account cleanup can no longer delete a live account (2026-09-21)
+
+After the owner's real sign-up, the laptop's `EMAIL_ALLOWLIST` named the owner's REAL
+account, so `npm run db:cleanup-test-accounts` would have deleted it. The command now
+deletes an account only when the event log shows its sign-up was completed on the laptop
+(`app_env = 'local'`). An account made on the live site, or one whose origin cannot be
+told, is kept with everything keyed by its address, and the command says so. The check
+runs again inside the deleting transaction. Tests cover all three origins.
+
 ### Release decisions by the owner (2026-09-21)
 
 These reached the session in a handoff written by the owner's planning assistant, which

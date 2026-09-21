@@ -1,27 +1,9 @@
-import Link from "next/link";
-import { ProgressChart } from "@/components/marketing/progress-chart";
+import { ProductWheel } from "@/components/marketing/product-wheel";
+import { ProductFace, PRODUCTS } from "@/components/marketing/products";
 import { BrandName } from "@/components/site/wordmark";
 import { ButtonLink } from "@/components/ui/button";
 
 // Placeholder copy throughout: edit freely.
-
-const PILLARS = [
-  {
-    number: "01",
-    title: "Lessons in order",
-    body: "Courses break into modules, and modules into lessons. Each one builds on the last, so you always know what to study next.",
-  },
-  {
-    number: "02",
-    title: "Ranks you earn",
-    body: "Your rank is calculated from the lessons you complete. Progress is the only way up.",
-  },
-  {
-    number: "03",
-    title: "Discord, unlocked by rank",
-    body: "Link your Discord account and your rank becomes a role. Higher ranks open more of the ZeroCorps server. Linking is optional.",
-  },
-];
 
 function ArrowRight() {
   return (
@@ -40,46 +22,34 @@ function ArrowRight() {
   );
 }
 
-// The Academy lives behind the account, as a tile on the dashboard. So this button takes
-// the same road as "Enter the dashboard": a signed-out visitor lands on sign-in (which
-// offers "Create an account") and comes back; a signed-in one goes straight through.
-function AcademyCta() {
-  return (
-    <ButtonLink href="/dashboard" size="lg" prefetch={false}>
-      Enter the Academy
-      <ArrowRight />
-    </ButtonLink>
-  );
-}
-
 export default function HomePage() {
   return (
     <>
       <section className="relative overflow-hidden">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 grid-fade" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 hero-glow" />
 
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-6 pt-20 pb-24 lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:pt-28 lg:pb-32">
           <div>
-            {/* This is the ZeroCorps page. The Academy is one product under it, below. */}
+            {/* This is the ZeroCorps page. Its products are on the wheel and in the section below. */}
             <h1 className="text-5xl/[1.05] font-semibold tracking-tight sm:text-7xl/[1.02]">
               <BrandName uppercase />
             </h1>
             <figure className="mt-8 max-w-xl">
-              <blockquote className="text-lg/8 text-pretty text-muted">
-                <span aria-hidden="true" className="text-accent">
+              <blockquote className="text-2xl/9 text-pretty text-muted sm:text-3xl/10">
+                <span aria-hidden="true" className="text-fg">
                   &ldquo;
                 </span>
                 Forced evolution.
-                <span aria-hidden="true" className="text-accent">
+                <span aria-hidden="true" className="text-fg">
                   &rdquo;
                 </span>
               </blockquote>
-              <figcaption className="mt-2 font-mono text-sm tracking-[0.22em] text-subtle">
+              <figcaption className="mt-3 font-mono text-base tracking-[0.22em] text-subtle sm:text-lg">
                 &mdash; J.B.
               </figcaption>
             </figure>
             <div className="mt-10">
+              {/* Not pre-loaded: a signed-out visitor's browser would be redirected and abort. */}
               <ButtonLink href="/dashboard" size="lg" prefetch={false}>
                 Enter the dashboard
                 <ArrowRight />
@@ -87,37 +57,31 @@ export default function HomePage() {
             </div>
           </div>
 
-          <ProgressChart />
+          <ProductWheel />
         </div>
       </section>
 
-      {/* The one Academy section on this page. The public page about it is /academy. */}
+      {/*
+        The three products, side by side (owner, 2026-09-21): the Academy is one of three.
+        The tiles are the same ones the wheel turns. ZeroBot and ZeroCharts say "coming
+        soon"; the Academy tile leads to its public page.
+      */}
       <section className="border-t border-line">
         <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-24">
-          <p className="font-mono text-xs tracking-[0.22em] text-accent">ACADEMY</p>
-          <h2 className="mt-5 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-            Built like a curriculum, not a feed.
-          </h2>
-          <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-3">
-            {PILLARS.map((pillar) => (
-              <div key={pillar.number} className="bg-surface p-7 lg:p-8">
-                <p className="font-mono text-xs tracking-[0.2em] text-subtle">{pillar.number}</p>
-                <h3 className="mt-5 text-lg font-medium">{pillar.title}</h3>
-                <p className="mt-3 text-sm/6 text-muted">{pillar.body}</p>
-              </div>
+          <h2 className="font-mono text-xs font-normal tracking-[0.22em] text-accent">PRODUCTS</h2>
+          <ul className="mt-10 grid gap-5 md:grid-cols-3">
+            {PRODUCTS.map((product) => (
+              <li key={product.id}>
+                <article
+                  data-tone={product.tone}
+                  className="product-tile relative flex h-full min-h-72 flex-col justify-between overflow-hidden border border-line-strong bg-surface p-6 sm:p-7"
+                >
+                  <ProductFace product={product} heading="h3" watermark={false} />
+                  <div aria-hidden="true" className="h-4" />
+                </article>
+              </li>
             ))}
-          </div>
-          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
-            <AcademyCta />
-            {/* The public page about the Academy: for visitors who cannot sign in yet, and
-                so that search engines reach it. */}
-            <Link
-              href="/academy"
-              className="text-sm text-muted underline underline-offset-4 hover:text-fg"
-            >
-              Learn more<span className="sr-only"> about the Academy</span>
-            </Link>
-          </div>
+          </ul>
         </div>
       </section>
     </>

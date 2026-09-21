@@ -40,7 +40,7 @@ function contrast(a: string, b: string): number {
 
 const THEMES = ["dark", "light"] as const;
 const BACKGROUNDS = ["bg", "surface", "raised"];
-const TEXT = ["fg", "muted", "subtle", "accent"];
+const TEXT = ["fg", "muted", "subtle", "accent", "tone-bot", "tone-charts"];
 const STATUS = ["danger", "success", "warning"];
 const HEAT = ["heat-0", "heat-1", "heat-2", "heat-3", "heat-4"];
 const AA = 4.5;

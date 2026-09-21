@@ -38,13 +38,18 @@ try {
   const found = await findTestAccounts(queryOf(sql), addresses);
   console.log("EMAIL_ALLOWLIST holds these test addresses:\n");
   for (const entry of found) {
-    const state = [
-      entry.hasAccount ? "has an account" : "no account",
-      `${entry.pendingSignUps} sign-up(s) waiting`,
-    ];
+    const account = !entry.hasAccount
+      ? "no account"
+      : entry.madeOn === "laptop"
+        ? "has an account (made on the laptop)"
+        : entry.madeOn === "live-site"
+          ? "has an account made on the LIVE SITE: it will be KEPT"
+          : "has an account of unknown origin: it will be KEPT";
+    const state = [account, `${entry.pendingSignUps} sign-up(s) waiting`];
     console.log(`  ${entry.address.padEnd(40)} ${state.join(", ")}`);
   }
-  const accounts = found.filter((entry) => entry.hasAccount).length;
+  // Only accounts made on the laptop are ever deleted.
+  const accounts = found.filter((entry) => entry.hasAccount && entry.madeOn === "laptop").length;
   console.log(
     `\nThis is the ONE database. ${accounts} account(s) would be deleted, for good, on the live site too.`,
   );
@@ -62,6 +67,11 @@ try {
     `\nRemoved ${removed.users} account(s), ${removed.pendingSignUps} waiting sign-up(s), ` +
       `${removed.events} event(s) and ${removed.counters} limit counter(s).`,
   );
+  if (removed.kept > 0) {
+    console.log(
+      `Kept ${removed.kept} account(s) that were not made on the laptop, with everything about them.`,
+    );
+  }
 } catch (error) {
   console.error(`Nothing was changed: ${explainConnectionError(error, url)}`);
   process.exitCode = 1;

@@ -39,7 +39,9 @@ export default function AcademyLandingPage() {
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 hero-glow" />
 
         <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-6 pt-24 pb-20 text-center lg:pt-32">
-          <p className="font-mono text-xs tracking-[0.22em] text-accent">ACADEMY</p>
+          <p className="font-mono text-xs tracking-[0.22em] text-accent">
+            ACADEMY <span className="text-subtle">·</span> COMING SOON
+          </p>
           <h1 className="mt-6 text-5xl/[1.05] font-semibold tracking-tight text-balance sm:text-6xl/[1.03]">
             <BrandName /> Academy
           </h1>

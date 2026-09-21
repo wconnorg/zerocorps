@@ -11,18 +11,26 @@ import { ProfileMenu } from "./profile-menu";
 describe("the dashboard", () => {
   const html = renderToStaticMarkup(<DashboardView email="member@example.com" />);
 
-  it("has one heading and shows which account is signed in", () => {
+  it("has ONE heading that says Dashboard, and shows which account is signed in", () => {
     expect(html.match(/<h1/g)).toHaveLength(1);
+    // The owner saw "Dashboard" twice (a label above the heading). Once is enough.
+    expect(html.match(/dashboard/gi)).toHaveLength(1);
     expect(html).toContain("member@example.com");
   });
 
-  it("shows the ZeroCorps Academy tile, marked as coming soon", () => {
-    expect(html).toMatch(/<h2[^>]*id="tile-academy"[^>]*>.*Zero.*Corps.* Academy<\/h2>/);
-    expect(html).toContain("COMING SOON");
-    expect(html).toContain('aria-labelledby="tile-academy"');
+  it("shows the three products in their tones, the Academy first, all coming soon", () => {
+    const tiles = [...html.matchAll(/<article[^>]*data-tone="([^"]+)"/g)].map((match) => match[1]);
+    expect(tiles).toEqual(["academy", "bot", "charts"]);
+    expect(html.match(/COMING SOON/g)).toHaveLength(3);
+    expect(html.match(/<h2/g)).toHaveLength(3);
+    expect(html).toContain(">Zero<");
+    expect(html).toContain(">Corps<");
+    expect(html).toContain(">Academy<");
+    expect(html).toContain(">Bot<");
+    expect(html).toContain(">Charts<");
   });
 
-  it("does not make the tile clickable: nothing on the dashboard links anywhere yet", () => {
+  it("makes no tile clickable: nothing on the dashboard links anywhere yet", () => {
     expect(html).not.toContain("<a ");
     expect(html).not.toContain("href=");
     expect(html).not.toContain("<button");

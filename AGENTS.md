@@ -193,7 +193,8 @@ npm run db:backup          # encrypted backup, verified by decrypting it again
 npm run db:restore:check   # restores the newest backup into a throwaway Postgres
 npm run db:migrate         # the ONLY way to change the schema: host + pending list,
                            # backup from the last hour required, typed confirmation
-npm run db:cleanup-test-accounts   # deletes the accounts of the addresses in EMAIL_ALLOWLIST
+npm run db:cleanup-test-accounts   # deletes the accounts of the addresses in EMAIL_ALLOWLIST,
+                                   # but ONLY ones made on the laptop; a live account is kept
 npm run sessions:revoke-all        # signs everyone out (runbook in docs/SECURITY.md)
 ```
 

@@ -12,14 +12,21 @@ export function ZeroMark({ className }: { className?: string }) {
   );
 }
 
-export function Wordmark({ className }: { className?: string }) {
+export function Wordmark({
+  className,
+  markClassName = "text-accent",
+}: {
+  className?: string;
+  /** The mark's colour. The headers use the text colour (owner, 2026-09-21); the footer keeps the red. */
+  markClassName?: string;
+}) {
   return (
     <Link
       href="/"
       aria-label={`${site.name} home`}
       className={cn("inline-flex items-center gap-2.5 text-fg", className)}
     >
-      <ZeroMark className="text-accent" />
+      <ZeroMark className={markClassName} />
       <span className="font-mono text-sm tracking-[0.22em]">
         <span className="font-semibold">ZERO</span>
         <span className="text-accent">CORPS</span>
