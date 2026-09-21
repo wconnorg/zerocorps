@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { ActivityPreview } from "@/components/marketing/activity-preview";
 import { ButtonLink } from "@/components/ui/button";
+import { BrandName } from "@/components/site/wordmark";
 import { site } from "@/config/site";
 
 export const metadata: Metadata = {
@@ -39,7 +41,7 @@ export default function AcademyLandingPage() {
         <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-6 pt-24 pb-20 text-center lg:pt-32">
           <p className="font-mono text-xs tracking-[0.22em] text-accent">ACADEMY</p>
           <h1 className="mt-6 text-5xl/[1.05] font-semibold tracking-tight text-balance sm:text-6xl/[1.03]">
-            {site.academy}
+            <BrandName /> Academy
           </h1>
           <p className="mt-6 max-w-xl text-lg/8 text-pretty text-muted">
             A structured path from your first chart to a repeatable process. Create an account to
@@ -72,6 +74,21 @@ export default function AcademyLandingPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="border-t border-line">
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-24">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+              See your consistency.
+            </h2>
+            <p className="mt-5 max-w-md text-base/7 text-muted">
+              A daily activity calendar shows when you studied, next to your current rank and how
+              far you are from the next one.
+            </p>
+          </div>
+          <ActivityPreview />
         </div>
       </section>
     </>

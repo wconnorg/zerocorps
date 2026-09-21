@@ -45,10 +45,29 @@ function watch(page, tag) {
     problems.push(`page error on ${tag}: ${error.message}`);
   });
   page.on("requestfailed", (request) => {
-    console.log(`  [requestfailed] (${tag}) ${request.url()} ${request.failure()?.errorText}`);
+    const errorText = request.failure()?.errorText;
+    // A signed-out visitor who CLICKS a protected link: the server answers the router's
+    // request with a redirect to sign-in, and the browser drops that request to follow it.
+    // That is how it should work. The same failure at any other moment is still a problem
+    // (it would mean the link is being pre-loaded again: a wasted request on every visit).
+    const url = new URL(request.url());
+    if (
+      clickingAProtectedLink &&
+      errorText === "net::ERR_ABORTED" &&
+      url.pathname === "/dashboard" &&
+      url.searchParams.has("_rsc")
+    ) {
+      return console.log(
+        `  [expected] (${tag}) the router's request for /dashboard was redirected`,
+      );
+    }
+    console.log(`  [requestfailed] (${tag}) ${request.url()} ${errorText}`);
     problems.push(`request failed on ${tag}: ${request.url()}`);
   });
 }
+
+/** True only while the script itself clicks a protected link as a signed-out visitor. */
+let clickingAProtectedLink = false;
 
 // ── 1. Headers and metadata routes ──────────────────────────────────────────
 {
@@ -71,7 +90,7 @@ function watch(page, tag) {
   note(headers["x-powered-by"] === undefined, "X-Powered-By header removed");
   note(headers["x-frame-options"] === "DENY", "X-Frame-Options is DENY");
 
-  for (const path of ["/robots.txt", "/sitemap.xml", "/icon.svg"]) {
+  for (const path of ["/robots.txt", "/sitemap.xml", "/icon.png"]) {
     const response = await context.request.get(`${base}${path}`);
     note(response.status() === 200, `${path} -> ${response.status()}`);
   }
@@ -126,8 +145,8 @@ function watch(page, tag) {
   const html = await (await context.request.get(`${base}/`)).text();
   note(/<html[^>]*data-theme="dark"/.test(html), "server HTML carries the dark default (static)");
 
-  await page.getByRole("link", { name: "Enter the Academy" }).first().click();
-  await page.waitForURL("**/academy");
+  await page.getByRole("link", { name: "Terms", exact: true }).first().click();
+  await page.waitForURL("**/terms");
   note((await theme()) === "light", "theme persists across client-side navigation");
   await context.close();
 }
@@ -143,22 +162,61 @@ function watch(page, tag) {
   const otherLinks = await page.evaluate(() =>
     [...document.querySelectorAll("main a")]
       .map((anchor) => anchor.getAttribute("href"))
-      .filter((href) => href !== "/academy"),
+      .filter((href) => href !== "/dashboard" && href !== "/academy"),
   );
   note(
     otherLinks.length === 0,
-    `every link in the home page body goes to /academy (others: ${JSON.stringify(otherLinks)})`,
+    `every link in the home page body goes to /dashboard or /academy (others: ${JSON.stringify(otherLinks)})`,
+  );
+  note(
+    (await page.getByRole("heading", { level: 1 }).textContent())?.trim() === "ZEROCORPS",
+    "the home page's heading is the name, not the Academy's",
+  );
+  note(
+    await page.getByRole("link", { name: "Enter the dashboard" }).isVisible(),
+    'the hero button is "Enter the dashboard"',
   );
 
-  await page.getByRole("link", { name: "Enter the Academy" }).first().click();
+  // Both buttons take the same road: a signed-out visitor lands on sign-in, with the way
+  // back to the dashboard remembered, and sign-in offers to create an account.
+  for (const name of ["Enter the dashboard", "Enter the Academy"]) {
+    await page.goto(`${base}/`, { waitUntil: "networkidle" });
+    clickingAProtectedLink = true;
+    await page.getByRole("link", { name }).first().click();
+    await page.waitForURL("**/sign-in**");
+    await page.waitForLoadState("networkidle");
+    clickingAProtectedLink = false;
+    const landed = new URL(page.url());
+    note(
+      landed.pathname === "/sign-in" && landed.searchParams.get("next") === "/dashboard",
+      `"${name}" sends a signed-out visitor to sign in, then back (${landed.pathname}${landed.search})`,
+    );
+  }
+  note(
+    await page.getByRole("link", { name: "Create an account" }).isVisible(),
+    "the sign-in page offers to create an account",
+  );
+
+  // The public page about the Academy is reachable from the home page without an account.
+  await page.goto(`${base}/`, { waitUntil: "networkidle" });
+  await page.getByRole("link", { name: "Learn more about the Academy" }).click();
   await page.waitForURL("**/academy");
   note(await page.getByRole("heading", { level: 1 }).isVisible(), "/academy shows its heading");
 
+  // A link that tries to leave the site through ?next= ends up on the dashboard road.
+  await page.goto(`${base}/sign-in?next=/.//evil.example`, { waitUntil: "networkidle" });
+  note(
+    await page.getByLabel("Email address").isVisible(),
+    "/sign-in?next=/.//evil.example still renders the form (the unsafe path is ignored)",
+  );
+  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
+
   await page.getByRole("link", { name: "Sign up" }).click();
   await page.waitForURL("**/sign-up");
+  const signUpHeading = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
   note(
-    await page.getByRole("heading", { level: 1, name: "Sign up" }).isVisible(),
-    "/sign-up renders",
+    ["Create your account", "Sign-ups open soon"].includes(signUpHeading ?? ""),
+    `/sign-up renders ("${signUpHeading}")`,
   );
 
   await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
@@ -177,7 +235,85 @@ function watch(page, tag) {
   await context.close();
 }
 
-// ── 4. Screenshots: both themes, desktop and phone ──────────────────────────
+// ── 4. Accounts: what a signed-out visitor can and cannot reach ─────────────
+// Nothing here creates an account or signs anyone in: there is ONE database, shared with
+// the live site. The owner tests the sign-up itself by hand.
+{
+  console.log("\n== accounts ==");
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  watch(page, "accounts");
+
+  const signInHeaders = (await context.request.get(`${base}/sign-in`)).headers();
+  const csp = signInHeaders["content-security-policy"] ?? "";
+  note(
+    csp.includes("frame-ancestors 'none'"),
+    "/sign-in cannot be framed (frame-ancestors 'none')",
+  );
+  note(
+    csp.includes("form-action 'self'"),
+    "/sign-in forms can only post to this site (form-action 'self')",
+  );
+
+  await page.goto(`${base}/dashboard`, { waitUntil: "networkidle" });
+  note(
+    new URL(page.url()).pathname === "/sign-in" &&
+      new URL(page.url()).searchParams.get("next") === "/dashboard",
+    `/dashboard sends a signed-out visitor to sign in (${new URL(page.url()).pathname}${new URL(page.url()).search})`,
+  );
+  note(await page.getByLabel("Email address").isVisible(), "/sign-in shows the form");
+  note(
+    (await page.getByLabel("Password", { exact: true }).getAttribute("autocomplete")) ===
+      "current-password",
+    "the password field is marked for password managers",
+  );
+
+  await page.goto(`${base}/reset-password`, { waitUntil: "networkidle" });
+  note(
+    await page.getByText("This reset link is incomplete").isVisible(),
+    "/reset-password without a token explains itself",
+  );
+
+  await page.goto(`${base}/sign-up/verify`, { waitUntil: "networkidle" });
+  note(
+    await page.getByRole("link", { name: "Start again" }).isVisible(),
+    "/sign-up/verify without a sign-up in progress offers to start again",
+  );
+
+  for (const path of ["/terms", "/privacy"]) {
+    await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
+    note(
+      await page.getByText("Draft.", { exact: true }).isVisible(),
+      `${path} is marked as a draft`,
+    );
+  }
+
+  const cron = await context.request.get(`${base}/api/cron/cleanup`);
+  note(
+    cron.status() === 401,
+    `the cleanup route refuses a caller without the secret (${cron.status()})`,
+  );
+  const wrongSecret = await context.request.get(`${base}/api/cron/cleanup`, {
+    headers: { authorization: "Bearer not-the-secret" },
+  });
+  note(wrongSecret.status() === 401, `...and one with the wrong secret (${wrongSecret.status()})`);
+
+  const securityTxt = await context.request.get(`${base}/.well-known/security.txt`);
+  note(
+    [200, 404].includes(securityTxt.status()),
+    `security.txt answers (${securityTxt.status()}: ${securityTxt.status() === 200 ? "published" : "no SECURITY_CONTACT set here"})`,
+  );
+  if (securityTxt.status() === 200) {
+    const body = await securityTxt.text();
+    note(
+      /^Contact: /m.test(body) && /^Expires: /m.test(body),
+      "security.txt has Contact and Expires",
+    );
+  }
+  await context.close();
+}
+
+// ── 5. Screenshots: both themes, desktop and phone ──────────────────────────
 {
   console.log("\n== screenshots ==");
   const { hostname } = new URL(base);
@@ -189,6 +325,12 @@ function watch(page, tag) {
     ["home", "/"],
     ["academy", "/academy"],
     ["sign-up", "/sign-up"],
+    ["sign-up-verify", "/sign-up/verify"],
+    ["sign-in", "/sign-in"],
+    ["forgot-password", "/forgot-password"],
+    ["reset-password", "/reset-password"],
+    ["terms", "/terms"],
+    ["privacy", "/privacy"],
     ["404", MISSING_PAGE],
   ];
 

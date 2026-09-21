@@ -18,7 +18,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(env.NEXT_PUBLIC_APP_URL),
   title: {
-    default: `${site.academy}: learn to trade with a system`,
+    default: site.name,
     template: `%s · ${site.name}`,
   },
   description: site.description,
@@ -26,11 +26,13 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: site.name,
-    title: site.academy,
+    title: site.name,
     description: site.description,
     url: "/",
   },
-  twitter: { card: "summary" },
+  // "summary_large_image" is what makes Discord, iMessage and others show the image large.
+  // The image itself is src/app/opengraph-image.png (and twitter-image.png), by file convention.
+  twitter: { card: "summary_large_image" },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

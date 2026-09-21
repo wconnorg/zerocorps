@@ -74,7 +74,8 @@ relevant section with a date; do not rewrite history.
 ### Brand (placeholders the owner will replace)
 
 - Text wordmark, near-black interface, one accent colour, placeholder copy.
-- The accent is a cold cyan, chosen so it never collides with the colours that
+- _Superseded on 2026-09-20: the brand is now black and red; see "Brand and landing page"._
+  The accent is a cold cyan, chosen so it never collides with the colours that
   carry meaning in a trading product: red (danger, loss), green (success, gain)
   and amber (warning).
 
@@ -160,7 +161,8 @@ from one above, this one is newer and wins.
   pushed to `dev`. It is configuration only; no application code depends on Vercel.
 - **Flow:** build and test locally on `dev` → merge to `main` once per milestone,
   and only when the owner says so, following the release order below. Nothing is
-  pushed unless the owner says "push".
+  pushed unless the owner says "push". _Narrowed on 2026-09-21 to `main` only; see
+  "Release decisions by the owner (2026-09-21)"._
 - `baseURL` and `trustedOrigins` are set explicitly from `NEXT_PUBLIC_APP_URL`, which
   stays the single source for the site's origin. There is no `BETTER_AUTH_URL`.
   Production refuses a non-https URL and a non-empty `EMAIL_ALLOWLIST`.
@@ -168,11 +170,13 @@ from one above, this one is newer and wins.
   endpoints, not only in the UI. When `false`, `/sign-up` shows a "signups open soon"
   state with the Discord invite as the call to action, and sign-in still works. The
   owner intends it to be `true` in production once milestone 2 is released and
-  tested.
+  tested. _Replaced on 2026-09-20 by the three-way `SIGNUP_MODE`; see "Approved on
+  2026-09-20"._
 - **Release order**, for every merge of `dev` into `main`:
   1. The owner sets any new Production variables in Vercel. Startup validation
      fails the build otherwise, which is deliberate.
-  2. `npm run db:migrate:prod`. Migrations are additive and backward-compatible, so
+  2. `npm run db:migrate` (named `db:migrate:prod` before 2026-09-20, when there
+     were to be two databases). Migrations are additive and backward-compatible, so
      the old code keeps working until the new code is live.
   3. Merge `dev` into `main`; push when the owner says "push".
   4. `npm run verify` against the live site, then the owner does a real sign-up on
@@ -182,11 +186,14 @@ from one above, this one is newer and wins.
 
 - **Two Supabase projects: `zerocorps-prod` and `zerocorps-dev`.** The laptop uses
   `zerocorps-dev`; the live site uses `zerocorps-prod`. The Data API is disabled on
-  both. Row-level security is on for every table, without `FORCE`.
+  both. Row-level security is on for every table, without `FORCE`. _Superseded on
+  2026-09-20: there is one database; see "One shared database" below. Wherever this
+  file mentions `zerocorps-dev` or `zerocorps-prod`, read "the database"._
 - **Migrations never run from Vercel.** `DATABASE_URL_MIGRATIONS` exists only on the
   owner's laptop.
 - **Migrations go to dev first.** Applying them to production is a separate,
   explicitly named script that refuses to run without a typed confirmation.
+  _Superseded on 2026-09-20 with the rest of the two-database plan._
 - **Only the owner puts connection strings in `.env.local`.** They are never asked
   for in chat and never printed.
 
@@ -397,6 +404,500 @@ here so nobody re-proposes them without knowing why.
   not be able to pause, the hosting plan must permit commercial use before anything
   is sold, and bot protection is reconsidered if rate limits prove too weak.
 
+## Approved on 2026-09-20 (milestone 2 go-ahead)
+
+The owner approved the revised milestone 2 plan with the decisions below. Where an
+entry here differs from one above, this one is newer and wins.
+
+### One shared database
+
+- **There is a single Supabase project, shared by the laptop and the live site.**
+  There is no `zerocorps-dev`. The owner accepts the risk of keeping it shared after
+  public launch, until the self-hosting phase. A separate development database is
+  recorded in [SECURITY.md](SECURITY.md) as a recommended control the owner has
+  declined for now.
+- Because of that, every one of these guardrails is mandatory:
+  - **Automated tests use PGlite only** (Postgres running inside the test process)
+    and never read `DATABASE_URL`.
+  - **No destructive commands against the database, ever:** no `drizzle-kit push`, no
+    drops, no truncates. Migrations are additive and go through one guarded command,
+    `npm run db:migrate`, which shows the target host and the pending migrations and
+    needs a typed confirmation.
+  - **An encrypted backup comes before every migration, without exception.** The
+    migrate command refuses to run unless a backup file from the last hour exists.
+  - **Local test accounts use only the owner's own addresses**, and a cleanup command
+    removes the accounts (and their events) that match that allowlist.
+  - **Reverting a git push restores code, never data.** Only a backup restores data,
+    so the restore runbook is kept tested.
+- **Laptop and Vercel hold different `BETTER_AUTH_SECRET`, `HMAC_SECRET` and
+  `CRON_SECRET` values**, even though they share the database. What that means in
+  practice:
+  - Accounts are portable: a password hash does not depend on any secret, so an
+    account made on the laptop can sign in on the live site and the other way round.
+    It also means a test address used on the laptop is taken on the live site until
+    the cleanup command removes it.
+  - Sessions, sign-ups in progress and the known-device cookie belong to the site
+    that issued them. Signing in on the live site with an account made on the laptop
+    sends a new-device email, as it should.
+  - Per-address limits and the daily email cap count separately on each side, because
+    the address is hashed with a different key. Testing on the laptop never uses up
+    the live site's allowance.
+  - Event-log hashes written by one side cannot be matched by the other. Each event
+    therefore records which side wrote it (`app_env`), so the laptop's test noise can
+    be told apart from real activity and left out of the milestone 4 health view.
+  - **For milestone 5:** Better Auth encrypts TOTP secrets and backup codes with
+    `BETTER_AUTH_SECRET`. An account that switches on 2FA on one side cannot complete
+    2FA on the other. Test 2FA on one side per account.
+
+### Sign-up modes
+
+- **`SIGNUP_MODE` is `closed`, `allowlist` or `open`**, and replaces `SIGNUPS_OPEN`.
+  It defaults to `closed`.
+- In `allowlist` mode the form shows a "private beta, invited addresses only" note.
+  Only addresses in `SIGNUP_ALLOWLIST` can start a sign-up; every other address gets
+  the same polite message.
+- The mode is enforced on the server, at the start of a sign-up and again when the
+  code is checked. Sign-in works in every mode.
+- The owner tests on the live site in `allowlist` mode first, then sets production
+  to `open` once milestone 2 is released and tested.
+
+### The app's database role
+
+- **The app connects as `zerocorps_app`, a role with no DDL rights**, from milestone
+  2 onwards. With one shared database this role is the main protection against a
+  destructive mistake, so it is required, not optional.
+- **Access comes from explicit row-level-security policies for that role, not from
+  the `BYPASSRLS` attribute.** `BYPASSRLS` is role-wide: it would switch off row-level
+  security on every table in the database, including tables added later and
+  Supabase's own. A policy is per table and sits in the migration that creates the
+  table, so a new table is closed to the app until a migration opens it. (Supabase's
+  `postgres` role also cannot hand out `BYPASSRLS`, but that is not the reason.)
+- The role is created by a migration **without a password and unable to log in**, so
+  no secret is ever committed. The owner then gives it a password by hand, once, with
+  a one-statement script. The owner deletes the saved query from the Supabase SQL
+  editor afterwards.
+- **Every migration that adds a table** enables row-level security on it and adds
+  the policy for `zerocorps_app`. `ALTER DEFAULT PRIVILEGES` grants the role
+  `SELECT, INSERT, UPDATE, DELETE` on tables the migration role creates, so a
+  forgotten grant cannot break the app; a test asserts that every table has
+  row-level security and the policy, and runs the app's queries as that role.
+- `DATABASE_URL` uses `zerocorps_app.<project-ref>` and that role's password.
+  `DATABASE_URL_MIGRATIONS` keeps the owner role and stays on the laptop only.
+- **`npm run db:check-role`** proves the role cannot create, alter or drop, holds no
+  special attributes, belongs to no other role, and can read nothing outside the
+  app's own tables.
+- The `brain_reader` role in milestone 9 follows the same procedure.
+
+### Answers on the content-security policy, contact details and pausing
+
+- **A nonce-based CSP is built at the start of milestone 4**, not in milestone 2. The
+  current policy and the reason for it are recorded in [SECURITY.md](SECURITY.md) as
+  the baseline. The auth pages already send `frame-ancestors 'none'` and
+  `form-action 'self'`, which need no nonce.
+- **`security.txt` takes its contact from `SECURITY_CONTACT`.** For now that is the
+  repository's GitHub private-vulnerability-reporting address, not an email address,
+  because the domain may have no working inbox and a published address must not
+  bounce. The privacy draft takes its contact from `PRIVACY_CONTACT` by the same
+  rule. **"A working contact channel exists" is a release gate.**
+- **DNS checklist 1 is on hold** until the owner decides between Proton and mail
+  forwarding.
+- **Database pausing on the Free plan is accepted for now.** The upgrade trigger is
+  recorded in the ledger: before the owner promotes the academy publicly or takes any
+  money, whichever comes first. Until then the daily cron touches the database every
+  day, and if the database cannot be reached the auth routes show a friendly
+  "temporarily unavailable" page.
+
+### Confirmed choices
+
+- A separate `HMAC_SECRET`; a keyed hash of the IP address plus a readable coarse
+  prefix in the event log, mentioned in the privacy draft; security emails counted by
+  the daily cap but never blocked by it; Better Auth's `name` mapped to
+  `display_name`; the accepted trade-off that a per-address limit lets someone
+  briefly block sign-up for an address they know.
+- **The backup file:** the key is derived from the passphrase with scrypt and a
+  random salt, the data is encrypted with AES-256-GCM, and the file header carries a
+  format version.
+
+### Additions
+
+- **Work that happens after the response uses Next's `after()`**, which also works
+  when self-hosted, with Better Auth's `advanced.backgroundTasks.handler` wired to
+  it. A bare promise that nobody awaits can be frozen when a serverless function
+  returns, and the email would never be sent. The owner's real sign-up at release is
+  the proof.
+- **Atomicity test:** with the adapter's `transaction: true`, a failure forced late
+  in the success path (at session creation, for example) must leave no user, account
+  or known-device row behind, and the pending row must still work.
+- **One normalised form of an email address, trim + lowercase,** shared by
+  `pending_signups`, the counters, the allowlists and Better Auth.
+- **A completed password reset also forgets every known device** for that user.
+- **For milestone 4, not built now:** an owner-only health view with 24-hour counts
+  of sign-ups, failed sign-ins, code failures, rate-limit hits and email send errors.
+
+### Sequence
+
+1. The first migration, then the app-role script, then `npm run db:check-role`.
+2. Milestone 2 is built on `dev`, then stops for the owner's local testing.
+3. The release tasks follow one at a time: Resend, DNS, the Vercel variables, the
+   GitHub security settings, the legal drafts, and `allowlist` mode on the live site.
+
+### Decided by the owner during local testing (2026-09-20)
+
+- **The owner tested milestone 2 on the laptop and it works:** sign-up by code,
+  sign-in, sign-out, password reset and the invite-only refusal.
+- **The live site stays in private beta (`SIGNUP_MODE=allowlist`) for a long while**, at
+  least until the whole course is finished. The owner invites friends by adding their
+  addresses to `SIGNUP_ALLOWLIST` in Vercel and redeploying. `open` is not the plan
+  for the milestone 2 release any more.
+- **An owner-only dev panel, later, not built now.** Once auth is proven on the live
+  site: a page only the owner's account can open, holding the milestone 4 health view
+  and, after milestone 9, a way into the brain export. The owner is identified by an
+  environment variable, never by an address written in this public repository, and
+  the check is by user id on the server on every request. Managing the invite list
+  from that panel, without a redeploy, belongs there too.
+- **The sign-up felt slow on the laptop** ("sending your code" and the step after it).
+  To be measured against a production build before release; see the open items.
+- **The owner wants to change the logo and the colours.** Colours are the tokens in
+  `src/app/globals.css` (the contrast test must keep passing); the logo is
+  `ZeroMark` in `src/components/site/wordmark.tsx` and `src/app/icon.svg`.
+
+### Brand and landing page, decided by the owner (2026-09-20)
+
+- **The colours are black and red in both themes.** This replaces the cold-cyan accent
+  and the earlier rule that the accent is never red. Because the brand is now red,
+  **`danger` is orange**, so an error can never be mistaken for the brand. On the dark
+  theme the text on a red button is black: white on that red fails the contrast test.
+- **The logo is the owner's hand-drawn slashed zero.** `public/brand/zero-mark.png` is
+  the mark alone, used as a CSS mask so it takes the text colour in both themes;
+  `src/app/icon.png` is the browser-tab icon. The source image is only 224 pixels
+  wide, so a vector version is wanted before it is used large.
+- **In the name, "Zero" is the text colour and "Corps" is red** (`BrandName` and
+  `Wordmark` in `src/components/site/wordmark.tsx`).
+- **The landing page leads with the quotation "Forced evolution."**, credited by
+  initials only, and one line: "We build trading solutions to empower the industry."
+  The closing "Start at zero" section was removed. _Changed on 2026-09-21: the name
+  leads and the quotation is small; see "The landing page is ZeroCorps's" below._
+- **Link previews carry the logo.** `src/app/opengraph-image.png` and `twitter-image.png`
+  (1200 by 630, generated from the mark) with the `summary_large_image` card, so Discord,
+  iMessage, WhatsApp and Android Messages show it. It appears once `dev` is released;
+  Discord caches previews, so an old link may need `?v=2` added to refresh.
+- **Wanted next, NOT built, each needs a plan and the owner's answers first:**
+  - a deeper, better-presented replacement for the "Built like a curriculum" section;
+  - **a trading journal with risk-to-reward tools**, as a product in its own right.
+    It is not in the brief; it needs its own milestone, schema and privacy thinking;
+  - **polished animation across the site.** Constraints already known: no third-party
+    script origins (CSP), the marketing pages stay static, and `prefers-reduced-motion`
+    is respected;
+  - "Powered by ZeroCorps" on the course pages, in milestone 7 when they exist.
+
+### Release mechanics, decided by the owner (2026-09-20)
+
+- **The checkpoint commits on `dev` are kept. Nothing is squashed.** A squash only
+  tidies history, and it rewrites commits to do it; the owner decided that is not
+  worth the risk.
+- **"One commit per milestone" now means one merge commit on `main`.** `dev` is
+  merged with `git merge --no-ff dev` and a message that names the milestone, so
+  `main` shows one entry per milestone and the checkpoints stay reachable under it.
+  On `dev`, work is committed in checkpoints. Never `--squash`, never a rebase of
+  commits that have been pushed, never a force push.
+- **`backup-dev-before-squash`** is a local branch left from the abandoned squash. It
+  is deleted only after the milestone 2 release has been verified on the live site.
+- **`dev` was pushed to GitHub on 2026-09-20** as the backup that is not on the
+  laptop. Before the push, the commits were checked for env files, the outbox and
+  backup files (none). After it, GitHub's public API listed no deployment, status or
+  check run for the pushed commit: `git.deploymentEnabled` held on the branch's very
+  first push, which Vercel's documentation (checked again the same day) does not
+  spell out. Had it not held, the result would have been a failed preview build, not
+  a change to the live site: only `main` deploys to production.
+- **Vercel's functions run in `cle1` (Cleveland)**, set by `"regions"` in
+  `vercel.json`. The database is in AWS `us-east-2`, which is the same place. Vercel's
+  default is `iad1` (Washington), a short hop away, so the gain on the live site is
+  small but free. The slowness the owner felt on the laptop was put down to the
+  laptop's own distance from the database (about eight round trips per sign-up). If
+  that is right, the live site never paid it. **Not proven yet: the sign-up is timed
+  on the live site after release.** The Hobby plan allows exactly one region.
+- **The site description is the landing page's line**, "We build trading solutions to
+  empower the industry." It lives once, in `src/config/site.ts`, and feeds the landing
+  page, the search-result description and the link preview.
+
+### Email DNS, decided by the owner (2026-09-20)
+
+Where an entry here differs from "Email and DNS" above, this one is newer and wins.
+
+- **Resend's records use its newer format ("Resend Forge"):** a DKIM `TXT` at
+  `resend._domainkey` and two CNAMEs, `send` → `send.forge.rmta.net` and `rsend` →
+  `rsend.forge.rmta.net`. There is no `MX` and no SPF `TXT` of ours, which replaces the
+  expectation recorded on 2026-09-19. A CNAME cannot share its name with any other
+  record, so nothing else is ever added at `send` or `rsend`.
+- **The two CNAMEs are a delegation of trust.** Resend publishes the SPF and bounce
+  `MX` that receiving servers read under our names. It is in the hosting ledger, and
+  the runbook "Stop using Resend" in [SECURITY.md](SECURITY.md) deletes both CNAMEs
+  the day Resend is dropped, so they never dangle.
+- **The zone's single `_dmarc` record is `v=DMARC1; p=none;`, added now**, without
+  waiting for Proton. This replaces "Proton's DMARC record stays the single DMARC
+  record": the record belongs to the zone, not to a mail host. When Proton returns it
+  will suggest its own; **we keep ONE and never add a second.** The policy is tightened
+  by editing that record once every sender passes.
+- **Proton is delayed until about 2026-09-24, so DNS checklist 1 stays on hold.** The
+  milestone 2 release does not wait for it.
+- The owner added the four records on 2026-09-20. They were confirmed the same day on
+  two public resolvers and on Namecheap's authoritative server, and both CNAME targets
+  publish an SPF record and a bounce `MX`. Resend's public Forge page does not list
+  the `rmta.net` hostnames, so the targets were checked another way: the address block
+  in `send`'s SPF is registered at ARIN to Resend. [DNS.md](DNS.md) has the values.
+- **2026-09-21: Resend's dashboard shows `zerocorps.org` as verified and able to send**
+  (the owner's report). The domain is in Resend's `us-east-1` region. **Receiving stays
+  OFF in Resend**, because it would compete with Proton's `MX` rows. A new session
+  repeated the lookups the same day: all four records and both CNAME targets answered
+  as recorded, with exactly one `_dmarc`.
+
+### Claude Code on the laptop, decided by the owner (2026-09-21)
+
+- **Claude Code's file tools are denied every env file except the example.**
+  `.claude/settings.json` (committed; it holds no secret) carries the deny rules
+  `Read(./.env)`, `Read(./.env.*)` and the carve-out `Read(!.env.example)`, the same
+  shape as `.gitignore`. Why: `.env.local` kept ending up as the owner's open editor
+  tab, and the VS Code extension attaches the open file's name, and any selected text,
+  to each message. A matching `Read` deny rule stops both from reaching the assistant,
+  and also blocks its Read, Edit, Write, Grep and Glob tools and shell commands such as
+  `cat` on those paths (Claude Code's documentation, read 2026-09-21).
+- **Proven the same day without touching `.env.local`:** a dummy `.env.denytest` was
+  refused, `.env.example` still opened, and `npm run env:check` still worked, because
+  the owner's tools read the file from inside Node, which the rule does not cover.
+- **What it does not cover:** a program that opens the file by itself. So the standing
+  rule is unchanged: nothing the assistant runs may print a value from `.env.local`.
+- **`.outbox/` is denied the same way** (`Read(./.outbox/**)`, added the same day when an
+  outbox file turned up as the open tab). Those files hold the owner's real address and
+  live codes and reset links, and with one shared database a reset link made on the
+  laptop also works on the live site until it expires. Proven with a dummy file. The
+  site, the tests and `npm run verify` read the outbox from inside Node and are
+  unaffected.
+
+### The landing page is ZeroCorps's, and the dashboard shell comes next (owner, 2026-09-21)
+
+- **The home page is the ZeroCorps page, not the Academy's.** The Academy is one product
+  under it. The hero's heading is the name (ZERO in the text colour, CORPS in red). Under
+  it, at the size the description line had, is the quotation "Forced evolution." with
+  the red quote marks, credited as "J.B." (two initials, replacing three). The hero no
+  longer shows "We build trading solutions to empower the industry."; that line stays in
+  `src/config/site.ts` as the search-result and link-preview description.
+- **The hero button is "Enter the dashboard"** and links to `/dashboard`. A signed-out
+  visitor is sent to sign-in and back, as before.
+- **The site title and the link-preview title are "ZeroCorps".** "ZeroCorps Academy"
+  stays on `/academy`.
+- **The Academy has ONE labelled section on the home page:** "Built like a curriculum,
+  not a feed." with its three pillars, under an ACADEMY label, with the "Enter the
+  Academy" button. "See your consistency." and its calendar preview moved to `/academy`
+  unchanged. No new marketing copy was written.
+- **Both buttons take the same road (owner, later the same day).** "Enter the Academy"
+  links to `/dashboard` too, because the Academy lives behind the account as a tile on
+  the dashboard. A signed-out visitor lands on sign-in, which offers "Create an
+  account", and is brought back to the dashboard; a signed-in one goes straight
+  through. Neither link is pre-loaded. `/academy` stays as the public page about the
+  Academy (in the sitemap, and the dashboard's Academy tile leads there until milestone
+  7). A quiet "Learn more" link beside the button leads to it, so a visitor who cannot
+  sign in during the beta can still read about it and search engines reach it.
+- **`?next=` cannot send anyone off the site (fixed before release, 2026-09-21).** The
+  sign-in form is the only reader of `next`, through `safeNextPath`. It rejected full
+  URLs, `//host`, `/\host` and control characters, but it checked the input only:
+  `/.//evil.example` and `/x/..//evil.example` passed, and normalising them produced
+  `//evil.example`, which a browser reads as another site. A phishing link could have
+  used the real sign-in page as its springboard. The result is now checked as well, and
+  must resolve to this site. The attack tests cover it, a mutation check proved they fail
+  without the fix, and `npm run verify` visits such a link. It was never live.
+  `next` is NOT carried through sign-up, the code screen or the reset: those end at
+  `/dashboard`, which is the only protected page today, so nothing is lost. Carrying it
+  belongs with the second protected page (milestone 4), through the same function.
+- **The invite-only note on `/sign-up` links to the Discord** when `DISCORD_INVITE_URL`
+  is set ("No invitation yet? Join the Discord."), as the "closed" state already did.
+  During the private beta the Discord is where the owner sends people, so
+  `DISCORD_INVITE_URL` joins the Production variables at step 5.
+- **The dashboard shell is the first slice after the milestone 2 release, ahead of
+  onboarding. NOT built, and no code until milestone 2 is live and the owner has
+  approved a plan.** What a signed-in user lands on: a dashboard of tiles, starting with
+  one tile, "Academy", and a profile icon at the top right (the grey default avatar)
+  that opens a small menu. Until profile and settings exist, the menu holds only "Sign
+  out". More tiles come later (the trading journal, for one).
+  - **What this does to the brief's order.** The brief has onboarding as milestone 3 and
+    "dashboard with the Academy tile and the profile menu, plus the settings pages" as
+    milestone 4. The shell is the first part of milestone 4, pulled ahead of milestone 3. Milestone 3 is unchanged and follows it: once it lands, a first sign-in is sent
+    through `/onboarding` before reaching the dashboard, and the uploaded avatar takes
+    the grey default's place in the shell. Milestone 4 shrinks to the settings pages
+    and the menu's remaining entries (profile, settings). The shell needs no schema
+    change. Its Academy tile leads to `/academy` until milestone 7 builds the lessons.
+
+### Release decisions by the owner (2026-09-21)
+
+These reached the session in a handoff written by the owner's planning assistant, which
+had made them on the owner's behalf. The owner was asked about each one directly and
+confirmed all of them.
+
+- **The standing push rule.** `dev` may be pushed to GitHub after any checkpoint commit
+  without asking, because `dev` never deploys and the push is the backup that is not on
+  the laptop. **`main` needs the owner's explicit "push" every time.** The repository is
+  public, so the commits are still checked for env files, secrets and real addresses
+  before every push. This narrows "nothing is pushed unless the owner says push".
+- **Finding 28 is approved.** An address that already has an account gets a pending row
+  with no password hash, so the code screen behaves the same for everyone. Not revealing
+  who has an account matters more than the letter of "no pending row".
+- **Supabase's CA certificate is pinned before the release**, as one small commit, and
+  it is kept only if `npm run db:check` then reports the certificate as verified on the
+  laptop. The certificate is public and may be committed. The connection must fail
+  closed and never fall back to an unverified link. If it turns into more than a small
+  change, the work stops, the hosting ledger says so, and it becomes the first job after
+  the release. It gets its own plan before any code.
+  - **The plan, approved the same day.** The certificate comes from the owner's own
+    Supabase dashboard. Both places that open a connection (`src/db/client.ts` and
+    `scripts/lib/database.mjs`) verify the chain and the host name against the pinned
+    certificates only, with no fallback; `db:check` stops retrying unverified. A guard
+    test fails if "encrypt, don't verify" comes back.
+  - **Two additions from the owner.** The pin is a LIST of certificates, so a rotation
+    is staged by adding the new one beside the old one before the old one is removed.
+    `db:check` and `npm run check` warn loudly when a pinned certificate has under 90
+    days left, and fail only when one has expired. SECURITY.md gets the runbook
+    "database connections fail after Supabase rotates its CA" and a ledger line that
+    the pin is ours to maintain, on Vercel and after the move to self-hosting.
+  - The owner's real sign-up on the live site is what proves the verified connection
+    works from Vercel. The rollback is Vercel's previous deployment.
+- **`PRIVACY_CONTACT` is a `@zerocorps.org` address.** The variable takes the `mailto:`
+  form. The address goes into Vercel only, never into this repository or into chat.
+- **The "working contact channel" gate for `PRIVACY_CONTACT` moves from the release to
+  the invitations.** Proton may not be working until about 2026-09-24. Proton's two `MX`
+  rows are intact, but whether the mailbox accepts mail before then depends on the
+  owner's Proton account, which DNS cannot show. So: the milestone 2 release goes ahead
+  when its other steps are done, and **until a test message sent to that address from
+  another mailbox has arrived, the live `SIGNUP_ALLOWLIST` holds only the owner's own
+  addresses.** While the owner is the only member, nobody else's data depends on that
+  contact. Friends are added only after the test message arrives, and the date goes
+  here. Replies sent from the address fail SPF and DKIM until DNS checklist 1 is done,
+  so they may land in spam until then. The owner's Gmail stays off the public page.
+  `SECURITY_CONTACT` is unaffected: it is GitHub's private vulnerability reporting page
+  and still gates the release.
+
+### Where milestone 2 stands (keep this current; last updated 2026-09-21)
+
+A new session starts here. Milestone 2 is **built on `dev`, tested by the owner on
+the laptop, and in its release walkthrough**; `main` holds only milestone 1 and the
+docs. `dev` is pushed to GitHub as a backup and is not built by Vercel.
+
+**Built and proven** (typecheck, lint, 168 tests, production build, `npm run verify`):
+
+- **Environment:** `src/env-schema.ts` (read by `src/env.ts`) with every milestone 2
+  key, and the owner's tools `env:check`, `env:secrets` and `env:app-url`. The owner's
+  `.env.local` is complete.
+- **Database:** migrations `0000_app_role` and `0001_auth_core` were applied to the
+  real database on 2026-09-20 after an encrypted backup and a passing restore drill.
+  The app connects as `zerocorps_app`, and `npm run db:check-role` passed every line
+  with nothing to review. The guarded commands are `db:check`, `db:backup`,
+  `db:restore:check`, `db:migrate`, `db:check-role`, `db:counts`,
+  `db:cleanup-test-accounts` and `sessions:revoke-all`; the ones that change anything
+  need a person at a terminal.
+- **Sign-up by emailed code** (`src/lib/auth/email-code-signup.ts`), a local Better
+  Auth plugin, with the attack tests the owner specified, the atomicity test, both
+  cross-site tests, and `SIGNUP_MODE` enforced at the start and at the code check. A
+  mutation check proved the cross-site test fails without the CSRF middleware.
+- **Around it:** per-address limits (`limits.ts`), the daily email cap, the event log
+  with `app_env` (`events.ts`), known devices and the new-device alert, the session
+  hook that stores a coarse IP prefix and a browser family, "a reset forgets every
+  known device", and the daily cleanup (`cleanup.ts`, `/api/cron/cleanup`).
+- **Email:** `sendEmail()` (console and `.outbox/` on the laptop, Resend through
+  `fetch`, the laptop-only allowlist) and the five messages, sent through Next's
+  `after()`.
+- **Pages:** `/sign-up` in its three modes, `/sign-up/verify`, `/sign-in`,
+  `/forgot-password`, `/reset-password`, a protected placeholder `/dashboard`, the
+  "temporarily unavailable" state, the `/terms` and `/privacy` drafts, and
+  `/.well-known/security.txt`. The marketing and auth pages are still static.
+
+**Done by the owner on 2026-09-20:** the second migration, `0002_email_code_signup`,
+is applied (there is one database, so production is migrated too), and local testing
+passed: sign-up by code, sign-in, sign-out, password reset and the invite-only refusal.
+
+**The release walkthrough, one step at a time, in this order:**
+
+The numbering is the owner's handoff of 2026-09-21, so both assistants mean the same
+step by the same number.
+
+1. **Done:** Resend's account, the domain, DNS checklist 2 in [DNS.md](DNS.md) verified
+   by lookup (2026-09-20, repeated 2026-09-21), the single `_dmarc` record at `p=none`,
+   and Resend's dashboard showing the domain as verified (2026-09-21).
+2. `npm run db:cleanup-test-accounts`, so the owner's test addresses are free again on
+   the live site. **Run on 2026-09-21: it removed nothing**, because the one address in
+   `EMAIL_ALLOWLIST` had no account, no waiting sign-up, no events and no counters. The
+   owner did test sign-ups on 2026-09-20, so either the cleanup had already been run or
+   the test used another address. **`npm run db:counts` settles it** (built the same
+   day: rows per table, counts only, read-only, as `zerocorps_app`). `users` must be 0
+   before the release and exactly 1 after the owner's real sign-up. If it is not 0, the
+   owner adds the address they tested with to `EMAIL_ALLOWLIST` and runs the cleanup
+   again.
+3. **Done 2026-09-21 (the owner's report):** the Resend API key, sending access only,
+   restricted to `zerocorps.org`, pasted straight into Vercel as `RESEND_API_KEY`
+   (Production, sensitive). It was never in chat or in `.env.local`.
+   **Re-test on the laptop, 2026-09-21,** after the auth code changed (the `next` fix,
+   the pinned connection, the new landing page): the owner signed up with the
+   allowlisted address using the code from `.outbox/`, landed on the dashboard, and the
+   server log showed every request answering 200 (start 1.6 s, code check 1.9 s on the
+   laptop). The cleanup then removed exactly that 1 account, 1 event and 2 limit
+   counters, so `users` is 0 again before the release.
+4. **Done 2026-09-21 (the owner's report):** GitHub's Dependabot alerts, secret scanning
+   with push protection, and private vulnerability reporting. The reporting page's URL
+   becomes `SECURITY_CONTACT`.
+5. The Production variables in Vercel. Keep `NEXT_PUBLIC_APP_URL`. Add `APP_ENV`,
+   `SIGNUP_MODE=allowlist`, `SIGNUP_ALLOWLIST`, `DATABASE_URL` (the `zerocorps_app`
+   one), `RESEND_API_KEY`, `SECURITY_CONTACT`, `PRIVACY_CONTACT`, `DISCORD_INVITE_URL`
+   (the public invite link, shown on the invite-only sign-up page), and three NEW values
+   for `BETTER_AUTH_SECRET`, `HMAC_SECRET` and `CRON_SECRET` that differ from the
+   laptop's and never appear in chat. **Never add** `DATABASE_URL_MIGRATIONS`,
+   `BACKUP_DIR` or `EMAIL_ALLOWLIST`. Leave `EMAIL_FROM` and `TRUSTED_IP_HEADER` unset.
+   **`npm run env:handoff` carries the four sensitive ones** (built 2026-09-21): it makes
+   the three secrets fresh, reads the app's `DATABASE_URL` and refuses it unless its role
+   is `zerocorps_app`, puts one value at a time on the clipboard through the clipboard
+   program's standard input, never shows one, and clears the clipboard (and Windows's
+   clipboard history) afterwards. Nobody opens `.env.local` to copy a URL by hand.
+   `PRIVACY_CONTACT` is the owner's `@zerocorps.org` address in the `mailto:` form; it
+   goes into Vercel only, never into this repository. **`SIGNUP_ALLOWLIST` holds only
+   the owner's own addresses** until the test message to that address has arrived (the
+   moved gate, above).
+   **Done 2026-09-21 (the owner's report):** the six typed variables, then the three
+   new secrets and the app's `DATABASE_URL` through `npm run env:handoff`.
+6. `npm run db:backup`, then `npm run db:restore:check` ("migrations applied: 3").
+   **Moved by the owner on 2026-09-21 ("fast path"): it runs right after the owner's
+   real sign-up,** not before the release. The database held 0 accounts at the release,
+   and the restore drill had passed on 2026-09-20, so there was nothing new to protect
+   until that first account existed.
+7. The owner reads `/terms` and `/privacy`. **Moved by the owner the same day: it gates
+   inviting anyone, not the release.** Until then the owner is the only person who can
+   sign up, so nobody else agrees to the drafts. It joins step 10.
+8. `git merge --no-ff dev` on `main`; push on the owner's word; `npm run verify`
+   against the live site; the owner's real sign-up in `allowlist` mode, timed. That
+   sign-up is also the proof that the verified database connection works from Vercel;
+   if it fails, the rollback is Vercel's previous deployment. `npm run db:counts` then
+   shows exactly 1 in `users`.
+9. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
+   AGENTS.md, and refresh Discord's cached link preview by sharing the link with `?v=2`.
+10. **Before anyone but the owner is invited:** Proton is restored (DNS checklist 1), a
+    test message sent to the `PRIVACY_CONTACT` address from another mailbox arrives,
+    and the date is recorded above; **and the owner has read and approved `/terms` and
+    `/privacy`** (moved here from step 7). Only then are friends added to
+    `SIGNUP_ALLOWLIST`.
+
+**Open questions for the owner:** none. Both earlier ones were answered on 2026-09-21
+(see "Release decisions by the owner" above): finding 28 is approved, and Supabase's CA
+certificate is pinned before the release. **The pinning was built on 2026-09-21**: the
+root certificate from the owner's dashboard is in `certs/` and pinned in
+`src/lib/db-ca.ts`; `src/db/client.ts` and `scripts/lib/database.mjs` trust that list
+only, with no unverified mode left anywhere; `db:check` makes one verified attempt and
+reports the days each certificate has left. A mutation check proved the guard test: with
+"encrypt, don't verify" put back, it fails. **Proven on the laptop the same day:**
+`npm run db:check` reported both URLs as "VERIFIED against the pinned certificates"
+(the app's role on the transaction pooler and the owner role on the session pooler),
+which was the owner's condition for keeping the change. The proof from Vercel is the
+owner's real sign-up at step 8.
+
+**Housekeeping:** the work sits in checkpoint commits on `dev`, made for safety at the
+owner's request. **They are not squashed** (see "Release mechanics" above): `main`
+gets one `--no-ff` merge commit for the milestone. The status table in AGENTS.md
+changes to "Done" only after the release is verified on the live site.
+
 ## Better Auth findings that shape the design
 
 Verified against the Better Auth **1.7.5** documentation and plugin source on
@@ -537,8 +1038,67 @@ expires_at > now() RETURNING …`, before the code is compared, so concurrent
     `display_name` column (`user.fields.name`) and created as an empty string, which
     is what Better Auth's own plugins do when they have no name. Onboarding fills
     it in.
-24. **Stock sign-in is already enumeration-safe**: one error for an unknown email
-    and a wrong password, a password hash on both paths to even out timing, and the
-    CSRF middleware. A reset token is single-use, `onPasswordReset` is the hook for
+24. **Stock sign-in is already enumeration-safe** (re-confirmed line by line on
+    2026-09-20, `api/routes/sign-in.mjs` 315 to 335): an unknown email, or a user
+    with no password, runs one full password hash, which costs the same scrypt work
+    as verifying a real one, and then throws `INVALID_EMAIL_OR_PASSWORD`; a wrong
+    password throws the identical error. "Email not verified" can only be reached
+    after the password has verified. The endpoint uses the CSRF middleware.
+
+Added on 2026-09-20 while proving the schema:
+
+25. **Better Auth switches its origin and CSRF checks off by itself under test.**
+    `skipOriginCheck` defaults to `true` whenever `NODE_ENV` is `test`, and with it
+    the CSRF check is skipped too (`context/create-context.mjs`, line 211). Our first
+    cross-site test passed for that reason and proved nothing. Both
+    `advanced.disableOriginCheck` and `advanced.disableCSRFCheck` are therefore set to
+    `false` explicitly: the tests run against the real checks, and no environment
+    variable can switch them off in production.
+26. **Better Auth checks the Drizzle schema against its own model on the first
+    request** and throws on a mismatch (`advanced.database.validateSchema`, on by
+    default). It stays on. The tests build a Postgres inside the test process from
+    the real migration files and run sign-in, reset and sign-out through it, once as
+    the owner and once as `zerocorps_app`, so a wrong or missing column, grant or
+    policy is caught before a migration ever reaches the one real database.
+27. **The `accounts` table carries Better Auth's OAuth token columns**
+    (`access_token`, `refresh_token`, `id_token` and their expiry times) because the
+    library's model requires them and the schema check would fail without them. No
+    social provider is ever configured, so they stay `NULL`; a test asserts that no
+    row holds a token and that every account is a `credential` account.
+
+Added on 2026-09-20 while building the email-code sign-up:
+
+28. **An address that already has an account DOES get a pending row, without a
+    password. This departs from the letter of "no pending row", on purpose. The owner
+    approved it on 2026-09-21.** The spec asks for two things that pull apart: "no
+    pending row" and "the same code screen, no enumeration". Without a row there is
+    nothing to count attempts, cooldowns or expiry against, so the code screen would
+    answer differently: five wrong codes on a real sign-up end in "too many attempts",
+    and on a registered address they never would. Six requests would then reveal who
+    has an account. So the row is created either way, with `password_hash` NULL for a
+    registered address. Such a row can never create anything: the verify step treats
+    a NULL hash as a wrong code even when the code is right, which a test proves by
+    finding the never-sent code by brute force with the server's secret. No password
+    hash is stored for that address, and it receives the "you already have an
+    account" email instead of a code. Both paths do the same work: one password hash,
+    one lookup, one row, one email, one cookie.
+29. **A resend replaces the code and does not give attempts back.** Only a hash of the
+    code is stored, so the same code cannot be sent twice. Five attempts per sign-up
+    means five however many codes it sends; with three sends that is still five
+    guesses, not fifteen.
+30. **Headers set in an after-hook reach the response**, cookies included
+    (`api/dispatch.mjs`, `mergeResponseHeaders`), and `context.returned` holds the
+    endpoint's error when it failed. That is how the sign-in hook sets the
+    known-device cookie and logs a failure without knowing whose it was. One upsert
+    decides whether a browser is new, so two sign-ins at once cannot both alert.
+31. **`after()` accepts a promise and is supported in route handlers** (Next's bundled
+    docs). On a serverless host it relies on the platform's `waitUntil`; a self-hosted
+    Node server needs nothing extra. It is wired to
+    `advanced.backgroundTasks.handler`, so every email Better Auth or our plugin hands
+    to `runInBackgroundOrAwait` goes out after the response. Without a handler (in the
+    tests) the send is awaited instead, which keeps the tests deterministic.
+32. **`createUser` takes a second, required argument** in 1.7.5, the provisioning
+    source. The plugin passes `{ method: "email-password" }`, the same value the stock
+    sign-up declares. A reset token is single-use, `onPasswordReset` is the hook for
     the "password changed" email, and `revokeSessionsOnPasswordReset` removes every
     session the user has.

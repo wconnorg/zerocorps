@@ -5,8 +5,9 @@
 export const site = {
   name: "ZeroCorps",
   academy: "ZeroCorps Academy",
-  description:
-    "ZeroCorps Academy is a structured trading curriculum. Work through the lessons in order, earn ranks as you progress, and unlock the ZeroCorps Discord as you go.",
+  // The search-result and link-preview description. The landing page's hero no longer
+  // shows it (owner, 2026-09-21): the hero is the name and the quotation.
+  description: "We build trading solutions to empower the industry.",
   disclaimer:
     "Educational content only. Nothing on this site is financial advice. Trading involves risk, including the loss of your capital.",
 } as const;

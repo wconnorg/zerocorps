@@ -9,26 +9,33 @@ Unit tests and a green build do not prove the pages work. At the end of every
 milestone, and after any change to layout, theming, headers or routing, drive the
 real app and **look at the screenshots**.
 
+## 0. Never touch port 3000
+
+The owner tests with `npm run dev` on port 3000. On 2026-09-20 a check was started on
+the same port, silently ran against the owner's server, and the "stop the server" step
+then killed it. So: **run every check on port 3100, and stop only what you started.**
+Before starting, confirm 3100 is free. If it is not, find out what holds it first.
+
 ## 1. Start a server (skip this for the live site)
 
 Development server, which also exercises the dev-only CSP allowances and React
 Strict Mode:
 
 ```powershell
-npx next dev --port 3000          # run in the background
+npx next dev --port 3100          # run in the background
 ```
 
 Production build, which is what Vercel serves:
 
 ```powershell
 npm run build
-npx next start --port 3000        # run in the background
+npx next start --port 3100        # run in the background
 ```
 
 Wait for it by polling, never by sleeping a fixed time:
 
 ```powershell
-foreach ($i in 1..120) { try { if ((Invoke-WebRequest -UseBasicParsing http://localhost:3000/ -TimeoutSec 30).StatusCode -eq 200) { break } } catch { Start-Sleep -Milliseconds 1500 } }
+foreach ($i in 1..120) { try { if ((Invoke-WebRequest -UseBasicParsing http://localhost:3100/ -TimeoutSec 30).StatusCode -eq 200) { break } } catch { Start-Sleep -Milliseconds 1500 } }
 ```
 
 The dev server compiles each route on first request, which is slow on this
@@ -38,7 +45,7 @@ checks so compile time does not skew them.
 ## 2. Drive it
 
 ```powershell
-node scripts/verify-site.mjs http://localhost:3000 dev
+node scripts/verify-site.mjs http://localhost:3100 dev
 node scripts/verify-site.mjs https://zerocorps.org live
 ```
 
@@ -54,7 +61,7 @@ The script uses the installed Microsoft Edge through `playwright-core`
 ## 3. Stop the server
 
 ```powershell
-$c = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
+$c = Get-NetTCPConnection -LocalPort 3100 -State Listen -ErrorAction SilentlyContinue | Select-Object -First 1
 if ($c) { Stop-Process -Id $c.OwningProcess -Force -Confirm:$false }
 ```
 

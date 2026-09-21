@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1789913413422,
+      "tag": "0000_app_role",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789913436476,
+      "tag": "0001_auth_core",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1789922334639,
+      "tag": "0002_email_code_signup",
+      "breakpoints": true
+    }
+  ]
+}

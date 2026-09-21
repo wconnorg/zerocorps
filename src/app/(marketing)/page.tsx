@@ -1,5 +1,6 @@
-import { ActivityPreview } from "@/components/marketing/activity-preview";
+import Link from "next/link";
 import { ProgressChart } from "@/components/marketing/progress-chart";
+import { BrandName } from "@/components/site/wordmark";
 import { ButtonLink } from "@/components/ui/button";
 
 // Placeholder copy throughout: edit freely.
@@ -39,9 +40,12 @@ function ArrowRight() {
   );
 }
 
+// The Academy lives behind the account, as a tile on the dashboard. So this button takes
+// the same road as "Enter the dashboard": a signed-out visitor lands on sign-in (which
+// offers "Create an account") and comes back; a signed-in one goes straight through.
 function AcademyCta() {
   return (
-    <ButtonLink href="/academy" size="lg">
+    <ButtonLink href="/dashboard" size="lg" prefetch={false}>
       Enter the Academy
       <ArrowRight />
     </ButtonLink>
@@ -57,16 +61,29 @@ export default function HomePage() {
 
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-6 pt-20 pb-24 lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:pt-28 lg:pb-32">
           <div>
-            <p className="font-mono text-xs tracking-[0.22em] text-accent">ZEROCORPS ACADEMY</p>
-            <h1 className="mt-6 text-5xl/[1.05] font-semibold tracking-tight text-balance sm:text-6xl/[1.03]">
-              Learn to trade with a system, not a hunch.
+            {/* This is the ZeroCorps page. The Academy is one product under it, below. */}
+            <h1 className="text-5xl/[1.05] font-semibold tracking-tight sm:text-7xl/[1.02]">
+              <BrandName uppercase />
             </h1>
-            <p className="mt-6 max-w-xl text-lg/8 text-pretty text-muted">
-              A structured trading curriculum. Work through the lessons in order, earn ranks as you
-              progress, and unlock the ZeroCorps Discord as you go.
-            </p>
+            <figure className="mt-8 max-w-xl">
+              <blockquote className="text-lg/8 text-pretty text-muted">
+                <span aria-hidden="true" className="text-accent">
+                  &ldquo;
+                </span>
+                Forced evolution.
+                <span aria-hidden="true" className="text-accent">
+                  &rdquo;
+                </span>
+              </blockquote>
+              <figcaption className="mt-2 font-mono text-sm tracking-[0.22em] text-subtle">
+                &mdash; J.B.
+              </figcaption>
+            </figure>
             <div className="mt-10">
-              <AcademyCta />
+              <ButtonLink href="/dashboard" size="lg" prefetch={false}>
+                Enter the dashboard
+                <ArrowRight />
+              </ButtonLink>
             </div>
           </div>
 
@@ -74,9 +91,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* The one Academy section on this page. The public page about it is /academy. */}
       <section className="border-t border-line">
         <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-24">
-          <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <p className="font-mono text-xs tracking-[0.22em] text-accent">ACADEMY</p>
+          <h2 className="mt-5 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             Built like a curriculum, not a feed.
           </h2>
           <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-3">
@@ -88,32 +107,16 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="border-t border-line">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-24">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              See your consistency.
-            </h2>
-            <p className="mt-5 max-w-md text-base/7 text-muted">
-              A daily activity calendar shows when you studied, next to your current rank and how
-              far you are from the next one.
-            </p>
-          </div>
-          <ActivityPreview />
-        </div>
-      </section>
-
-      <section className="border-t border-line">
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center px-6 py-24 text-center lg:py-28">
-          <h2 className="text-4xl font-semibold tracking-tight sm:text-5xl">Start at zero.</h2>
-          <p className="mt-5 max-w-md text-base/7 text-muted">
-            Everyone does. Create an account and open the first lesson.
-          </p>
-          <div className="mt-9">
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
             <AcademyCta />
+            {/* The public page about the Academy: for visitors who cannot sign in yet, and
+                so that search engines reach it. */}
+            <Link
+              href="/academy"
+              className="text-sm text-muted underline underline-offset-4 hover:text-fg"
+            >
+              Learn more<span className="sr-only"> about the Academy</span>
+            </Link>
           </div>
         </div>
       </section>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { site } from "@/config/site";
 import { Wordmark } from "./wordmark";
 
@@ -10,6 +11,14 @@ export function Footer() {
           <p className="text-xs text-subtle">
             © {new Date().getFullYear()} {site.name}
           </p>
+          <nav aria-label="Legal" className="flex gap-4 text-xs text-subtle">
+            <Link href="/terms" className="underline-offset-4 hover:text-fg hover:underline">
+              Terms
+            </Link>
+            <Link href="/privacy" className="underline-offset-4 hover:text-fg hover:underline">
+              Privacy
+            </Link>
+          </nav>
         </div>
         <p className="max-w-md text-xs/5 text-subtle">{site.disclaimer}</p>
       </div>

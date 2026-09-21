@@ -35,12 +35,30 @@ possible.
   once per milestone, and only when the owner says so, following the release order
   in DECISIONS.md. There is no staging site: `dev` is pushed to GitHub as a backup
   and Vercel does not build it.
-- Make **one local commit at the end of each milestone. Never push** unless the
-  owner says "push".
+- Commit locally on `dev`, in checkpoints. **`main` gets one merge commit per
+  milestone** (`git merge --no-ff dev`). Never squash, never rebase pushed commits,
+  never force-push.
+- **The push rule (owner, 2026-09-21).** `dev` may be pushed after any checkpoint
+  commit without asking, because `dev` never deploys; it is the backup that is not on
+  the laptop. **`main` needs the owner's explicit "push" every time.** The repo is
+  public, so check the commits for env files, secrets and real addresses before
+  every push.
 - **Ask before adding any new external service.** The owner wants as few third
   parties as possible and will self-host later.
 - **Never ask for, print or log secrets or connection strings.** Only the owner
-  puts them in `.env.local` and in the host's settings.
+  puts them in `.env.local` and in the host's settings. `.claude/settings.json`
+  denies Claude Code's file tools every env file except `.env.example`, and the email
+  outbox (`.outbox/`): keep those rules, and never work around them with a shell
+  command or a script.
+- **There is ONE database, shared by the laptop and the live site. Treat
+  `.env.local` as production.** Never run `drizzle-kit push`. Never drop or
+  truncate, and never delete rows except through the documented commands (the daily
+  purge, the test-account cleanup, the revoke-sessions runbook). Migrations are
+  additive and go through `npm run db:migrate` only,
+  which the owner runs in a terminal (it needs a typed confirmation and a backup
+  from the last hour). Tests use PGlite and never read `DATABASE_URL`. Never
+  connect to the real database to try something out. The rules and the reasons are
+  in DECISIONS.md under "One shared database".
 - Items under "Design for later, do NOT build now" in the brief get schema room
   or a placeholder only.
 - Update the status table below when a milestone is finished.
@@ -48,7 +66,7 @@ possible.
 | #   | Milestone                                                | Status               |
 | --- | -------------------------------------------------------- | -------------------- |
 | 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel |
-| 2   | Auth                                                     | Not started          |
+| 2   | Auth                                                     | Tested, releasing    |
 | 3   | Onboarding                                               | Not started          |
 | 4   | Dashboard and settings                                   | Not started          |
 | 5   | Phone and 2FA                                            | Not started          |
@@ -57,10 +75,17 @@ possible.
 | 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started          |
 | 9   | Brain export for the owner's Obsidian vault              | Not started          |
 
+**After milestone 2 is live, the dashboard shell comes before milestone 3** (owner,
+2026-09-21): the first part of milestone 4, pulled forward. DECISIONS.md has it under
+"The landing page is ZeroCorps's, and the dashboard shell comes next". Plan first.
+
+**A milestone in progress: read "Where milestone 2 stands" in DECISIONS.md first.**
+It says what is done, what is waiting on the owner and what is left to build.
+
 Deployment, environments, DNS and the release checklist are described in
-DECISIONS.md. A push to `main` deploys to production, so never push without being
-asked. `SIGNUPS_OPEN` is a server-side kill switch; only the owner changes it in
-production.
+DECISIONS.md. A push to `main` deploys to production, so never push `main` without
+being asked. `SIGNUP_MODE` (`closed`, `allowlist`, `open`) is a server-side kill switch;
+only the owner changes it in production.
 
 ## Hard rules (from the brief; never trade these away)
 
@@ -106,14 +131,34 @@ production.
 - **Theme**: `data-theme` on `<html>`, dark by default, saved in the `zc-theme`
   cookie and applied by an inline script before first paint. Do not read that
   cookie in a layout on the server: it would make every page dynamic.
-- **Environment variables** are declared in `src/env.ts` and listed in
-  `.env.example`. A test fails if the two lists differ. A key becomes required in
+- **Environment variables** are declared in `src/env-schema.ts` (parsed once by
+  `src/env.ts`) and listed in `.env.example`. A test fails if the two lists differ. A key becomes required in
   the milestone that first needs it. Import `env` instead of reading `process.env`.
 - **Security headers** come from `src/lib/security-headers.ts`. Add new CSP
   origins there and nowhere else.
 - **Links are type-checked** (`typedRoutes`). Wrap `next/link` the way
   `ButtonLink` does.
-- **Tests** sit next to the code as `*.test.ts` and run with Vitest.
+- **Tests** sit next to the code as `*.test.ts` and run with Vitest. Anything that
+  needs a database uses `createTestDatabase()` from `src/test/test-database.ts`: a
+  Postgres inside the test process, built from the real files in `drizzle/`. Tests
+  never import `@/env`, the real database client or the `postgres` driver; a test
+  fails if one does.
+- **The database schema** is `src/db/schema.ts`. A change is proven in the tests
+  first, then turned into SQL with `npm run db:generate` (offline). Every new table
+  needs `appAccess()` in its definition, which adds row-level security and the policy
+  for `zerocorps_app`; a test fails without it. A migration can never be undone, so
+  read the generated SQL before committing it.
+- **The database connection is pinned and fails closed.** Every `postgres()` call uses
+  `ssl: databaseTls()` from `src/lib/db-ca.ts`, which trusts only the certificates in
+  that list. Never add an unverified mode, not even for diagnosis; a test fails if one
+  appears. The rotation runbook is in docs/SECURITY.md.
+- **Auth is built by `createAuth(deps)`** in `src/lib/auth/create-auth.ts`, which
+  takes everything as arguments and reads no environment variable, so tests run the
+  real configuration.
+- **The owner's command-line tools** live in `scripts/` as `.mjs` files that load
+  tested TypeScript modules from `src/lib/` directly (Node strips the types). Those
+  modules must import with explicit `.ts` extensions and never use the `@/` alias.
+  The tools never print a value from `.env.local`.
 - Copy on the marketing pages is placeholder text for the owner to edit.
 
 ## Commands
@@ -126,7 +171,31 @@ npm run lint
 npm run test
 npm run format      # prettier --write
 npm run verify      # headless-browser checks and screenshots (start a server first)
+
+npm run env:check          # which keys in .env.local are filled, blank or malformed (names only)
+npm run env:secrets        # fills the BLANK secrets in .env.local; never shows a value
+npm run env:app-url        # builds DATABASE_URL from the proven migrations URL (-- --ask
+                           # prompts for the role password); nobody hand-edits a URL
+npm run db:check           # tests both database URLs, verified against the pinned CA: PASS or
+                           # the kind of failure, and the days each pinned certificate has left
+npm run db:generate        # schema change -> SQL file in drizzle/ (offline; read the SQL)
+npm run db:check-role      # proves zerocorps_app cannot create, alter or drop (read-only)
+npm run db:counts          # rows per table, counts only (read-only); `users` is the live site's too
+
+# Owner only. These need a person at a terminal and refuse to run otherwise:
+npm run env:handoff        # carries values to the host's settings on the CLIPBOARD, one at a
+                           # time, never shown: three NEW secrets, and the app's DATABASE_URL
+                           # (refused unless its role is zerocorps_app)
+npm run db:backup          # encrypted backup, verified by decrypting it again
+npm run db:restore:check   # restores the newest backup into a throwaway Postgres
+npm run db:migrate         # the ONLY way to change the schema: host + pending list,
+                           # backup from the last hour required, typed confirmation
+npm run db:cleanup-test-accounts   # deletes the accounts of the addresses in EMAIL_ALLOWLIST
+npm run sessions:revoke-all        # signs everyone out (runbook in docs/SECURITY.md)
 ```
+
+`npm run check` and `next dev` validate `.env.local` on start. If it is incomplete,
+the message names the keys; `npm run env:check` explains each one.
 
 `npm run verify` drives the real app in headless Edge. Run it at the end of every
 milestone and look at the screenshots in `.verify/`. The `verify-site` skill in

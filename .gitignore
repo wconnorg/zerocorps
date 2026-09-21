@@ -24,6 +24,14 @@
 *.pem
 *.key
 
+# encrypted database backups (npm run db:backup). Encrypted or not, they hold
+# members' data and never belong in a public repository.
+/backups/
+*.zcbak
+
+# emails written to disk instead of being sent, on the laptop only
+/.outbox/
+
 # debug logs
 npm-debug.log*
 yarn-debug.log*
