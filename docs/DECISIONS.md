@@ -884,6 +884,17 @@ step by the same number.
    until the owner has looked at the site in a normal browser and at the Firewall tab.
    The owner's real sign-up, `npm run verify` against the live site, and the
    milestone's "Done" all wait on that.
+   **The owner's real sign-up on zerocorps.org worked the same day**, in `allowlist`
+   mode, in a normal browser: the site loads for real visitors, Resend delivered the
+   code to a real mailbox, the pinned database connection works from Vercel, and the
+   Production variables are right. `npm run db:counts` then showed exactly 1 user, 1
+   account, 1 session, 1 known device and no sign-up left waiting. It was not timed.
+   **Still open:** Vercel keeps challenging every automated client (checked again after
+   the sign-up), so `npm run verify` against the live site has not run. The same pages
+   passed all 79 checks on the production build on the laptop. The owner is to look at
+   the project's Firewall tab (Attack Challenge Mode, Bot Protection). It matters later
+   too: Agent Zero's calls to the internal API (milestone 8) are automated traffic, and
+   the first run of the daily cleanup cron should be confirmed.
 9. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
    AGENTS.md, and refresh Discord's cached link preview by sharing the link with `?v=2`.
 10. **Before anyone but the owner is invited:** Proton is restored (DNS checklist 1), a

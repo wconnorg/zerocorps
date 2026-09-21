@@ -63,24 +63,26 @@ possible.
   or a placeholder only.
 - Update the status table below when a milestone is finished.
 
-| #   | Milestone                                                | Status               |
-| --- | -------------------------------------------------------- | -------------------- |
-| 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel |
-| 2   | Auth                                                     | Tested, releasing    |
-| 3   | Onboarding                                               | Not started          |
-| 4   | Dashboard and settings                                   | Not started          |
-| 5   | Phone and 2FA                                            | Not started          |
-| 6   | Discord link and unlink                                  | Not started          |
-| 7   | Academy: MDX lessons, progress, rank, heatmap            | Not started          |
-| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started          |
-| 9   | Brain export for the owner's Obsidian vault              | Not started          |
+| #   | Milestone                                                | Status                |
+| --- | -------------------------------------------------------- | --------------------- |
+| 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel  |
+| 2   | Auth                                                     | Live since 2026-09-21 |
+| 3   | Onboarding                                               | Not started           |
+| 4   | Dashboard and settings                                   | Not started           |
+| 5   | Phone and 2FA                                            | Not started           |
+| 6   | Discord link and unlink                                  | Not started           |
+| 7   | Academy: MDX lessons, progress, rank, heatmap            | Not started           |
+| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started           |
+| 9   | Brain export for the owner's Obsidian vault              | Not started           |
 
 **After milestone 2 is live, the dashboard shell comes before milestone 3** (owner,
 2026-09-21): the first part of milestone 4, pulled forward. DECISIONS.md has it under
 "The landing page is ZeroCorps's, and the dashboard shell comes next". Plan first.
 
-**A milestone in progress: read "Where milestone 2 stands" in DECISIONS.md first.**
-It says what is done, what is waiting on the owner and what is left to build.
+**Read "Where milestone 2 stands" in DECISIONS.md first.** Milestone 2 is live and the
+owner's real sign-up worked. It lists what is still open from the release: the backup
+after that sign-up, Vercel challenging automated requests (so `npm run verify` has not
+run against the live site), and the gates before anyone else is invited.
 
 Deployment, environments, DNS and the release checklist are described in
 DECISIONS.md. A push to `main` deploys to production, so never push `main` without
