@@ -27,6 +27,7 @@
     "db:restore:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-restore-check.mjs",
     "db:migrate": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-migrate.mjs",
     "db:check-role": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-check-role.mjs",
+    "db:counts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-counts.mjs",
     "db:cleanup-test-accounts": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/db-cleanup-test-accounts.mjs",
     "sessions:revoke-all": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sessions-revoke-all.mjs"
   },

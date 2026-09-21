@@ -3,9 +3,13 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDatabase, type TestDatabase } from "../../test/test-database.ts";
 import { decryptBackup, encryptBackup } from "../backup/format.ts";
 import { dumpDatabase, readDumpSummary, restoreDatabase, type Query } from "../backup/dump.ts";
+import { countRows } from "./counts.ts";
 import { parseJournal, pendingMigrations } from "./migrations.ts";
 import { checkAppRole } from "./role-check.ts";
 import { PGlite } from "@electric-sql/pglite";
+import { getTableName, is } from "drizzle-orm";
+import { PgTable } from "drizzle-orm/pg-core";
+import * as schema from "../../db/schema.ts";
 
 /**
  * The owner's database commands, proven on a Postgres inside this process. None of
@@ -268,6 +272,60 @@ describe("db:check-role", () => {
         ALTER TABLE public.verifications ENABLE ROW LEVEL SECURITY;
         DROP TABLE public.zz_no_policy;
       `);
+    }
+  }, 60_000);
+});
+
+describe("db:counts", () => {
+  it("counts every table of the schema as zerocorps_app, and returns names and numbers only", async () => {
+    const counts = await source.asAppRole(() => countRows(queryOf(source.client)));
+
+    const schemaTables = Object.values(schema)
+      .flatMap((value) => (is(value, PgTable) ? [getTableName(value)] : []))
+      .sort();
+    expect(counts.map((entry) => entry.table)).toEqual(schemaTables);
+
+    expect(Object.fromEntries(counts.map((entry) => [entry.table, entry.rows]))).toEqual({
+      abuse_counters: 1,
+      accounts: 1,
+      auth_events: 2,
+      known_devices: 1,
+      pending_signups: 2,
+      rate_limits: 1,
+      sessions: 1,
+      users: 2,
+      verifications: 0,
+    });
+    for (const entry of counts) expect(Object.keys(entry).sort()).toEqual(["rows", "table"]);
+    expect(JSON.stringify(counts)).not.toMatch(/example\.com|1111|token-one/);
+  }, 60_000);
+
+  it("reports a table the role may not read, without attempting it", async () => {
+    // New tables are granted to the app role by default, so the right is taken away again.
+    await source.client.exec(`
+      CREATE TABLE public.zz_private (id integer);
+      REVOKE ALL ON public.zz_private FROM zerocorps_app;
+    `);
+    try {
+      const counts = await source.asAppRole(() => countRows(queryOf(source.client)));
+      expect(counts.find((entry) => entry.table === "zz_private")).toEqual({
+        table: "zz_private",
+        rows: null,
+      });
+      expect(counts.find((entry) => entry.table === "users")?.rows).toBe(2);
+    } finally {
+      await source.client.exec("DROP TABLE public.zz_private");
+    }
+  }, 60_000);
+
+  it("refuses to count anything when a table name is not a plain identifier", async () => {
+    await source.client.exec('CREATE TABLE public."zz; DROP TABLE users; --" (id integer)');
+    try {
+      await expect(countRows(queryOf(source.client))).rejects.toThrow(/unexpected name/);
+      const { rows } = await source.client.query("SELECT count(*)::int AS n FROM users");
+      expect(rows[0]).toEqual({ n: 2 });
+    } finally {
+      await source.client.exec('DROP TABLE public."zz; DROP TABLE users; --"');
     }
   }, 60_000);
 });

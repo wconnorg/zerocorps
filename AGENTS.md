@@ -171,6 +171,7 @@ npm run env:app-url        # builds DATABASE_URL from the proven migrations URL 
 npm run db:check           # tests both database URLs: PASS or the kind of failure (read-only)
 npm run db:generate        # schema change -> SQL file in drizzle/ (offline; read the SQL)
 npm run db:check-role      # proves zerocorps_app cannot create, alter or drop (read-only)
+npm run db:counts          # rows per table, counts only (read-only); `users` is the live site's too
 
 # Owner only. These need a person at a terminal and refuse to run otherwise:
 npm run db:backup          # encrypted backup, verified by decrypting it again

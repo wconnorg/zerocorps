@@ -692,6 +692,19 @@ confirmed all of them.
   closed and never fall back to an unverified link. If it turns into more than a small
   change, the work stops, the hosting ledger says so, and it becomes the first job after
   the release. It gets its own plan before any code.
+  - **The plan, approved the same day.** The certificate comes from the owner's own
+    Supabase dashboard. Both places that open a connection (`src/db/client.ts` and
+    `scripts/lib/database.mjs`) verify the chain and the host name against the pinned
+    certificates only, with no fallback; `db:check` stops retrying unverified. A guard
+    test fails if "encrypt, don't verify" comes back.
+  - **Two additions from the owner.** The pin is a LIST of certificates, so a rotation
+    is staged by adding the new one beside the old one before the old one is removed.
+    `db:check` and `npm run check` warn loudly when a pinned certificate has under 90
+    days left, and fail only when one has expired. SECURITY.md gets the runbook
+    "database connections fail after Supabase rotates its CA" and a ledger line that
+    the pin is ours to maintain, on Vercel and after the move to self-hosting.
+  - The owner's real sign-up on the live site is what proves the verified connection
+    works from Vercel. The rollback is Vercel's previous deployment.
 - **`PRIVACY_CONTACT` is a `@zerocorps.org` address.** The variable takes the `mailto:`
   form. The address goes into Vercel only, never into this repository or into chat.
 - **The "working contact channel" gate for `PRIVACY_CONTACT` moves from the release to
@@ -722,8 +735,9 @@ docs. `dev` is pushed to GitHub as a backup and is not built by Vercel.
   real database on 2026-09-20 after an encrypted backup and a passing restore drill.
   The app connects as `zerocorps_app`, and `npm run db:check-role` passed every line
   with nothing to review. The guarded commands are `db:check`, `db:backup`,
-  `db:restore:check`, `db:migrate`, `db:check-role`, `db:cleanup-test-accounts` and
-  `sessions:revoke-all`; the ones that change anything need a person at a terminal.
+  `db:restore:check`, `db:migrate`, `db:check-role`, `db:counts`,
+  `db:cleanup-test-accounts` and `sessions:revoke-all`; the ones that change anything
+  need a person at a terminal.
 - **Sign-up by emailed code** (`src/lib/auth/email-code-signup.ts`), a local Better
   Auth plugin, with the attack tests the owner specified, the atomicity test, both
   cross-site tests, and `SIGNUP_MODE` enforced at the start and at the code check. A
@@ -753,7 +767,14 @@ step by the same number.
    by lookup (2026-09-20, repeated 2026-09-21), the single `_dmarc` record at `p=none`,
    and Resend's dashboard showing the domain as verified (2026-09-21).
 2. `npm run db:cleanup-test-accounts`, so the owner's test addresses are free again on
-   the live site.
+   the live site. **Run on 2026-09-21: it removed nothing**, because the one address in
+   `EMAIL_ALLOWLIST` had no account, no waiting sign-up, no events and no counters. The
+   owner did test sign-ups on 2026-09-20, so either the cleanup had already been run or
+   the test used another address. **`npm run db:counts` settles it** (built the same
+   day: rows per table, counts only, read-only, as `zerocorps_app`). `users` must be 0
+   before the release and exactly 1 after the owner's real sign-up. If it is not 0, the
+   owner adds the address they tested with to `EMAIL_ALLOWLIST` and runs the cleanup
+   again.
 3. The Resend API key: sending access only, restricted to `zerocorps.org`, pasted
    straight into Vercel as `RESEND_API_KEY` (Production, sensitive). Never into chat.
 4. GitHub: Dependabot alerts, secret scanning with push protection, private
@@ -771,7 +792,10 @@ step by the same number.
 6. `npm run db:backup`, then `npm run db:restore:check` ("migrations applied: 3").
 7. The owner reads `/terms` and `/privacy`.
 8. `git merge --no-ff dev` on `main`; push on the owner's word; `npm run verify`
-   against the live site; the owner's real sign-up in `allowlist` mode, timed.
+   against the live site; the owner's real sign-up in `allowlist` mode, timed. That
+   sign-up is also the proof that the verified database connection works from Vercel;
+   if it fails, the rollback is Vercel's previous deployment. `npm run db:counts` then
+   shows exactly 1 in `users`.
 9. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
    AGENTS.md, and refresh Discord's cached link preview by sharing the link with `?v=2`.
 10. **Before anyone but the owner is invited:** Proton is restored (DNS checklist 1), a
