@@ -718,6 +718,21 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
   one tile, "Academy", and a profile icon at the top right (the grey default avatar)
   that opens a small menu. Until profile and settings exist, the menu holds only "Sign
   out". More tiles come later (the trading journal, for one).
+  - **Built on `dev` on 2026-09-21, after the release, on the owner's word** ("proceed
+    with functionality"). **The Academy tile says "Coming soon" and is not a link**
+    (owner, the same day): there are no lessons until milestone 7, and the public
+    `/academy` page would ask a signed-in member to sign up. The tile is labelled
+    "ZeroCorps Academy" and reuses the public page's one line; no new copy. The header
+    of the signed-in area gains the profile button (the grey default picture) whose
+    menu holds "Sign out"; the standalone sign-out button it replaced is gone. No
+    library was added: the menu is a small disclosure menu (Escape, a click outside or
+    focus leaving closes it). Tests render the dashboard and the menu from plain values,
+    so nothing signs in to the one shared database. **The owner's testing on the laptop
+    comes before it is released.**
+  - **The order after it, agreed the same day:** the username step (one additive
+    migration, forced after the first sign-in), then profile-picture upload, which needs
+    file storage and is decided when it is reached. Everyone has the grey default
+    picture until then, as the brief says.
   - **What this does to the brief's order.** The brief has onboarding as milestone 3 and
     "dashboard with the Academy tile and the profile menu, plus the settings pages" as
     milestone 4. The shell is the first part of milestone 4, pulled ahead of milestone 3. Milestone 3 is unchanged and follows it: once it lands, a first sign-in is sent
