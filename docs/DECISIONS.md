@@ -784,6 +784,32 @@ owner watching the laptop's dev server and answering as it changed. Not released
   hot reload ("you lost the colour scheme"). Changes that belong together should land
   together, and the owner should be told when a state is ready to judge.
 
+### Released on 2026-09-21: the home page, the dashboard shell and the Academy's page
+
+On the owner's word ("looks good", "push all changes to the live website"), `dev` was
+merged into `main` as one `--no-ff` merge commit, `bbd5269`, made without switching the
+working folder off `dev`, and `main` was pushed. GitHub recorded Vercel's production
+deployment of it as a success. **No database change was in this release.**
+
+What went live: the ZeroCorps home page (the turning product wheel, the products row, the
+centred header, the white header logo), the dashboard shell (three product tiles, the
+profile button with "Sign out"), `/academy` as a black "coming soon" page, the `?next=`
+fix, the guarded test-account cleanup and `npm run env:handoff`.
+
+Proven before the merge, on a quiet laptop: typecheck, lint, **207 tests** and the
+production build; then **86 browser checks** against that production build, including the
+wheel turning by itself, holding still under reduced motion, a side click bringing a tile
+forward, `/academy` black in both themes, and sign-in offering "Create an account".
+
+**A first attempt at the full check died of memory pressure** (the owner's dev server, a
+backup and the check at once) and reported a crashed worker and a timed-out test. Nothing
+was wrong with the code, and it passed on the second run with the laptop quiet. **Only one
+heavy thing runs on this laptop at a time.**
+
+**The first backup holding a real account** was taken by the owner the same day, and
+verified by decrypting it again: 1 user, 1 account, 6 auth events, migrations applied 3.
+The restore drill (`npm run db:restore:check`) is still to run.
+
 ### The dashboard's look, decided by the owner while watching it live (2026-09-21)
 
 - **Three equal tiles, one above the other:** ZeroCorps Academy, then ZeroBot, then
