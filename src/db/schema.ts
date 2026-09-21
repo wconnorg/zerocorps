@@ -61,6 +61,21 @@ export const users = pgTable(
     /** Always stored trimmed and lower-cased; see `normalizeEmail`. */
     email: text("email").notNull(),
     emailVerified: boolean("email_verified").notNull().default(false),
+    /**
+     * The name other members see, unique without regard to case. NULL until onboarding
+     * asks for it, which is what sends a member there. Always stored lower-cased and
+     * trimmed; the rules and the reserved words are in `src/lib/username.ts`, and a test
+     * proves the pattern below is the same one.
+     */
+    username: text("username"),
+    /**
+     * The name this member had before their last change, HELD so nobody else can take it
+     * and pass themselves off as them. It is free again once the hold has run out; the
+     * daily cleanup clears it then. NULL for a member who has never changed their name.
+     */
+    previousUsername: text("previous_username"),
+    /** When the name last changed. Together with the column above it says what is held. */
+    usernameChangedAt: instant("username_changed_at"),
     /** Better Auth's `name`. Empty until onboarding asks for it. */
     displayName: text("display_name").notNull().default(""),
     /** Better Auth's `image`. Holds the storage object key, never a full URL. */
@@ -73,6 +88,24 @@ export const users = pgTable(
   (table) => [
     uniqueIndex("users_email_unique").on(table.email),
     check("users_email_normalised", sql`${table.email} = lower(btrim(${table.email}))`),
+    // Postgres lets a unique index hold many NULLs, so every member without a name yet
+    // sits here happily, and the first one to claim a name wins it. THIS is the guard
+    // against two people taking one name: not the check in the browser, and not the one
+    // on the server, both of which can be raced.
+    uniqueIndex("users_username_unique").on(table.username),
+    check(
+      "users_username_shape",
+      sql`${table.username} IS NULL OR ${table.username} ~ '^[a-z0-9_]{3,20}$'`,
+    ),
+    check(
+      "users_previous_username_shape",
+      sql`${table.previousUsername} IS NULL OR ${table.previousUsername} ~ '^[a-z0-9_]{3,20}$'`,
+    ),
+    // A held name means nothing without the moment it started being held.
+    check(
+      "users_previous_username_dated",
+      sql`${table.previousUsername} IS NULL OR ${table.usernameChangedAt} IS NOT NULL`,
+    ),
     appAccess(),
   ],
 );

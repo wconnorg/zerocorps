@@ -1,4 +1,4 @@
-import { lt, sql } from "drizzle-orm";
+import { and, isNotNull, lt, lte, sql } from "drizzle-orm";
 import {
   abuseCounters,
   authEvents,
@@ -6,16 +6,21 @@ import {
   pendingSignups,
   rateLimits,
   sessions,
+  users,
   verifications,
 } from "../../db/schema.ts";
 import type { AuthDatabase } from "./create-auth.ts";
+import { HOLD_DAYS } from "./username-claim.ts";
 
 /**
  * The daily cleanup. Everything here has simply run out: nothing a member could still
  * use is ever removed. It also keeps the database active, which matters while it is on
  * a plan that pauses idle projects.
  *
- * These are the only routine deletes in the app, and they run as `zerocorps_app`.
+ * These are the only routine deletes in the app, and they run as `zerocorps_app`. One
+ * entry is not a delete: it lets go of a username somebody left, once the hold on it has
+ * run out. That is tidying rather than rule-keeping, because a name's hold is worked out
+ * from the date it changed, so it ends on time whether or not this has run.
  */
 
 export const EVENT_RETENTION_DAYS = 90;
@@ -29,7 +34,8 @@ export type CleanupResult = Record<
   | "rateLimits"
   | "abuseCounters"
   | "authEvents"
-  | "knownDevices",
+  | "knownDevices"
+  | "usernameHolds",
   number
 >;
 
@@ -89,6 +95,18 @@ export async function runCleanup(db: AuthDatabase): Promise<CleanupResult> {
           ),
         )
         .returning({ id: knownDevices.id }),
+    ),
+    usernameHolds: await removed(
+      db
+        .update(users)
+        .set({ previousUsername: null })
+        .where(
+          and(
+            isNotNull(users.previousUsername),
+            lte(users.usernameChangedAt, sql`now() - make_interval(days => ${HOLD_DAYS})`),
+          ),
+        )
+        .returning({ id: users.id }),
     ),
   };
 }

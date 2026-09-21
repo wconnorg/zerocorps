@@ -105,7 +105,11 @@ describe("backup: dump, encrypt, decrypt, restore", () => {
       ["public.users", 2],
       ["public.verifications", 0],
     ]);
-    expect(summary.migrations).toHaveLength(3);
+    // Every migration in the journal, however many there are: adding one must not break
+    // this test, only a backup that failed to record what had been applied.
+    expect(summary.migrations).toHaveLength(
+      parseJournal(readFileSync("drizzle/meta/_journal.json", "utf8")).length,
+    );
 
     const file = encryptBackup(Buffer.from(text, "utf8"), "a long test passphrase", {
       createdAt: summary.createdAt,

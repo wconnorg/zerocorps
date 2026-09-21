@@ -784,7 +784,7 @@ owner watching the laptop's dev server and answering as it changed. Not released
   hot reload ("you lost the colour scheme"). Changes that belong together should land
   together, and the owner should be told when a state is ready to judge.
 
-### The username step: the owner's answers (2026-09-21). NOT built yet
+### The username step: the owner's answers (2026-09-21)
 
 - **A username can be changed from the start.** This goes further than the brief, which
   puts "username change" in the settings of milestone 4. So the change needs somewhere to
@@ -798,6 +798,52 @@ owner watching the laptop's dev server and answering as it changed. Not released
   one name at the same moment must end in "just taken", never an error page).
 - Better Auth's own username plugin is still NOT used: it registers a username sign-in
   route, which breaks hard rule 1. A small local plugin is used instead, as for sign-up.
+
+### The username step, part one: the rules and the database (2026-09-21)
+
+Built on `dev`. **The migration is written but NOT applied**, and there is no screen yet:
+the endpoints and the pages are part two.
+
+- **`src/lib/username.ts`** holds what a name may be, in one place, used by the browser as
+  it is typed, by the server when it is claimed, and by the database constraint. The
+  narrow alphabet (`a-z 0-9 _`) is itself a security control: with no Unicode nobody can
+  register a name that merely LOOKS like someone else's, which is how impersonation
+  usually starts. The reserved list covers the brand, the people who run it and the site's
+  own words, and it ignores underscores, so `a_d_m_i_n` is refused with `admin`. A test
+  refuses any reserved word too short to be a name anyway; it found one (`me`) at once.
+- **`src/lib/display-name.ts`** guards the free-text name. It refuses direction overrides
+  and zero-width characters, which are invisible and can make one member appear to be
+  another, and it tidies spacing so " Jane Doe " and "Jane Doe" cannot sit side by side
+  as two members. Real names in any language are kept.
+- **The migration `0003_usernames` adds three nullable columns to `users`**
+  (`username`, `previous_username`, `username_changed_at`), a unique index and three CHECK
+  constraints. Nothing is dropped or rewritten, and on a table of one member every step is
+  instant. The display name needed no column.
+- **`src/lib/auth/username-claim.ts`** claims and changes names. **The unique index is what
+  decides that two people cannot share a name**, not the check in the browser and not the
+  one on the server: both can be true for two people at the same instant, so the write is
+  attempted and a unique violation is read as "taken". A test drives a clashing write
+  straight past every check to prove the index is what refuses it, and another proves the
+  CHECK refuses a badly shaped name the same way.
+- **A name somebody leaves is held for 30 days**, so nobody can pick it up and be mistaken
+  for them. The hold is worked out from the date, so it ends on time whether or not
+  anything has tidied it; the daily cleanup lets go of the ones that have run out, which
+  is also the only entry there that is not a delete.
+- **The first change is free, then there is a 30-day wait.** Someone who mistypes their
+  name at onboarding can put it right; after that a name cannot churn. The row is locked
+  while the wait is judged, so two requests at once cannot both pass it.
+
+### No source file may contain a character that cannot be seen (2026-09-21)
+
+`src/test/no-hidden-characters.test.ts` refuses a direction override or a zero-width
+character anywhere in `src/` or `scripts/`. A direction override reverses how the rest of
+a line is drawn, so a reviewer can be shown one thing while the computer runs another;
+that is the "Trojan Source" trick, and this repository is public, so what a reader sees
+must be what runs. Escapes such as `​` are fine and are what the rules above use.
+
+It was written because it happened: the display-name tests were first written with real
+invisible characters instead of escapes, and the guard then found a second one in the
+username tests that had gone unnoticed.
 
 ### The Academy tile is the way IN, and slow tests no longer read as failures (2026-09-21)
 
