@@ -1,8 +1,6 @@
-import { ActivityPreview } from "@/components/marketing/activity-preview";
 import { ProgressChart } from "@/components/marketing/progress-chart";
 import { BrandName } from "@/components/site/wordmark";
 import { ButtonLink } from "@/components/ui/button";
-import { site } from "@/config/site";
 
 // Placeholder copy throughout: edit freely.
 
@@ -59,11 +57,12 @@ export default function HomePage() {
 
         <div className="relative mx-auto grid w-full max-w-6xl items-center gap-14 px-6 pt-20 pb-24 lg:grid-cols-[1.05fr_1fr] lg:gap-12 lg:pt-28 lg:pb-32">
           <div>
-            <p className="font-mono text-xs tracking-[0.22em] text-muted">
-              <BrandName uppercase /> ACADEMY
-            </p>
-            <figure className="mt-6">
-              <blockquote className="text-5xl/[1.05] font-semibold tracking-tight text-balance sm:text-7xl/[1.02]">
+            {/* This is the ZeroCorps page. The Academy is one product under it, below. */}
+            <h1 className="text-5xl/[1.05] font-semibold tracking-tight sm:text-7xl/[1.02]">
+              <BrandName uppercase />
+            </h1>
+            <figure className="mt-8 max-w-xl">
+              <blockquote className="text-lg/8 text-pretty text-muted">
                 <span aria-hidden="true" className="text-accent">
                   &ldquo;
                 </span>
@@ -72,13 +71,15 @@ export default function HomePage() {
                   &rdquo;
                 </span>
               </blockquote>
-              <figcaption className="mt-5 font-mono text-sm tracking-[0.22em] text-subtle">
-                &mdash; J. B. D.
+              <figcaption className="mt-2 font-mono text-sm tracking-[0.22em] text-subtle">
+                &mdash; J.B.
               </figcaption>
             </figure>
-            <p className="mt-8 max-w-xl text-lg/8 text-pretty text-muted">{site.description}</p>
             <div className="mt-10">
-              <AcademyCta />
+              <ButtonLink href="/dashboard" size="lg" prefetch={false}>
+                Enter the dashboard
+                <ArrowRight />
+              </ButtonLink>
             </div>
           </div>
 
@@ -86,9 +87,11 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* The one Academy section on this page. Everything else about it lives on /academy. */}
       <section className="border-t border-line">
         <div className="mx-auto w-full max-w-6xl px-6 py-20 lg:py-24">
-          <h2 className="max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
+          <p className="font-mono text-xs tracking-[0.22em] text-accent">ACADEMY</p>
+          <h2 className="mt-5 max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
             Built like a curriculum, not a feed.
           </h2>
           <div className="mt-12 grid gap-px overflow-hidden rounded-2xl border border-line bg-line md:grid-cols-3">
@@ -100,21 +103,9 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="border-t border-line">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-24">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              See your consistency.
-            </h2>
-            <p className="mt-5 max-w-md text-base/7 text-muted">
-              A daily activity calendar shows when you studied, next to your current rank and how
-              far you are from the next one.
-            </p>
+          <div className="mt-10">
+            <AcademyCta />
           </div>
-          <ActivityPreview />
         </div>
       </section>
     </>

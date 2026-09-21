@@ -75,6 +75,10 @@ possible.
 | 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started          |
 | 9   | Brain export for the owner's Obsidian vault              | Not started          |
 
+**After milestone 2 is live, the dashboard shell comes before milestone 3** (owner,
+2026-09-21): the first part of milestone 4, pulled forward. DECISIONS.md has it under
+"The landing page is ZeroCorps's, and the dashboard shell comes next". Plan first.
+
 **A milestone in progress: read "Where milestone 2 stands" in DECISIONS.md first.**
 It says what is done, what is waiting on the owner and what is left to build.
 

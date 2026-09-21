@@ -36,6 +36,11 @@ type ButtonLinkProps<T extends string> = {
   variant?: Variant;
   size?: Size;
   className?: string;
+  /**
+   * Pass `false` for a link to a protected page. A signed-out visitor's browser would
+   * otherwise pre-load it, be redirected to sign-in, and abort: a wasted request.
+   */
+  prefetch?: boolean;
   children: ReactNode;
 };
 
@@ -45,10 +50,11 @@ export function ButtonLink<T extends string>({
   variant,
   size,
   className,
+  prefetch,
   children,
 }: ButtonLinkProps<T>) {
   return (
-    <Link href={href} className={buttonClasses({ variant, size, className })}>
+    <Link href={href} prefetch={prefetch} className={buttonClasses({ variant, size, className })}>
       {children}
     </Link>
   );

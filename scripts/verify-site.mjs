@@ -143,11 +143,19 @@ function watch(page, tag) {
   const otherLinks = await page.evaluate(() =>
     [...document.querySelectorAll("main a")]
       .map((anchor) => anchor.getAttribute("href"))
-      .filter((href) => href !== "/academy"),
+      .filter((href) => href !== "/academy" && href !== "/dashboard"),
   );
   note(
     otherLinks.length === 0,
-    `every link in the home page body goes to /academy (others: ${JSON.stringify(otherLinks)})`,
+    `every link in the home page body goes to /dashboard or /academy (others: ${JSON.stringify(otherLinks)})`,
+  );
+  note(
+    (await page.getByRole("heading", { level: 1 }).textContent())?.trim() === "ZEROCORPS",
+    "the home page's heading is the name, not the Academy's",
+  );
+  note(
+    await page.getByRole("link", { name: "Enter the dashboard" }).isVisible(),
+    'the hero button is "Enter the dashboard"',
   );
 
   await page.getByRole("link", { name: "Enter the Academy" }).first().click();

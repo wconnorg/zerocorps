@@ -575,7 +575,8 @@ entry here differs from one above, this one is newer and wins.
   `Wordmark` in `src/components/site/wordmark.tsx`).
 - **The landing page leads with the quotation "Forced evolution."**, credited by
   initials only, and one line: "We build trading solutions to empower the industry."
-  The closing "Start at zero" section was removed.
+  The closing "Start at zero" section was removed. _Changed on 2026-09-21: the name
+  leads and the quotation is small; see "The landing page is ZeroCorps's" below._
 - **Link previews carry the logo.** `src/app/opengraph-image.png` and `twitter-image.png`
   (1200 by 630, generated from the mark) with the `summary_large_image` card, so Discord,
   iMessage, WhatsApp and Android Messages show it. It appears once `dev` is released;
@@ -671,6 +672,40 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
   laptop also works on the live site until it expires. Proven with a dummy file. The
   site, the tests and `npm run verify` read the outbox from inside Node and are
   unaffected.
+
+### The landing page is ZeroCorps's, and the dashboard shell comes next (owner, 2026-09-21)
+
+- **The home page is the ZeroCorps page, not the Academy's.** The Academy is one product
+  under it. The hero's heading is the name (ZERO in the text colour, CORPS in red). Under
+  it, at the size the description line had, is the quotation "Forced evolution." with
+  the red quote marks, credited as "J.B." (two initials, replacing three). The hero no
+  longer shows "We build trading solutions to empower the industry."; that line stays in
+  `src/config/site.ts` as the search-result and link-preview description.
+- **The hero button is "Enter the dashboard"** and links to `/dashboard`. A signed-out
+  visitor is sent to sign-in and back, as before.
+- **The site title and the link-preview title are "ZeroCorps".** "ZeroCorps Academy"
+  stays on `/academy`.
+- **The Academy has ONE labelled section on the home page:** "Built like a curriculum,
+  not a feed." with its three pillars, under an ACADEMY label, with the "Enter the
+  Academy" button. "See your consistency." and its calendar preview moved to `/academy`
+  unchanged. No new marketing copy was written.
+- **The invite-only note on `/sign-up` links to the Discord** when `DISCORD_INVITE_URL`
+  is set ("No invitation yet? Join the Discord."), as the "closed" state already did.
+  During the private beta the Discord is where the owner sends people, so
+  `DISCORD_INVITE_URL` joins the Production variables at step 5.
+- **The dashboard shell is the first slice after the milestone 2 release, ahead of
+  onboarding. NOT built, and no code until milestone 2 is live and the owner has
+  approved a plan.** What a signed-in user lands on: a dashboard of tiles, starting with
+  one tile, "Academy", and a profile icon at the top right (the grey default avatar)
+  that opens a small menu. Until profile and settings exist, the menu holds only "Sign
+  out". More tiles come later (the trading journal, for one).
+  - **What this does to the brief's order.** The brief has onboarding as milestone 3 and
+    "dashboard with the Academy tile and the profile menu, plus the settings pages" as
+    milestone 4. The shell is the first part of milestone 4, pulled ahead of milestone 3. Milestone 3 is unchanged and follows it: once it lands, a first sign-in is sent
+    through `/onboarding` before reaching the dashboard, and the uploaded avatar takes
+    the grey default's place in the shell. Milestone 4 shrinks to the settings pages
+    and the menu's remaining entries (profile, settings). The shell needs no schema
+    change. Its Academy tile leads to `/academy` until milestone 7 builds the lessons.
 
 ### Release decisions by the owner (2026-09-21)
 
@@ -781,7 +816,8 @@ step by the same number.
    vulnerability reporting. The reporting page's URL becomes `SECURITY_CONTACT`.
 5. The Production variables in Vercel. Keep `NEXT_PUBLIC_APP_URL`. Add `APP_ENV`,
    `SIGNUP_MODE=allowlist`, `SIGNUP_ALLOWLIST`, `DATABASE_URL` (the `zerocorps_app`
-   one), `RESEND_API_KEY`, `SECURITY_CONTACT`, `PRIVACY_CONTACT`, and three NEW values
+   one), `RESEND_API_KEY`, `SECURITY_CONTACT`, `PRIVACY_CONTACT`, `DISCORD_INVITE_URL`
+   (the public invite link, shown on the invite-only sign-up page), and three NEW values
    for `BETTER_AUTH_SECRET`, `HMAC_SECRET` and `CRON_SECRET` that differ from the
    laptop's and never appear in chat. **Never add** `DATABASE_URL_MIGRATIONS`,
    `BACKUP_DIR` or `EMAIL_ALLOWLIST`. Leave `EMAIL_FROM` and `TRUSTED_IP_HEADER` unset.

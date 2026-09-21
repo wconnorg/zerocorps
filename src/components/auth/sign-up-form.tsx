@@ -7,7 +7,14 @@ import { Button } from "@/components/ui/button";
 import { Field, FormMessage, PasswordField } from "@/components/ui/field";
 import { authFetch } from "@/lib/auth/auth-fetch";
 
-export function SignUpForm({ inviteOnly }: { inviteOnly: boolean }) {
+export function SignUpForm({
+  inviteOnly,
+  discordInviteUrl,
+}: {
+  inviteOnly: boolean;
+  /** Shown with the invite-only note: during the private beta, the Discord is the way in. */
+  discordInviteUrl?: string;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,6 +42,20 @@ export function SignUpForm({ inviteOnly }: { inviteOnly: boolean }) {
         <FormMessage tone="info">
           Private beta: sign-ups are open to invited addresses only. Use the address your invitation
           was sent to.
+          {discordInviteUrl ? (
+            <>
+              {" "}
+              No invitation yet?{" "}
+              <a
+                href={discordInviteUrl}
+                rel="noopener noreferrer"
+                className="text-fg underline underline-offset-4"
+              >
+                Join the Discord
+              </a>
+              .
+            </>
+          ) : null}
         </FormMessage>
       ) : null}
       <Field

@@ -48,7 +48,10 @@ export default function SignUpPage() {
         An email address and a password. We email you a 6-digit code to confirm the address, and
         nothing is created until you enter it.
       </p>
-      <SignUpForm inviteOnly={env.SIGNUP_MODE === "allowlist"} />
+      <SignUpForm
+        inviteOnly={env.SIGNUP_MODE === "allowlist"}
+        discordInviteUrl={env.DISCORD_INVITE_URL}
+      />
     </>
   );
 }
