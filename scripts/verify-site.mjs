@@ -192,14 +192,20 @@ let clickingAProtectedLink = false;
       `"${name}" sends a signed-out visitor to sign in, then back (${landed.pathname}${landed.search})`,
     );
   }
-  note(
-    await page.getByRole("link", { name: "Create an account" }).isVisible(),
-    "the sign-in page offers to create an account",
-  );
+  // The form reads ?next= from the address bar, so it appears a moment after the page does.
+  const offersSignUp = await page
+    .getByRole("link", { name: "Create an account" })
+    .waitFor({ state: "visible", timeout: 15000 })
+    .then(() => true)
+    .catch(() => false);
+  note(offersSignUp, "the sign-in page offers to create an account");
 
   // The public page about the Academy is reachable from the home page without an account.
   await page.goto(`${base}/`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: "Enter here: ZeroCorps Academy" }).first().click();
+  await page
+    .getByRole("link", { name: /Enter here.*ZeroCorps Academy/ })
+    .first()
+    .click();
   await page.waitForURL("**/academy");
   // Until the lessons exist: pitch black in BOTH themes, a red glow, and two small words.
   note(
