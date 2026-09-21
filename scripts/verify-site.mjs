@@ -199,7 +199,7 @@ let clickingAProtectedLink = false;
 
   // The public page about the Academy is reachable from the home page without an account.
   await page.goto(`${base}/`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: "Enter the ZeroCorps Academy page" }).first().click();
+  await page.getByRole("link", { name: "Enter here: ZeroCorps Academy" }).first().click();
   await page.waitForURL("**/academy");
   note(await page.getByRole("heading", { level: 1 }).isVisible(), "/academy shows its heading");
 

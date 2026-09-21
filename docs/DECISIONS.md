@@ -784,6 +784,26 @@ owner watching the laptop's dev server and answering as it changed. Not released
   hot reload ("you lost the colour scheme"). Changes that belong together should land
   together, and the owner should be told when a state is ready to judge.
 
+### The dashboard's look, decided by the owner while watching it live (2026-09-21)
+
+- **Three equal tiles, one above the other:** ZeroCorps Academy, then ZeroBot, then
+  ZeroCharts, in the same tones as the home page. They are the same tile component, in a
+  "row" layout for wide tiles: the words on the left and ONE action at the middle right.
+- **The action:** a red **"Enter here"** button on the Academy, which leads to `/academy`
+  (that page says "COMING SOON"); on ZeroBot and ZeroCharts, "COMING SOON" drawn as a
+  button that cannot be pressed. This replaces "the Academy tile is not a link". The
+  same red button is the Academy tile's way in on the home page too, where it replaced a
+  small text link.
+- **One heading**, light, in capitals and widely spaced, with a short red rule under it
+  (the owner saw "Dashboard" twice and asked for a sleeker title). The red wash from the
+  home page's hero sits behind the top of the page, and the signed-in area's header has
+  the same bar under it as the home page's.
+- **"Signed in as ..." stays on the dashboard** and is to show the USERNAME, not the
+  email address. There are no usernames until the next slice, so it shows the email
+  address until then. A label on the profile button instead was tried and reversed at
+  the owner's word within minutes.
+- The profile button and its menu ("Sign out") are as built; the owner approved them.
+
 ### The test-account cleanup can no longer delete a live account (2026-09-21)
 
 After the owner's real sign-up, the laptop's `EMAIL_ALLOWLIST` named the owner's REAL

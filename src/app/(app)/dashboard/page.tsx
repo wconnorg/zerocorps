@@ -19,5 +19,6 @@ export default async function DashboardPage() {
   if (state.status === "unavailable") return <Unavailable />;
   if (state.status === "signed-out") redirect("/sign-in?next=/dashboard");
 
-  return <DashboardView email={state.user.email} />;
+  // The username once usernames exist (the next slice); the email address until then.
+  return <DashboardView signedInAs={state.user.email} />;
 }

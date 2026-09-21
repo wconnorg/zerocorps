@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { ZeroMark } from "@/components/site/wordmark";
+import { buttonClasses } from "@/components/ui/button";
 
 /**
  * The three ZeroCorps products, and the face of a product tile. The turning wheel in the
@@ -72,6 +73,7 @@ export function ProductFace({
   linked = true,
   watermark = true,
   comingSoon,
+  layout = "column",
 }: {
   product: Product;
   heading: "h2" | "h3";
@@ -83,46 +85,88 @@ export function ProductFace({
    * somewhere. The dashboard says it for all three: a member cannot use any of them yet.
    */
   comingSoon?: boolean;
+  /**
+   * "column" (the narrow tiles of the wheel and of the home page): the status on top, the
+   * way in under the name. "row" (the dashboard's wide tiles, owner): the words on the left
+   * and ONE action at the middle right, which is either "COMING SOON", drawn as a button
+   * that cannot be pressed, or the red "Enter here" button, in the very same place.
+   */
+  layout?: "column" | "row";
 }) {
+  const soon = comingSoon ?? !product.href;
+
+  const surface = (
+    // A faint grid, scanlines, a wash of the tone, and the mark as a watermark.
+    <span aria-hidden="true" className="product-surface">
+      <span className="absolute inset-0 grid-fade opacity-70" />
+      <span className="absolute inset-0 scanlines" />
+      <span className="tone-glow absolute inset-0" />
+      {watermark ? <ZeroMark className="wheel-watermark tone-text absolute opacity-10" /> : null}
+    </span>
+  );
+
+  const words = (
+    <>
+      <ZeroMark className="tone-text size-7 sm:size-9" />
+      <Heading className="wheel-name mt-4 text-2xl/none font-semibold uppercase sm:text-4xl/none">
+        <span className="text-fg">Zero</span>
+        <span className="tone-text">{product.rest}</span>
+        {product.line ? <span className="wheel-name-line text-muted">{product.line}</span> : null}
+      </Heading>
+      {product.blurb ? <p className="mt-3 max-w-64 text-sm/6 text-muted">{product.blurb}</p> : null}
+    </>
+  );
+
+  // A red button (owner). Its ::after covers the whole tile, so the tile is the target.
+  const enter =
+    product.href && linked ? (
+      <Link
+        href={product.href}
+        className={buttonClasses({ className: "after:absolute after:inset-0" })}
+      >
+        Enter here
+        <Arrow />
+        <span className="sr-only">: {nameOf(product)}</span>
+      </Link>
+    ) : null;
+
+  const pulse = <span className="tone-bg size-1.5 animate-pulse motion-reduce:animate-none" />;
+
+  if (layout === "row") {
+    return (
+      <>
+        {surface}
+        <div className="product-content flex w-full flex-col items-start justify-between gap-6 sm:flex-row sm:items-center">
+          <div>{words}</div>
+          <div className="shrink-0">
+            {enter ??
+              (soon ? (
+                <span className="tone-border tone-text inline-flex h-10 items-center gap-2 border px-4 font-mono text-xs tracking-[0.2em]">
+                  {pulse}
+                  COMING SOON
+                </span>
+              ) : null)}
+          </div>
+        </div>
+      </>
+    );
+  }
+
   return (
     <>
-      {/* The surface: a faint grid, scanlines, a wash of the tone, and the mark as a watermark. */}
-      <span aria-hidden="true" className="product-surface">
-        <span className="absolute inset-0 grid-fade opacity-70" />
-        <span className="absolute inset-0 scanlines" />
-        <span className="tone-glow absolute inset-0" />
-        {watermark ? <ZeroMark className="wheel-watermark tone-text absolute opacity-10" /> : null}
-      </span>
-
+      {surface}
       <div className="product-content tone-text flex h-4 items-center gap-2 font-mono text-[10px] tracking-[0.2em] sm:text-[11px]">
-        {(comingSoon ?? !product.href) ? (
+        {soon ? (
           <>
-            <span className="tone-bg size-1.5 animate-pulse motion-reduce:animate-none" />
+            {pulse}
             COMING SOON
           </>
         ) : null}
       </div>
 
       <div className="product-content">
-        <ZeroMark className="tone-text size-7 sm:size-9" />
-        <Heading className="wheel-name mt-4 text-2xl/none font-semibold uppercase sm:text-4xl/none">
-          <span className="text-fg">Zero</span>
-          <span className="tone-text">{product.rest}</span>
-          {product.line ? <span className="wheel-name-line text-muted">{product.line}</span> : null}
-        </Heading>
-        {product.blurb ? (
-          <p className="mt-3 max-w-64 text-sm/6 text-muted">{product.blurb}</p>
-        ) : null}
-        {product.href && linked ? (
-          <Link
-            href={product.href}
-            className="tone-text mt-4 inline-flex items-center gap-2 font-mono text-xs tracking-[0.2em] uppercase after:absolute after:inset-0"
-          >
-            Enter
-            <Arrow />
-            <span className="sr-only"> the {nameOf(product)} page</span>
-          </Link>
-        ) : null}
+        {words}
+        {enter ? <div className="mt-5">{enter}</div> : null}
       </div>
     </>
   );
