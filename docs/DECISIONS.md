@@ -784,6 +784,21 @@ owner watching the laptop's dev server and answering as it changed. Not released
   hot reload ("you lost the colour scheme"). Changes that belong together should land
   together, and the owner should be told when a state is ready to judge.
 
+### The username step: the owner's answers (2026-09-21). NOT built yet
+
+- **A username can be changed from the start.** This goes further than the brief, which
+  puts "username change" in the settings of milestone 4. So the change needs somewhere to
+  live and a rule against churn; the plan below carries both.
+- **The display name is asked for on the same screen**, optional and not unique. It needs
+  no new column: `users.display_name` already exists (Better Auth's `name`), empty until
+  onboarding fills it.
+- Still the brief's rules: 3 to 20 characters, `a-z 0-9 _`, stored lowercase, unique
+  without regard to case, a reserved-word blocklist, a rate-limited availability check as
+  the member types, and **the database constraint as the real guard** (two people claiming
+  one name at the same moment must end in "just taken", never an error page).
+- Better Auth's own username plugin is still NOT used: it registers a username sign-in
+  route, which breaks hard rule 1. A small local plugin is used instead, as for sign-up.
+
 ### The Academy tile is the way IN, and slow tests no longer read as failures (2026-09-21)
 
 - **On the home page, "Enter here" on the Academy tile leads to the sign-in and sign-up
