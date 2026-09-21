@@ -150,6 +150,13 @@ message sent to that address from another mailbox has arrived, the live
 member, nobody else's data depends on that contact. Friends are added only after the
 test message arrives, and the date it arrived is recorded in DECISIONS.md.
 
+**Two more gates were moved by the owner on 2026-09-21, for the same reason** (the owner
+is the only person who can sign up): approving `/terms` and `/privacy` now gates
+**inviting anyone**, not the release; and the fresh backup with its restore check runs
+**right after the owner's real sign-up**. The gate "an encrypted backup has been run once
+and its restore check has passed" was already met on 2026-09-20, and the database held no
+accounts at the release.
+
 ### Open items carried from earlier decisions
 
 - **The hosting plan must permit commercial use** before anything is sold. Vercel

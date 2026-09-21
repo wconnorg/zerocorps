@@ -857,8 +857,16 @@ step by the same number.
    goes into Vercel only, never into this repository. **`SIGNUP_ALLOWLIST` holds only
    the owner's own addresses** until the test message to that address has arrived (the
    moved gate, above).
+   **Done 2026-09-21 (the owner's report):** the six typed variables, then the three
+   new secrets and the app's `DATABASE_URL` through `npm run env:handoff`.
 6. `npm run db:backup`, then `npm run db:restore:check` ("migrations applied: 3").
-7. The owner reads `/terms` and `/privacy`.
+   **Moved by the owner on 2026-09-21 ("fast path"): it runs right after the owner's
+   real sign-up,** not before the release. The database held 0 accounts at the release,
+   and the restore drill had passed on 2026-09-20, so there was nothing new to protect
+   until that first account existed.
+7. The owner reads `/terms` and `/privacy`. **Moved by the owner the same day: it gates
+   inviting anyone, not the release.** Until then the owner is the only person who can
+   sign up, so nobody else agrees to the drafts. It joins step 10.
 8. `git merge --no-ff dev` on `main`; push on the owner's word; `npm run verify`
    against the live site; the owner's real sign-up in `allowlist` mode, timed. That
    sign-up is also the proof that the verified database connection works from Vercel;
@@ -868,7 +876,9 @@ step by the same number.
    AGENTS.md, and refresh Discord's cached link preview by sharing the link with `?v=2`.
 10. **Before anyone but the owner is invited:** Proton is restored (DNS checklist 1), a
     test message sent to the `PRIVACY_CONTACT` address from another mailbox arrives,
-    and the date is recorded above. Only then are friends added to `SIGNUP_ALLOWLIST`.
+    and the date is recorded above; **and the owner has read and approved `/terms` and
+    `/privacy`** (moved here from step 7). Only then are friends added to
+    `SIGNUP_ALLOWLIST`.
 
 **Open questions for the owner:** none. Both earlier ones were answered on 2026-09-21
 (see "Release decisions by the owner" above): finding 28 is approved, and Supabase's CA
