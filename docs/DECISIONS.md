@@ -161,7 +161,8 @@ from one above, this one is newer and wins.
   pushed to `dev`. It is configuration only; no application code depends on Vercel.
 - **Flow:** build and test locally on `dev` → merge to `main` once per milestone,
   and only when the owner says so, following the release order below. Nothing is
-  pushed unless the owner says "push".
+  pushed unless the owner says "push". _Narrowed on 2026-09-21 to `main` only; see
+  "Release decisions by the owner (2026-09-21)"._
 - `baseURL` and `trustedOrigins` are set explicitly from `NEXT_PUBLIC_APP_URL`, which
   stays the single source for the site's origin. There is no `BETTER_AUTH_URL`.
   Production refuses a non-https URL and a non-empty `EMAIL_ALLOWLIST`.
@@ -643,8 +644,56 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
   publish an SPF record and a bounce `MX`. Resend's public Forge page does not list
   the `rmta.net` hostnames, so the targets were checked another way: the address block
   in `send`'s SPF is registered at ARIN to Resend. [DNS.md](DNS.md) has the values.
+- **2026-09-21: Resend's dashboard shows `zerocorps.org` as verified and able to send**
+  (the owner's report). The domain is in Resend's `us-east-1` region. **Receiving stays
+  OFF in Resend**, because it would compete with Proton's `MX` rows. A new session
+  repeated the lookups the same day: all four records and both CNAME targets answered
+  as recorded, with exactly one `_dmarc`.
 
-### Where milestone 2 stands (keep this current; last updated 2026-09-20)
+### Claude Code on the laptop, decided by the owner (2026-09-21)
+
+- **Claude Code's file tools are denied every env file except the example.**
+  `.claude/settings.json` (committed; it holds no secret) carries the deny rules
+  `Read(./.env)`, `Read(./.env.*)` and the carve-out `Read(!.env.example)`, the same
+  shape as `.gitignore`. Why: `.env.local` kept ending up as the owner's open editor
+  tab, and the VS Code extension attaches the open file's name, and any selected text,
+  to each message. A matching `Read` deny rule stops both from reaching the assistant,
+  and also blocks its Read, Edit, Write, Grep and Glob tools and shell commands such as
+  `cat` on those paths (Claude Code's documentation, read 2026-09-21).
+- **Proven the same day without touching `.env.local`:** a dummy `.env.denytest` was
+  refused, `.env.example` still opened, and `npm run env:check` still worked, because
+  the owner's tools read the file from inside Node, which the rule does not cover.
+- **What it does not cover:** a program that opens the file by itself. So the standing
+  rule is unchanged: nothing the assistant runs may print a value from `.env.local`.
+
+### Release decisions by the owner (2026-09-21)
+
+These reached the session in a handoff written by the owner's planning assistant, which
+had made them on the owner's behalf. The owner was asked about each one directly and
+confirmed all of them.
+
+- **The standing push rule.** `dev` may be pushed to GitHub after any checkpoint commit
+  without asking, because `dev` never deploys and the push is the backup that is not on
+  the laptop. **`main` needs the owner's explicit "push" every time.** The repository is
+  public, so the commits are still checked for env files, secrets and real addresses
+  before every push. This narrows "nothing is pushed unless the owner says push".
+- **Finding 28 is approved.** An address that already has an account gets a pending row
+  with no password hash, so the code screen behaves the same for everyone. Not revealing
+  who has an account matters more than the letter of "no pending row".
+- **Supabase's CA certificate is pinned before the release**, as one small commit, and
+  it is kept only if `npm run db:check` then reports the certificate as verified on the
+  laptop. The certificate is public and may be committed. The connection must fail
+  closed and never fall back to an unverified link. If it turns into more than a small
+  change, the work stops, the hosting ledger says so, and it becomes the first job after
+  the release. It gets its own plan before any code.
+- **`PRIVACY_CONTACT` will be a `@zerocorps.org` address for now.** Incoming mail works
+  today, because Proton's two `MX` rows are intact. Replies sent from that address fail
+  SPF and DKIM until DNS checklist 1 is done, so they may land in spam until then. The
+  variable takes the `mailto:` form. The address goes into Vercel only, never into this
+  repository or into chat. Before step 5, the owner sends it a test message from another
+  mailbox and sees it arrive.
+
+### Where milestone 2 stands (keep this current; last updated 2026-09-21)
 
 A new session starts here. Milestone 2 is **built on `dev`, tested by the owner on
 the laptop, and in its release walkthrough**; `main` holds only milestone 1 and the
@@ -683,29 +732,38 @@ passed: sign-up by code, sign-in, sign-out, password reset and the invite-only r
 
 **The release walkthrough, one step at a time, in this order:**
 
-1. `npm run db:cleanup-test-accounts`, so the owner's test addresses are free again on
-   the live site.
-2. Resend. **Done 2026-09-20:** the account, the domain, and DNS checklist 2 in
-   [DNS.md](DNS.md), verified by lookup. **Still to do:** the owner presses Verify in
-   Resend, then creates a sending-only API key restricted to `zerocorps.org`. The key
-   goes into Vercel only, never into chat.
-3. **Done 2026-09-20:** the single `_dmarc` record at `p=none`, confirmed and added by
-   the owner without waiting for the Proton decision.
-4. `PRIVACY_CONTACT` and `SECURITY_CONTACT`: a channel that works today.
-5. The Production variables in Vercel, with secrets that differ from the laptop's.
-6. GitHub: Dependabot alerts, secret scanning with push protection, private
-   vulnerability reporting.
-7. A fresh encrypted backup and its restore check.
-8. The owner reads `/terms` and `/privacy`.
-9. `git merge --no-ff dev` on `main`; push on the owner's word; `npm run verify`
-   against the live site; the owner's real sign-up in `allowlist` mode, timed.
-10. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
-    AGENTS.md.
+The numbering is the owner's handoff of 2026-09-21, so both assistants mean the same
+step by the same number.
 
-**Open questions for the owner:** pinning Supabase's CA certificate so the database
-link is verified and not only encrypted ([SECURITY.md](SECURITY.md)); and the
-already-registered path keeping a password-less row (finding 28), which differs from
-the letter of "no pending row".
+1. **Done:** Resend's account, the domain, DNS checklist 2 in [DNS.md](DNS.md) verified
+   by lookup (2026-09-20, repeated 2026-09-21), the single `_dmarc` record at `p=none`,
+   and Resend's dashboard showing the domain as verified (2026-09-21).
+2. `npm run db:cleanup-test-accounts`, so the owner's test addresses are free again on
+   the live site.
+3. The Resend API key: sending access only, restricted to `zerocorps.org`, pasted
+   straight into Vercel as `RESEND_API_KEY` (Production, sensitive). Never into chat.
+4. GitHub: Dependabot alerts, secret scanning with push protection, private
+   vulnerability reporting. The reporting page's URL becomes `SECURITY_CONTACT`.
+5. The Production variables in Vercel. Keep `NEXT_PUBLIC_APP_URL`. Add `APP_ENV`,
+   `SIGNUP_MODE=allowlist`, `SIGNUP_ALLOWLIST`, `DATABASE_URL` (the `zerocorps_app`
+   one), `RESEND_API_KEY`, `SECURITY_CONTACT`, `PRIVACY_CONTACT`, and three NEW values
+   for `BETTER_AUTH_SECRET`, `HMAC_SECRET` and `CRON_SECRET` that differ from the
+   laptop's and never appear in chat. **Never add** `DATABASE_URL_MIGRATIONS`,
+   `BACKUP_DIR` or `EMAIL_ALLOWLIST`. Leave `EMAIL_FROM` and `TRUSTED_IP_HEADER` unset.
+   `PRIVACY_CONTACT` is an interim channel that works today (Proton is delayed); it
+   goes into Vercel only, never into this repository.
+6. `npm run db:backup`, then `npm run db:restore:check` ("migrations applied: 3").
+7. The owner reads `/terms` and `/privacy`.
+8. `git merge --no-ff dev` on `main`; push on the owner's word; `npm run verify`
+   against the live site; the owner's real sign-up in `allowlist` mode, timed.
+9. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
+   AGENTS.md, and refresh Discord's cached link preview by sharing the link with `?v=2`.
+
+**Open questions for the owner:** none. Both earlier ones were answered on 2026-09-21
+(see "Release decisions by the owner" above): finding 28 is approved, and Supabase's CA
+certificate is pinned before the release. **The pinning is not built yet.** It is one
+small commit with its own plan first, it fits anywhere before step 8, and it does not
+hold up steps 2 to 7.
 
 **Housekeeping:** the work sits in checkpoint commits on `dev`, made for safety at the
 owner's request. **They are not squashed** (see "Release mechanics" above): `main`
@@ -883,8 +941,8 @@ Added on 2026-09-20 while proving the schema:
 Added on 2026-09-20 while building the email-code sign-up:
 
 28. **An address that already has an account DOES get a pending row, without a
-    password. This departs from the letter of "no pending row", on purpose, and is
-    the owner's to confirm.** The spec asks for two things that pull apart: "no
+    password. This departs from the letter of "no pending row", on purpose. The owner
+    approved it on 2026-09-21.** The spec asks for two things that pull apart: "no
     pending row" and "the same code screen, no enumeration". Without a row there is
     nothing to count attempts, cooldowns or expiry against, so the code screen would
     answer differently: five wrong codes on a real sign-up end in "too many attempts",

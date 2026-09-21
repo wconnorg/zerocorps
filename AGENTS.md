@@ -37,11 +37,18 @@ possible.
   and Vercel does not build it.
 - Commit locally on `dev`, in checkpoints. **`main` gets one merge commit per
   milestone** (`git merge --no-ff dev`). Never squash, never rebase pushed commits,
-  never force-push. **Never push** unless the owner says "push".
+  never force-push.
+- **The push rule (owner, 2026-09-21).** `dev` may be pushed after any checkpoint
+  commit without asking, because `dev` never deploys; it is the backup that is not on
+  the laptop. **`main` needs the owner's explicit "push" every time.** The repo is
+  public, so check the commits for env files, secrets and real addresses before
+  every push.
 - **Ask before adding any new external service.** The owner wants as few third
   parties as possible and will self-host later.
 - **Never ask for, print or log secrets or connection strings.** Only the owner
-  puts them in `.env.local` and in the host's settings.
+  puts them in `.env.local` and in the host's settings. `.claude/settings.json`
+  denies Claude Code's file tools every env file except `.env.example`: keep those
+  rules, and never work around them with a shell command or a script.
 - **There is ONE database, shared by the laptop and the live site. Treat
   `.env.local` as production.** Never run `drizzle-kit push`. Never drop or
   truncate, and never delete rows except through the documented commands (the daily
@@ -71,8 +78,8 @@ possible.
 It says what is done, what is waiting on the owner and what is left to build.
 
 Deployment, environments, DNS and the release checklist are described in
-DECISIONS.md. A push to `main` deploys to production, so never push without being
-asked. `SIGNUP_MODE` (`closed`, `allowlist`, `open`) is a server-side kill switch;
+DECISIONS.md. A push to `main` deploys to production, so never push `main` without
+being asked. `SIGNUP_MODE` (`closed`, `allowlist`, `open`) is a server-side kill switch;
 only the owner changes it in production.
 
 ## Hard rules (from the brief; never trade these away)

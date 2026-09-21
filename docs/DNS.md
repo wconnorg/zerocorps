@@ -152,6 +152,8 @@ Rules that always hold for this zone:
   with any other record, so an `MX` or `TXT` there would break both. **Both CNAMEs are
   deleted the day Resend is dropped**, so they never dangle (runbook "Stop using
   Resend" in [SECURITY.md](SECURITY.md)).
+- **Receiving stays OFF in Resend.** Turning it on would ask for an `MX` of Resend's,
+  which would compete with Proton's two `MX` rows. The site only sends.
 
 ### The single `_dmarc` record (in place since 2026-09-20)
 
@@ -202,7 +204,9 @@ four times, TTL Automatic:
    and a bounce `MX`, and the values are written into this file.
 6. Press **Verify** in Resend and say what status it shows.
 
-**Status:** steps 1 to 5 are done. On 2026-09-20 a public resolver returned all four
+**Status:** all six steps are done. On 2026-09-20 a public resolver returned all four
 records with the values above, both CNAME targets published an SPF record and a bounce
 `MX`, `_dmarc` answered with exactly one record, and the `A` record and Proton's two
-`MX` records were unchanged. Step 6 is the owner's.
+`MX` records were unchanged. Step 6: the owner reported on 2026-09-21 that Resend's
+dashboard shows the domain as verified and able to send. The same lookups were repeated
+on 2026-09-21 from a new session and gave the same answers.
