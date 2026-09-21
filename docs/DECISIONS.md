@@ -872,6 +872,18 @@ step by the same number.
    sign-up is also the proof that the verified database connection works from Vercel;
    if it fails, the rollback is Vercel's previous deployment. `npm run db:counts` then
    shows exactly 1 in `users`.
+   **Released 2026-09-21.** On the owner's explicit word, `dev` was merged into `main`
+   as one `--no-ff` merge commit, "Milestone 2: auth" (`871359d`, parents `35ad045` and
+   `bd55d15`), created without switching the working folder off `dev`, and `main` was
+   pushed. GitHub recorded Vercel's production deployment of that commit as a success.
+   **Not verified yet:** every automated request to `zerocorps.org` (curl, headless Edge,
+   and a fetch from another network) is answered with Vercel's "Security Checkpoint",
+   HTTP 403 with `X-Vercel-Mitigated: challenge`. At milestone 1 the same verification
+   ran against the live site, so something on the Vercel side differs: Attack Challenge
+   Mode or Bot Protection in the project's Firewall, or an automatic mitigation. Open
+   until the owner has looked at the site in a normal browser and at the Firewall tab.
+   The owner's real sign-up, `npm run verify` against the live site, and the
+   milestone's "Done" all wait on that.
 9. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
    AGENTS.md, and refresh Discord's cached link preview by sharing the link with `?v=2`.
 10. **Before anyone but the owner is invited:** Proton is restored (DNS checklist 1), a
