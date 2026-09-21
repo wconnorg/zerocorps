@@ -47,8 +47,9 @@ possible.
   parties as possible and will self-host later.
 - **Never ask for, print or log secrets or connection strings.** Only the owner
   puts them in `.env.local` and in the host's settings. `.claude/settings.json`
-  denies Claude Code's file tools every env file except `.env.example`: keep those
-  rules, and never work around them with a shell command or a script.
+  denies Claude Code's file tools every env file except `.env.example`, and the email
+  outbox (`.outbox/`): keep those rules, and never work around them with a shell
+  command or a script.
 - **There is ONE database, shared by the laptop and the live site. Treat
   `.env.local` as production.** Never run `drizzle-kit push`. Never drop or
   truncate, and never delete rows except through the documented commands (the daily

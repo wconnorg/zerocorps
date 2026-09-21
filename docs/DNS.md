@@ -90,8 +90,9 @@ Record. Add-only: do not edit or delete anything that is already there.
 Leave Mail Settings on **Custom MX**. Switching it to anything else removes the
 `MX` records.
 
-What is affected while they are missing: incoming mail still works, because the
-MX records are intact. Mail **sent** from an `@zerocorps.org` address fails the
+What is affected while they are missing: as far as DNS goes, incoming mail still
+works, because the MX records are intact. Whether Proton accepts it also depends on the
+owner's Proton account, which DNS cannot show; a test message settles it. Mail **sent** from an `@zerocorps.org` address fails the
 SPF and DKIM checks that receiving servers run, so it is likely to land in spam,
 and Proton may flag the domain as not fully configured.
 

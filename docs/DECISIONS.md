@@ -665,6 +665,12 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
   the owner's tools read the file from inside Node, which the rule does not cover.
 - **What it does not cover:** a program that opens the file by itself. So the standing
   rule is unchanged: nothing the assistant runs may print a value from `.env.local`.
+- **`.outbox/` is denied the same way** (`Read(./.outbox/**)`, added the same day when an
+  outbox file turned up as the open tab). Those files hold the owner's real address and
+  live codes and reset links, and with one shared database a reset link made on the
+  laptop also works on the live site until it expires. Proven with a dummy file. The
+  site, the tests and `npm run verify` read the outbox from inside Node and are
+  unaffected.
 
 ### Release decisions by the owner (2026-09-21)
 
@@ -686,12 +692,20 @@ confirmed all of them.
   closed and never fall back to an unverified link. If it turns into more than a small
   change, the work stops, the hosting ledger says so, and it becomes the first job after
   the release. It gets its own plan before any code.
-- **`PRIVACY_CONTACT` will be a `@zerocorps.org` address for now.** Incoming mail works
-  today, because Proton's two `MX` rows are intact. Replies sent from that address fail
-  SPF and DKIM until DNS checklist 1 is done, so they may land in spam until then. The
-  variable takes the `mailto:` form. The address goes into Vercel only, never into this
-  repository or into chat. Before step 5, the owner sends it a test message from another
-  mailbox and sees it arrive.
+- **`PRIVACY_CONTACT` is a `@zerocorps.org` address.** The variable takes the `mailto:`
+  form. The address goes into Vercel only, never into this repository or into chat.
+- **The "working contact channel" gate for `PRIVACY_CONTACT` moves from the release to
+  the invitations.** Proton may not be working until about 2026-09-24. Proton's two `MX`
+  rows are intact, but whether the mailbox accepts mail before then depends on the
+  owner's Proton account, which DNS cannot show. So: the milestone 2 release goes ahead
+  when its other steps are done, and **until a test message sent to that address from
+  another mailbox has arrived, the live `SIGNUP_ALLOWLIST` holds only the owner's own
+  addresses.** While the owner is the only member, nobody else's data depends on that
+  contact. Friends are added only after the test message arrives, and the date goes
+  here. Replies sent from the address fail SPF and DKIM until DNS checklist 1 is done,
+  so they may land in spam until then. The owner's Gmail stays off the public page.
+  `SECURITY_CONTACT` is unaffected: it is GitHub's private vulnerability reporting page
+  and still gates the release.
 
 ### Where milestone 2 stands (keep this current; last updated 2026-09-21)
 
@@ -750,14 +764,19 @@ step by the same number.
    for `BETTER_AUTH_SECRET`, `HMAC_SECRET` and `CRON_SECRET` that differ from the
    laptop's and never appear in chat. **Never add** `DATABASE_URL_MIGRATIONS`,
    `BACKUP_DIR` or `EMAIL_ALLOWLIST`. Leave `EMAIL_FROM` and `TRUSTED_IP_HEADER` unset.
-   `PRIVACY_CONTACT` is an interim channel that works today (Proton is delayed); it
-   goes into Vercel only, never into this repository.
+   `PRIVACY_CONTACT` is the owner's `@zerocorps.org` address in the `mailto:` form; it
+   goes into Vercel only, never into this repository. **`SIGNUP_ALLOWLIST` holds only
+   the owner's own addresses** until the test message to that address has arrived (the
+   moved gate, above).
 6. `npm run db:backup`, then `npm run db:restore:check` ("migrations applied: 3").
 7. The owner reads `/terms` and `/privacy`.
 8. `git merge --no-ff dev` on `main`; push on the owner's word; `npm run verify`
    against the live site; the owner's real sign-up in `allowlist` mode, timed.
 9. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
    AGENTS.md, and refresh Discord's cached link preview by sharing the link with `?v=2`.
+10. **Before anyone but the owner is invited:** Proton is restored (DNS checklist 1), a
+    test message sent to the `PRIVACY_CONTACT` address from another mailbox arrives,
+    and the date is recorded above. Only then are friends added to `SIGNUP_ALLOWLIST`.
 
 **Open questions for the owner:** none. Both earlier ones were answered on 2026-09-21
 (see "Release decisions by the owner" above): finding 28 is approved, and Supabase's CA
