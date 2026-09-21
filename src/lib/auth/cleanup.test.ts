@@ -131,13 +131,14 @@ describe("the test-account cleanup", () => {
       "never.used@example.com",
     ];
     expect(await findTestAccounts(query, addresses)).toEqual([
-      { address: "owner+test@example.com", hasAccount: true, pendingSignUps: 0 },
-      { address: "owner+pending@example.com", hasAccount: false, pendingSignUps: 1 },
-      { address: "never.used@example.com", hasAccount: false, pendingSignUps: 0 },
+      { address: "owner+test@example.com", hasAccount: true, pendingSignUps: 0, madeOn: "laptop" },
+      { address: "owner+pending@example.com", hasAccount: false, pendingSignUps: 1, madeOn: null },
+      { address: "never.used@example.com", hasAccount: false, pendingSignUps: 0, madeOn: null },
     ]);
 
     const removed = await deleteTestAccounts(query, addresses, HMAC_SECRET);
     expect(removed.users).toBe(1);
+    expect(removed.kept).toBe(0);
     expect(removed.pendingSignUps).toBe(1);
     expect(removed.events).toBeGreaterThan(0);
     expect(removed.counters).toBeGreaterThan(0);
@@ -162,6 +163,71 @@ describe("the test-account cleanup", () => {
       real_devices: 1,
       orphaned_devices: 0,
     });
+  }, 240_000);
+
+  it("NEVER deletes an account made on the live site, even when its address is on the list", async () => {
+    // The owner's real account uses one of the owner's own addresses, so after the first
+    // real sign-up the list of test addresses names a real account.
+    const live = createTestAuth(database, { appEnv: "production" });
+    const laptop = createTestAuth(database);
+    const signUp = async (t: ReturnType<typeof createTestAuth>, email: string, ip: string) => {
+      const client = createTestClient(t.auth, { baseUrl: TEST_BASE_URL, ip });
+      await client.post("/email-signup/start", {
+        email,
+        password: "a long enough passphrase",
+        acceptTerms: true,
+      });
+      await client.post("/email-signup/verify", { code: t.latestCode(email) });
+    };
+    await signUp(live, "owner.real@example.com", "198.51.100.1");
+    await signUp(laptop, "owner+laptop@example.com", "198.51.100.2");
+    // An account whose sign-up event is gone (purged, or never written): origin unknown.
+    await signUp(laptop, "owner+unknown@example.com", "198.51.100.3");
+    await query(
+      `DELETE FROM auth_events WHERE type = 'signup_completed'
+         AND user_id = (SELECT id FROM users WHERE email = 'owner+unknown@example.com')`,
+    );
+
+    const addresses = [
+      "owner.real@example.com",
+      "owner+laptop@example.com",
+      "owner+unknown@example.com",
+    ];
+    expect((await findTestAccounts(query, addresses)).map((entry) => entry.madeOn)).toEqual([
+      "live-site",
+      "laptop",
+      "unknown",
+    ]);
+
+    const removed = await deleteTestAccounts(query, addresses, HMAC_SECRET);
+    expect(removed.users).toBe(1);
+    expect(removed.kept).toBe(2);
+
+    const left = await query(
+      `SELECT u.email,
+              (SELECT count(*)::int FROM sessions s WHERE s.user_id = u.id) AS sessions,
+              (SELECT count(*)::int FROM accounts a WHERE a.user_id = u.id) AS credentials
+         FROM users u WHERE u.email = ANY($1::text[]) ORDER BY u.email`,
+      [addresses],
+    );
+    expect(left).toEqual([
+      { email: "owner+unknown@example.com", sessions: 1, credentials: 1 },
+      { email: "owner.real@example.com", sessions: 1, credentials: 1 },
+    ]);
+    // What is keyed by the live account's ADDRESS is kept too: its events and its limits.
+    const liveHash = keyedHash(HMAC_SECRET, "event-identifier", "owner.real@example.com");
+    const [events] = await query(
+      "SELECT count(*)::int AS n FROM auth_events WHERE identifier_hash = $1",
+      [liveHash],
+    );
+    expect(Number(events?.n)).toBeGreaterThan(0);
+
+    // A sign-up completed in BOTH places (it cannot happen, but if it did): kept.
+    await query(
+      `INSERT INTO auth_events (type, user_id, app_env)
+       SELECT 'signup_completed', id, 'local' FROM users WHERE email = 'owner.real@example.com'`,
+    );
+    expect((await deleteTestAccounts(query, ["owner.real@example.com"], HMAC_SECRET)).kept).toBe(1);
   }, 240_000);
 
   it("hashes addresses and limit names exactly as the app does", async () => {

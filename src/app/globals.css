@@ -40,6 +40,11 @@
   --accent: #ff3b47;
   --accent-fg: #0a0000;
 
+  /* Product tones on the home page's wheel (owner, 2026-09-21): ZeroBot is blue and
+     ZeroCharts is purple. The Academy keeps the brand red. Used as text, so AA applies. */
+  --tone-bot: #4da3ff;
+  --tone-charts: #b18cff;
+
   /* Status. Danger is orange so it cannot be mistaken for the red brand accent. */
   --danger: #ff8a4c;
   --success: #3dd68c;
@@ -71,6 +76,9 @@
 
   --accent: #b00020;
   --accent-fg: #ffffff;
+
+  --tone-bot: #0b5ed7;
+  --tone-charts: #6b3fd4;
 
   --danger: #a83a00;
   --success: #17703f;
@@ -161,4 +169,245 @@
   background-color: currentColor;
   -webkit-mask: url("/brand/zero-mark.png") center / contain no-repeat;
   mask: url("/brand/zero-mark.png") center / contain no-repeat;
+}
+
+/*
+ * The product wheel on the home page: three monolith tiles on a turning wheel. The tile in
+ * front is sharp; the two behind it stand to either side, turned away and dimmed. Each
+ * tile's place comes from `data-pos` (0 front, 1 right, 2 left), so turning the wheel is
+ * one attribute change and the browser animates the rest. No inline styles, so it works
+ * under a strict CSP.
+ */
+.wheel {
+  aspect-ratio: 16 / 13;
+  perspective: 1100px;
+  /* One 3D space for the three tiles: the browser decides which is in front from where
+     each one really is, all the way through a turn. A fixed layer order made a clicked
+     tile jump on top at once, which looked choppy. */
+  transform-style: preserve-3d;
+}
+
+/*
+ * A product tile, on the wheel or in the products section. `--tone` is its own colour:
+ * the Academy keeps the brand red, the others name theirs with `data-tone`. It is its own
+ * stacking context, so its surface can sit BEHIND its content and a link inside it can
+ * cover the whole tile.
+ */
+.product-tile {
+  --tone: var(--accent);
+  isolation: isolate;
+}
+
+.product-tile[data-tone="bot"] {
+  --tone: var(--tone-bot);
+}
+
+.product-tile[data-tone="charts"] {
+  --tone: var(--tone-charts);
+}
+
+.product-surface {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.wheel-tile {
+  position: absolute;
+  inset: 0;
+  margin-inline: auto;
+  width: 56%;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform;
+  /* A slow, even turn that eases in and out, like something heavy. Only the transform
+     moves, which is cheap for the browser, so the turn stays smooth. */
+  transition: transform 2200ms cubic-bezier(0.6, 0, 0.2, 1);
+}
+
+/* The invisible zones over the wheel's left and right that bring a side tile to the front. */
+.wheel-hit {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 5;
+  width: 22%;
+  cursor: pointer;
+  background: transparent;
+}
+
+.wheel-hit-left {
+  left: 0;
+}
+
+.wheel-hit-right {
+  right: 0;
+}
+
+/*
+ * A tile is always solid. One that stands at the side is dimmed by a dark veil over it,
+ * not by making the tile see-through: see-through tiles showed each other's text while
+ * they crossed.
+ */
+.wheel-tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: var(--bg);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 2200ms cubic-bezier(0.6, 0, 0.2, 1);
+}
+
+.wheel-tile[data-pos="1"]::after,
+.wheel-tile[data-pos="2"]::after {
+  opacity: 0.5;
+}
+
+/*
+ * A tile at the side shows no words: half of it is behind the front tile, and half a name
+ * ("OBOT") looks broken. It stands as a monolith in its own colour, and its words fade in
+ * as it arrives at the front. They stay in the page for screen readers all along.
+ */
+.wheel-tile .product-content {
+  transition: opacity 700ms ease;
+}
+
+.wheel-tile[data-pos="0"] .product-content {
+  opacity: 1;
+  transition-delay: 1300ms;
+}
+
+.wheel-tile[data-pos="1"] .product-content,
+.wheel-tile[data-pos="2"] .product-content {
+  opacity: 0;
+}
+
+.wheel-tile[data-pos="0"] {
+  transform: translate3d(0, 0, 0) rotateY(0deg);
+}
+
+.wheel-tile[data-pos="1"] {
+  transform: translate3d(68%, 0, -200px) rotateY(-48deg);
+}
+
+.wheel-tile[data-pos="2"] {
+  transform: translate3d(-68%, 0, -200px) rotateY(48deg);
+}
+
+/* The slashed zero, large and faint, running off the tile's lower right corner. */
+.wheel-watermark {
+  right: -18%;
+  bottom: -12%;
+  width: 78%;
+  aspect-ratio: 1;
+}
+
+.wheel-name {
+  letter-spacing: 0.06em;
+}
+
+.wheel-name-line {
+  display: block;
+  margin-top: 0.75rem;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  font-weight: 400;
+  letter-spacing: 0.42em;
+}
+
+.tone-text {
+  color: var(--tone);
+}
+
+.tone-bg {
+  background-color: var(--tone);
+}
+
+.tone-border {
+  border-color: var(--tone);
+}
+
+/* The wash of colour at the top of a tile, in the tile's own tone. Decorative only. */
+.tone-glow {
+  background-image: radial-gradient(
+    70% 60% at 50% 0%,
+    color-mix(in oklab, var(--tone) 18%, transparent),
+    transparent 72%
+  );
+}
+
+/* Fine horizontal lines over a tile, like a monitor. Decorative only. */
+@utility scanlines {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--fg) 5%, transparent) 0,
+    color-mix(in oklab, var(--fg) 5%, transparent) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+}
+
+/*
+ * The wheel's timer: an element nobody can see, with an 8-second animation that changes
+ * nothing. The wheel turns when it ends. So pausing the animation pauses the wheel exactly
+ * where it was, a background tab stops it, and a visitor who asked for less motion never
+ * gets a wheel that turns by itself.
+ */
+@keyframes wheel-timer {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+.wheel-timer {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  animation: wheel-timer 8s linear forwards;
+}
+
+.wheel-timer[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheel-tile,
+  .wheel-tile::after,
+  .wheel-tile .product-content {
+    transition: none;
+  }
+
+  .wheel-timer {
+    animation: none;
+  }
+}
+
+/*
+ * The Academy's page until the lessons exist (owner, 2026-09-21): pitch black, a red glow
+ * in the middle, and two small words. True black, in both themes: the section carries its
+ * own `data-theme="dark"`.
+ */
+.void {
+  /* The whole space between the header and the footer, so no strip of the page shows. */
+  min-height: max(72vh, calc(100vh - 14rem));
+  background-color: #000000;
+}
+
+.void-glow {
+  background-image: radial-gradient(
+    38% 42% at 50% 50%,
+    color-mix(in oklab, var(--accent) 26%, transparent),
+    transparent 72%
+  );
+}
+
+.void-text {
+  letter-spacing: 0.42em;
 }

@@ -718,6 +718,21 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
   one tile, "Academy", and a profile icon at the top right (the grey default avatar)
   that opens a small menu. Until profile and settings exist, the menu holds only "Sign
   out". More tiles come later (the trading journal, for one).
+  - **Built on `dev` on 2026-09-21, after the release, on the owner's word** ("proceed
+    with functionality"). **The Academy tile says "Coming soon" and is not a link**
+    (owner, the same day): there are no lessons until milestone 7, and the public
+    `/academy` page would ask a signed-in member to sign up. The tile is labelled
+    "ZeroCorps Academy" and reuses the public page's one line; no new copy. The header
+    of the signed-in area gains the profile button (the grey default picture) whose
+    menu holds "Sign out"; the standalone sign-out button it replaced is gone. No
+    library was added: the menu is a small disclosure menu (Escape, a click outside or
+    focus leaving closes it). Tests render the dashboard and the menu from plain values,
+    so nothing signs in to the one shared database. **The owner's testing on the laptop
+    comes before it is released.**
+  - **The order after it, agreed the same day:** the username step (one additive
+    migration, forced after the first sign-in), then profile-picture upload, which needs
+    file storage and is decided when it is reached. Everyone has the grey default
+    picture until then, as the brief says.
   - **What this does to the brief's order.** The brief has onboarding as milestone 3 and
     "dashboard with the Academy tile and the profile menu, plus the settings pages" as
     milestone 4. The shell is the first part of milestone 4, pulled ahead of milestone 3. Milestone 3 is unchanged and follows it: once it lands, a first sign-in is sent
@@ -725,6 +740,99 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
     the grey default's place in the shell. Milestone 4 shrinks to the settings pages
     and the menu's remaining entries (profile, settings). The shell needs no schema
     change. Its Academy tile leads to `/academy` until milestone 7 builds the lessons.
+
+### The home page's look, decided by the owner while watching it live (2026-09-21)
+
+The owner's direction: a stark corporate look in the manner of Arasaka (black, red,
+sharp edges, restrained motion). Built on `dev` after the milestone 2 release, with the
+owner watching the laptop's dev server and answering as it changed. Not released yet.
+
+- **The hero.** The chart is replaced by a **turning wheel of three product tiles**:
+  ZeroBot, ZeroCharts and ZeroCorps Academy. The quotation and "J.B." are larger and the
+  quotation marks take the text colour (white on the dark theme). The hero's background
+  grid is gone. The chart component is kept, unused: it is Academy material.
+- **Each product has its own tone:** ZeroBot blue, ZeroCharts purple, the Academy the
+  brand red. They are theme tokens (`--tone-bot`, `--tone-charts`) in both themes, held to
+  the same AA contrast test as every other text colour. A tile names its tone with
+  `data-tone`; there are no inline styles.
+- **The tiles:** sharp corners and a plain outline (the owner liked the outline and
+  asked for the corner brackets to go), no index number on top, "COMING SOON" on ZeroBot
+  and ZeroCharts only. The Academy tile says nothing on top and **leads to `/academy`**,
+  which now says "COMING SOON" itself. ZeroBot and ZeroCharts carry one short line each.
+  **Those two lines are placeholder copy written at the owner's request** ("I'll leave it
+  up to you, super short"); the ZeroCharts one is the owner's own pitch cut down. They
+  are the owner's to edit, in `src/components/marketing/products.tsx`.
+- **The motion:** slow and even (a 2.2 second turn, every 8 seconds). Tiles are always
+  solid: one at the side is dimmed by a dark veil and shows no words, because half a
+  name behind the front tile ("OBOT") looked broken; the words fade in at the front. The
+  tiles share one real 3D space, so they pass behind each other; a fixed layer order had
+  made a clicked tile jump on top at once. Nothing is drawn under the wheel: a click at
+  either side brings that tile forward (two invisible zones outside the 3D space catch
+  it, because a tile at the side stands behind the wheel's own plane and the browser
+  gives the click to the wheel). The timer is an invisible element's CSS animation, so
+  resting the pointer on the wheel pauses it exactly, a background tab stops it, and a
+  visitor who asked for reduced motion never gets a wheel that turns by itself. The
+  previous, next, pick-one and pause buttons remain for the keyboard and screen readers,
+  hidden until focused. No library.
+- **The section below the hero is the three products side by side** (the same tiles,
+  without the large faint mark). The three Academy "pillars", the "Enter the Academy"
+  button and the "Learn more" link are gone from the home page; `/academy` keeps its own
+  content and is reached through the Academy tile.
+- **The header:** the logo and the name sit in the middle, on all three headers, and the
+  logo takes the text colour there. The footer's logo stays red.
+- **A lesson about working this way:** the owner saw every half-finished state through
+  hot reload ("you lost the colour scheme"). Changes that belong together should land
+  together, and the owner should be told when a state is ready to judge.
+
+### The dashboard's look, decided by the owner while watching it live (2026-09-21)
+
+- **Three equal tiles, one above the other:** ZeroCorps Academy, then ZeroBot, then
+  ZeroCharts, in the same tones as the home page. They are the same tile component, in a
+  "row" layout for wide tiles: the words on the left and ONE action at the middle right.
+- **The action:** a red **"Enter here"** button on the Academy, which leads to `/academy`
+  (that page says "COMING SOON"); on ZeroBot and ZeroCharts, "COMING SOON" drawn as a
+  button that cannot be pressed. This replaces "the Academy tile is not a link". The
+  same red button is the Academy tile's way in on the home page too, where it replaced a
+  small text link.
+- **One heading**, light, in capitals and widely spaced, with a short red rule under it
+  (the owner saw "Dashboard" twice and asked for a sleeker title). The red wash from the
+  home page's hero sits behind the top of the page, and the signed-in area's header has
+  the same bar under it as the home page's.
+- **"Signed in as ..." stays on the dashboard** and is to show the USERNAME, not the
+  email address. There are no usernames until the next slice, so it shows the email
+  address until then. A label on the profile button instead was tried and reversed at
+  the owner's word within minutes.
+- The profile button and its menu ("Sign out") are as built; the owner approved them.
+
+### Profile pictures live in the database; the Academy's page for now (owner, 2026-09-21)
+
+- **Profile pictures will be stored in Postgres, not in Supabase Storage.** The owner's
+  words: "everything lives in the database". This replaces the brief's S3-compatible
+  storage for avatars and DECISIONS.md's earlier "Storage" entry, for pictures. Why it
+  fits the owner's priorities: no new service, no new keys, nothing new in the hosting
+  ledger, and the pictures are in the same encrypted backups as everything else. The
+  price, accepted: migrations are never undone, so the table stays even if pictures move
+  out one day; and every picture is served through the app. It is still behind the small
+  storage wrapper, so the place can change. Pictures are small (resized and re-encoded on
+  the server, which also strips metadata such as a phone's GPS position), so the
+  database stays small. **Not built:** it is the slice after the username step. The
+  brain export is unaffected: it is limited to usernames, ranks and progress.
+- **`/academy`, where "Enter here" leads, is pitch black with a red glow and two small
+  words, "COMING SOON", in the middle**, until the lessons exist (milestone 7). It is
+  black in BOTH themes: that part of the page carries its own `data-theme="dark"`. The
+  earlier landing content (the features, the calendar preview, the sign-up and sign-in
+  buttons) is gone from it. An account is reached through "Enter the dashboard", and the
+  sign-in page offers "Create an account". The page keeps a heading for screen readers
+  and search engines.
+
+### The test-account cleanup can no longer delete a live account (2026-09-21)
+
+After the owner's real sign-up, the laptop's `EMAIL_ALLOWLIST` named the owner's REAL
+account, so `npm run db:cleanup-test-accounts` would have deleted it. The command now
+deletes an account only when the event log shows its sign-up was completed on the laptop
+(`app_env = 'local'`). An account made on the live site, or one whose origin cannot be
+told, is kept with everything keyed by its address, and the command says so. The check
+runs again inside the deleting transaction. Tests cover all three origins.
 
 ### Release decisions by the owner (2026-09-21)
 
@@ -872,6 +980,29 @@ step by the same number.
    sign-up is also the proof that the verified database connection works from Vercel;
    if it fails, the rollback is Vercel's previous deployment. `npm run db:counts` then
    shows exactly 1 in `users`.
+   **Released 2026-09-21.** On the owner's explicit word, `dev` was merged into `main`
+   as one `--no-ff` merge commit, "Milestone 2: auth" (`871359d`, parents `35ad045` and
+   `bd55d15`), created without switching the working folder off `dev`, and `main` was
+   pushed. GitHub recorded Vercel's production deployment of that commit as a success.
+   **Not verified yet:** every automated request to `zerocorps.org` (curl, headless Edge,
+   and a fetch from another network) is answered with Vercel's "Security Checkpoint",
+   HTTP 403 with `X-Vercel-Mitigated: challenge`. At milestone 1 the same verification
+   ran against the live site, so something on the Vercel side differs: Attack Challenge
+   Mode or Bot Protection in the project's Firewall, or an automatic mitigation. Open
+   until the owner has looked at the site in a normal browser and at the Firewall tab.
+   The owner's real sign-up, `npm run verify` against the live site, and the
+   milestone's "Done" all wait on that.
+   **The owner's real sign-up on zerocorps.org worked the same day**, in `allowlist`
+   mode, in a normal browser: the site loads for real visitors, Resend delivered the
+   code to a real mailbox, the pinned database connection works from Vercel, and the
+   Production variables are right. `npm run db:counts` then showed exactly 1 user, 1
+   account, 1 session, 1 known device and no sign-up left waiting. It was not timed.
+   **Still open:** Vercel keeps challenging every automated client (checked again after
+   the sign-up), so `npm run verify` against the live site has not run. The same pages
+   passed all 79 checks on the production build on the laptop. The owner is to look at
+   the project's Firewall tab (Attack Challenge Mode, Bot Protection). It matters later
+   too: Agent Zero's calls to the internal API (milestone 8) are automated traffic, and
+   the first run of the daily cleanup cron should be confirmed.
 9. Afterwards: delete `backup-dev-before-squash`, mark milestone 2 "Done" in
    AGENTS.md, and refresh Discord's cached link preview by sharing the link with `?v=2`.
 10. **Before anyone but the owner is invited:** Proton is restored (DNS checklist 1), a

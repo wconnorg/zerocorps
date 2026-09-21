@@ -1,96 +1,41 @@
 import type { Metadata } from "next";
-import { ActivityPreview } from "@/components/marketing/activity-preview";
-import { ButtonLink } from "@/components/ui/button";
-import { BrandName } from "@/components/site/wordmark";
 import { site } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Academy",
-  description:
-    "Create a ZeroCorps Academy account or sign in to continue your lessons, track your progress and earn ranks.",
+  description: `${site.academy} is coming soon.`,
   openGraph: { title: site.academy, url: "/academy" },
 };
 
-// Placeholder copy throughout: edit freely.
-
-const FEATURES = [
-  {
-    title: "Lessons in order",
-    body: "Courses, modules and lessons in a deliberate sequence, so the next step is never a guess.",
-  },
-  {
-    title: "Ranks from progress",
-    body: "Completing lessons moves you up the ranks. Your rank is always calculated from what you have finished.",
-  },
-  {
-    title: "Activity calendar",
-    body: "See the days you studied at a glance, and how far you are from your next rank.",
-  },
-  {
-    title: "Discord is optional",
-    body: "You never need a site account to use the ZeroCorps Discord. Linking one simply lets your rank appear there as a role.",
-  },
-];
-
-export default function AcademyLandingPage() {
+/**
+ * Where "Enter here" on the Academy tile leads, until the lessons exist (milestone 7).
+ *
+ * The owner's words (2026-09-21): pitch black, a red glow, and small text in the middle
+ * that says coming soon. So this part of the page is dark in BOTH themes: it carries its
+ * own `data-theme`, which switches the colour tokens for everything inside it. The header
+ * and the footer keep the visitor's theme.
+ *
+ * The earlier landing content (the features, the calendar preview, the sign-up and sign-in
+ * buttons) is gone from here. An account is still reached through "Enter the dashboard",
+ * and the sign-in page offers "Create an account".
+ */
+export default function AcademyPage() {
   return (
-    <>
-      <section className="relative overflow-hidden">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 hero-glow" />
-
-        <div className="relative mx-auto flex w-full max-w-3xl flex-col items-center px-6 pt-24 pb-20 text-center lg:pt-32">
-          <p className="font-mono text-xs tracking-[0.22em] text-accent">ACADEMY</p>
-          <h1 className="mt-6 text-5xl/[1.05] font-semibold tracking-tight text-balance sm:text-6xl/[1.03]">
-            <BrandName /> Academy
-          </h1>
-          <p className="mt-6 max-w-xl text-lg/8 text-pretty text-muted">
-            A structured path from your first chart to a repeatable process. Create an account to
-            begin, or sign in to pick up where you left off.
-          </p>
-
-          <div className="mt-10 flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
-            <ButtonLink href="/sign-up" size="lg" className="sm:min-w-40">
-              Sign up
-            </ButtonLink>
-            <ButtonLink href="/sign-in" size="lg" variant="secondary" className="sm:min-w-40">
-              Sign in
-            </ButtonLink>
-          </div>
-
-          <p className="mt-6 text-sm text-subtle">
-            Accounts use an email address and a password. You verify your email before you start.
-          </p>
-        </div>
-      </section>
-
-      <section className="border-t border-line">
-        <div className="mx-auto w-full max-w-6xl px-6 py-20">
-          <h2 className="sr-only">What is inside</h2>
-          <div className="grid gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-2">
-            {FEATURES.map((feature) => (
-              <div key={feature.title} className="bg-surface p-7 lg:p-8">
-                <h3 className="text-lg font-medium">{feature.title}</h3>
-                <p className="mt-3 text-sm/6 text-muted">{feature.body}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-t border-line">
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 px-6 py-20 lg:grid-cols-2 lg:py-24">
-          <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-balance sm:text-4xl">
-              See your consistency.
-            </h2>
-            <p className="mt-5 max-w-md text-base/7 text-muted">
-              A daily activity calendar shows when you studied, next to your current rank and how
-              far you are from the next one.
-            </p>
-          </div>
-          <ActivityPreview />
-        </div>
-      </section>
-    </>
+    <section
+      data-theme="dark"
+      className="void relative flex items-center justify-center overflow-hidden px-6"
+    >
+      <div aria-hidden="true" className="void-glow pointer-events-none absolute inset-0" />
+      <div className="relative text-center">
+        <h1 className="sr-only">{site.academy}</h1>
+        <p className="void-text inline-flex items-center gap-3 font-mono text-xs text-muted">
+          <span
+            aria-hidden="true"
+            className="size-1.5 animate-pulse bg-accent motion-reduce:animate-none"
+          />
+          COMING SOON
+        </p>
+      </div>
+    </section>
   );
 }

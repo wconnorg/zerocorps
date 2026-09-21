@@ -177,9 +177,9 @@ let clickingAProtectedLink = false;
     'the hero button is "Enter the dashboard"',
   );
 
-  // Both buttons take the same road: a signed-out visitor lands on sign-in, with the way
-  // back to the dashboard remembered, and sign-in offers to create an account.
-  for (const name of ["Enter the dashboard", "Enter the Academy"]) {
+  // A signed-out visitor lands on sign-in, with the way back to the dashboard remembered,
+  // and sign-in offers to create an account.
+  for (const name of ["Enter the dashboard"]) {
     await page.goto(`${base}/`, { waitUntil: "networkidle" });
     clickingAProtectedLink = true;
     await page.getByRole("link", { name }).first().click();
@@ -192,16 +192,42 @@ let clickingAProtectedLink = false;
       `"${name}" sends a signed-out visitor to sign in, then back (${landed.pathname}${landed.search})`,
     );
   }
-  note(
-    await page.getByRole("link", { name: "Create an account" }).isVisible(),
-    "the sign-in page offers to create an account",
-  );
+  // The form reads ?next= from the address bar, so it appears a moment after the page does.
+  const offersSignUp = await page
+    .getByRole("link", { name: "Create an account" })
+    .waitFor({ state: "visible", timeout: 15000 })
+    .then(() => true)
+    .catch(() => false);
+  note(offersSignUp, "the sign-in page offers to create an account");
 
   // The public page about the Academy is reachable from the home page without an account.
   await page.goto(`${base}/`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: "Learn more about the Academy" }).click();
+  await page
+    .getByRole("link", { name: /Enter here.*ZeroCorps Academy/ })
+    .first()
+    .click();
   await page.waitForURL("**/academy");
-  note(await page.getByRole("heading", { level: 1 }).isVisible(), "/academy shows its heading");
+  // Until the lessons exist: pitch black in BOTH themes, a red glow, and two small words.
+  note(
+    await page.getByText("COMING SOON", { exact: true }).isVisible(),
+    "/academy says coming soon",
+  );
+  note(
+    (await page.getByRole("heading", { level: 1 }).textContent())?.trim() === "ZeroCorps Academy",
+    "/academy still has its heading for screen readers and search engines",
+  );
+  for (const scheme of ["dark", "light"]) {
+    await page.evaluate(
+      (value) => document.documentElement.setAttribute("data-theme", value),
+      scheme,
+    );
+    const colour = await page.evaluate(
+      () => getComputedStyle(document.querySelector("main section")).backgroundColor,
+    );
+    note(colour === "rgb(0, 0, 0)", `/academy is pitch black in the ${scheme} theme (${colour})`);
+  }
+  const academyLinks = await page.evaluate(() => document.querySelectorAll("main a").length);
+  note(academyLinks === 0, `/academy offers nothing to click (${academyLinks} links)`);
 
   // A link that tries to leave the site through ?next= ends up on the dashboard road.
   await page.goto(`${base}/sign-in?next=/.//evil.example`, { waitUntil: "networkidle" });
@@ -209,22 +235,19 @@ let clickingAProtectedLink = false;
     await page.getByLabel("Email address").isVisible(),
     "/sign-in?next=/.//evil.example still renders the form (the unsafe path is ignored)",
   );
-  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
 
-  await page.getByRole("link", { name: "Sign up" }).click();
+  // An account is reached through sign-in, which offers to create one.
+  await page.goto(`${base}/sign-in`, { waitUntil: "networkidle" });
+  note(
+    await page.getByRole("heading", { level: 1, name: "Sign in" }).isVisible(),
+    "/sign-in renders",
+  );
+  await page.getByRole("link", { name: "Create an account" }).click();
   await page.waitForURL("**/sign-up");
   const signUpHeading = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
   note(
     ["Create your account", "Sign-ups open soon"].includes(signUpHeading ?? ""),
     `/sign-up renders ("${signUpHeading}")`,
-  );
-
-  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: "Sign in" }).click();
-  await page.waitForURL("**/sign-in");
-  note(
-    await page.getByRole("heading", { level: 1, name: "Sign in" }).isVisible(),
-    "/sign-in renders",
   );
   note((await page.title()).includes("ZeroCorps"), `page title: "${await page.title()}"`);
 
@@ -233,6 +256,68 @@ let clickingAProtectedLink = false;
   const focused = await page.evaluate(() => document.activeElement?.textContent?.trim());
   note(focused === "Skip to content", `first Tab focuses the skip link ("${focused}")`);
   await context.close();
+}
+
+// ── 3b. The product wheel on the home page ─────────────────────────────────
+{
+  console.log("\n== product wheel ==");
+  const frontOf = (page) =>
+    page.evaluate(() =>
+      document.querySelector('.wheel-tile[data-pos="0"]')?.getAttribute("aria-label"),
+    );
+
+  const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  const page = await context.newPage();
+  watch(page, "wheel");
+  await page.goto(`${base}/`, { waitUntil: "networkidle" });
+
+  const slides = await page.evaluate(() =>
+    [...document.querySelectorAll(".wheel-tile")].map((tile) => tile.getAttribute("aria-label")),
+  );
+  note(
+    JSON.stringify(slides) ===
+      JSON.stringify(["1 of 3: ZeroBot", "2 of 3: ZeroCharts", "3 of 3: ZeroCorps Academy"]),
+    `the wheel has its three tiles (${JSON.stringify(slides)})`,
+  );
+
+  // Left alone, it turns by itself (the timer is 8 seconds).
+  const first = await frontOf(page);
+  await page.mouse.move(5, 5);
+  let turned = first;
+  for (let i = 0; i < 48 && turned === first; i++) {
+    await page.waitForTimeout(250);
+    turned = await frontOf(page);
+  }
+  note(turned !== first, `the wheel turns by itself (${first} -> ${turned})`);
+
+  // With the pointer resting on it, it holds still; a click at the side brings that tile forward.
+  await page.hover(".wheel");
+  await page.waitForTimeout(2600);
+  const held = await frontOf(page);
+  await page.locator(".wheel-hit-right").click();
+  await page.waitForTimeout(600);
+  const clicked = await frontOf(page);
+  note(
+    clicked !== held,
+    `a click at the side brings that tile to the front (${held} -> ${clicked})`,
+  );
+  await context.close();
+
+  // A visitor who asked for reduced motion never gets a wheel that turns by itself.
+  const calm = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    reducedMotion: "reduce",
+  });
+  const calmPage = await calm.newPage();
+  watch(calmPage, "wheel-reduced-motion");
+  await calmPage.goto(`${base}/`, { waitUntil: "networkidle" });
+  const before = await frontOf(calmPage);
+  await calmPage.waitForTimeout(9500);
+  note(
+    (await frontOf(calmPage)) === before,
+    "with reduced motion the wheel does not turn by itself",
+  );
+  await calm.close();
 }
 
 // ── 4. Accounts: what a signed-out visitor can and cannot reach ─────────────
