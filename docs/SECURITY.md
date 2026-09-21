@@ -163,6 +163,14 @@ accounts at the release.
 - **The hosting plan must permit commercial use** before anything is sold. Vercel
   Hobby is for non-commercial use.
 - **Bot protection is reconsidered** if rate limits prove too weak in practice.
+- **One open dependency alert, development-only (seen 2026-09-21).** `npm audit` and
+  Dependabot report a moderate advisory in an old `esbuild` that `drizzle-kit` pulls in
+  (GHSA-67mh-4wv8-2f99). It is about esbuild's own development web server, which nothing
+  here ever starts: `drizzle-kit` is used only for `npm run db:generate`, offline, on the
+  laptop, and none of it is in what the live site runs. **Do not run
+  `npm audit fix --force`:** it would swap `drizzle-kit` for a years-old version. The fix is
+  a `drizzle-kit` release that drops the old package; check again at each release. The
+  owner has not yet said whether to accept this or to dismiss the alert on GitHub.
 
 ## 2. Hosting assumptions ledger
 
