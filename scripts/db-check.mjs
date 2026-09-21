@@ -3,17 +3,44 @@
 // Tests both database URLs in .env.local and reports PASS or FAIL for each, with the
 // KIND of failure: the URL does not parse, the host is unreachable, or the password is
 // rejected. It never prints a URL, a host, a username or a password. Read-only.
+//
+// Every connection is verified against the pinned certificates in src/lib/db-ca.ts.
+// There is no unverified retry: a certificate that cannot be verified is a FAIL. It also
+// says how long each pinned certificate has left, warns under 90 days, and fails once
+// one has expired.
 
+import { PINNED_DATABASE_CAS } from "../src/lib/db-ca.ts";
 import { diagnoseDatabaseUrl } from "../src/lib/db-url.ts";
+import { inspectPinnedCas, WARN_BELOW_DAYS } from "../src/lib/db-tools/ca-status.ts";
 import { APP_ROLE } from "../src/lib/db-tools/role-check.ts";
-import { connect, explainConnectionError, isCertificateError } from "./lib/database.mjs";
+import { connect, explainConnectionError } from "./lib/database.mjs";
 import { readEnvFile } from "./lib/env-file.mjs";
 
 const env = readEnvFile();
 let failed = false;
 
-async function probe(url, verifyCertificate) {
-  const sql = connect(url, { verifyCertificate });
+const RUNBOOK = '"Database connections fail after Supabase rotates its CA" in docs/SECURITY.md';
+
+function reportPinnedCertificates() {
+  console.log("Pinned certificate authorities (the only ones a database connection trusts):");
+  for (const ca of inspectPinnedCas(PINNED_DATABASE_CAS, new Date())) {
+    const until = ca.validTo.toISOString().slice(0, 10);
+    if (ca.state === "expired") {
+      failed = true;
+      console.log(`  FAIL     ${ca.name}: EXPIRED on ${until}. Runbook: ${RUNBOOK}.`);
+    } else if (ca.state === "expiring") {
+      console.log(
+        `  WARNING  ${ca.name}: only ${ca.daysLeft} days left (under ${WARN_BELOW_DAYS}), until ${until}.`,
+      );
+      console.log(`           Stage its replacement now. Runbook: ${RUNBOOK}.`);
+    } else {
+      console.log(`  ok       ${ca.name}: ${ca.daysLeft} days left, until ${until}.`);
+    }
+  }
+}
+
+async function probe(url) {
+  const sql = connect(url);
   try {
     const [row] = await sql`
       SELECT current_user::text AS role,
@@ -42,26 +69,15 @@ async function check(key, kind, label) {
   for (const problem of diagnosis.problems) console.log(`  note  ${problem}`);
 
   let row;
-  let certificate = "verified against the public certificate authorities";
   try {
-    row = await probe(url, true);
+    row = await probe(url);
   } catch (error) {
-    if (!isCertificateError(error)) {
-      failed = true;
-      return console.log(`  FAIL  ${explainConnectionError(error, url)}`);
-    }
-    certificate =
-      "ENCRYPTED, but the server's certificate is NOT verifiable with public authorities";
-    try {
-      row = await probe(url, false);
-    } catch (second) {
-      failed = true;
-      return console.log(`  FAIL  ${explainConnectionError(second, url)}`);
-    }
+    failed = true;
+    return console.log(`  FAIL  ${explainConnectionError(error, url)}`);
   }
 
   console.log(`  PASS  connected as role "${row.role}", Postgres ${row.major}.`);
-  console.log(`        TLS: ${certificate}.`);
+  console.log("        TLS: encrypted, and VERIFIED against the pinned certificates.");
   if (kind === "app" && row.role !== APP_ROLE) {
     console.log(
       `  note  The app should connect as ${APP_ROLE}, not "${row.role}". That changes after the role walkthrough.`,
@@ -73,6 +89,7 @@ async function check(key, kind, label) {
   }
 }
 
+reportPinnedCertificates();
 await check("DATABASE_URL", "app", "what the app uses: transaction pooler, port 6543");
 await check(
   "DATABASE_URL_MIGRATIONS",

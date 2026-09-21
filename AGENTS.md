@@ -144,6 +144,10 @@ only the owner changes it in production.
   needs `appAccess()` in its definition, which adds row-level security and the policy
   for `zerocorps_app`; a test fails without it. A migration can never be undone, so
   read the generated SQL before committing it.
+- **The database connection is pinned and fails closed.** Every `postgres()` call uses
+  `ssl: databaseTls()` from `src/lib/db-ca.ts`, which trusts only the certificates in
+  that list. Never add an unverified mode, not even for diagnosis; a test fails if one
+  appears. The rotation runbook is in docs/SECURITY.md.
 - **Auth is built by `createAuth(deps)`** in `src/lib/auth/create-auth.ts`, which
   takes everything as arguments and reads no environment variable, so tests run the
   real configuration.
@@ -168,7 +172,8 @@ npm run env:check          # which keys in .env.local are filled, blank or malfo
 npm run env:secrets        # fills the BLANK secrets in .env.local; never shows a value
 npm run env:app-url        # builds DATABASE_URL from the proven migrations URL (-- --ask
                            # prompts for the role password); nobody hand-edits a URL
-npm run db:check           # tests both database URLs: PASS or the kind of failure (read-only)
+npm run db:check           # tests both database URLs, verified against the pinned CA: PASS or
+                           # the kind of failure, and the days each pinned certificate has left
 npm run db:generate        # schema change -> SQL file in drizzle/ (offline; read the SQL)
 npm run db:check-role      # proves zerocorps_app cannot create, alter or drop (read-only)
 npm run db:counts          # rows per table, counts only (read-only); `users` is the live site's too

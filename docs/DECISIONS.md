@@ -804,9 +804,16 @@ step by the same number.
 
 **Open questions for the owner:** none. Both earlier ones were answered on 2026-09-21
 (see "Release decisions by the owner" above): finding 28 is approved, and Supabase's CA
-certificate is pinned before the release. **The pinning is not built yet.** It is one
-small commit with its own plan first, it fits anywhere before step 8, and it does not
-hold up steps 2 to 7.
+certificate is pinned before the release. **The pinning was built on 2026-09-21**: the
+root certificate from the owner's dashboard is in `certs/` and pinned in
+`src/lib/db-ca.ts`; `src/db/client.ts` and `scripts/lib/database.mjs` trust that list
+only, with no unverified mode left anywhere; `db:check` makes one verified attempt and
+reports the days each certificate has left. A mutation check proved the guard test: with
+"encrypt, don't verify" put back, it fails. **Proven on the laptop the same day:**
+`npm run db:check` reported both URLs as "VERIFIED against the pinned certificates"
+(the app's role on the transaction pooler and the owner role on the session pooler),
+which was the owner's condition for keeping the change. The proof from Vercel is the
+owner's real sign-up at step 8.
 
 **Housekeeping:** the work sits in checkpoint commits on `dev`, made for safety at the
 owner's request. **They are not squashed** (see "Release mechanics" above): `main`

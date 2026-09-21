@@ -2,6 +2,7 @@
 // without ever showing the URL.
 
 import postgres from "postgres";
+import { databaseTls } from "../../src/lib/db-ca.ts";
 import { diagnoseDatabaseUrl } from "../../src/lib/db-url.ts";
 import { readEnvFile, scrub } from "./env-file.mjs";
 
@@ -12,6 +13,9 @@ const TLS_CERTIFICATE_ERRORS = new Set([
   "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
   "UNABLE_TO_GET_ISSUER_CERT",
   "CERT_UNTRUSTED",
+  "CERT_HAS_EXPIRED",
+  "CERT_NOT_YET_VALID",
+  "ERR_TLS_CERT_ALTNAME_INVALID",
 ]);
 
 export const isCertificateError = (error) => TLS_CERTIFICATE_ERRORS.has(error?.code);
@@ -34,13 +38,14 @@ export function readDatabaseUrl(kind) {
 
 /**
  * One connection, closed by the caller. `prepare: false` because the transaction
- * pooler does not support prepared statements. TLS is always on.
+ * pooler does not support prepared statements. TLS is always on and always verified
+ * against the pinned certificates (src/lib/db-ca.ts). There is no unverified mode.
  */
-export function connect(url, { verifyCertificate = false } = {}) {
+export function connect(url) {
   return postgres(url, {
     max: 1,
     prepare: false,
-    ssl: verifyCertificate ? "verify-full" : "require",
+    ssl: databaseTls(),
     connect_timeout: 20,
     idle_timeout: 5,
     onnotice: () => {},
@@ -112,6 +117,8 @@ export function explainConnectionError(error, url) {
     return "the database name at the end of the URL does not exist. It should be /postgres.";
   if (code === "53300")
     return "the database has no free connections right now. Wait a minute and try again.";
-  if (isCertificateError(error)) return "the server's TLS certificate could not be verified.";
+  if (isCertificateError(error)) {
+    return 'the server\'s certificate was NOT verified against the pinned certificates, so no connection was made and no password was sent. See the runbook "Database connections fail after Supabase rotates its CA" in docs/SECURITY.md.';
+  }
   return `unexpected error (code ${code || "none"}): ${message || "no message"}`;
 }

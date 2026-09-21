@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import { env } from "@/env";
+import { databaseTls } from "@/lib/db-ca";
 import * as schema from "./schema";
 
 /**
@@ -11,9 +12,11 @@ import * as schema from "./schema";
  * a different role, and never run from here.
  *
  *   prepare: false   Supabase's transaction pooler does not support prepared statements.
- *   ssl: "require"   always encrypted. Verifying the server's certificate is an open item
- *                    in docs/SECURITY.md: the pooler's certificate is signed by Supabase's
- *                    own authority, so it needs their published CA to be pinned.
+ *   ssl              always encrypted AND verified: the server's chain and host name are
+ *                    checked against the pinned certificates in `src/lib/db-ca.ts`, and
+ *                    nothing else is trusted. There is no fallback. If the check fails,
+ *                    no connection is made and every request that needs the database is
+ *                    refused (runbook in docs/SECURITY.md).
  *
  * Tests never come here: they run on PGlite (`src/test/test-database.ts`).
  */
@@ -29,7 +32,7 @@ const sql =
   globalForDatabase.zerocorpsSql ??
   postgres(env.DATABASE_URL, {
     prepare: false,
-    ssl: "require",
+    ssl: databaseTls(),
     max: 5,
     idle_timeout: 20,
     connect_timeout: 10,
