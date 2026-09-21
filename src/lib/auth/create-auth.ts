@@ -6,6 +6,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { authSchema, knownDevices } from "../../db/schema.ts";
 import { looksLikeEmail, normalizeEmail } from "../email-address.ts";
 import { clientIp, coarseIpPrefix, userAgentFamily } from "./client-info.ts";
+import { profilePlugin } from "./profile-plugin.ts";
 import { emailCodeSignUp, type SignUpMailer, type SignUpMode } from "./email-code-signup.ts";
 import { createEventLog } from "./events.ts";
 import { ensureDeviceToken } from "./known-device.ts";
@@ -153,6 +154,9 @@ export function createAuth(deps: AuthDeps) {
       additionalFields: {
         termsAcceptedAt: { type: "date", required: false, input: false },
         termsVersion: { type: "string", required: false, input: false },
+        // `input: false`: nothing a client sends can set it. A name is only ever written
+        // by `setUsername`, which holds the rules, the hold and the wait.
+        username: { type: "string", required: false, input: false },
       },
     },
 
@@ -314,6 +318,7 @@ export function createAuth(deps: AuthDeps) {
         emailBudget,
         events,
       }),
+      profilePlugin({ db, limiter, events }),
     ],
 
     rateLimit: {

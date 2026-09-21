@@ -28,6 +28,12 @@ export const LIMITS = {
   passwordResetPerIp: { window: HOUR, max: 20 },
   /** One cap across ALL email types. Security notices are counted but never blocked. */
   emailsPerAddressPerDay: { window: DAY, max: 10 },
+  /**
+   * The "free / taken" hint while a member types. Generous for a person choosing a name,
+   * far too slow to harvest the list of names with. Counted per MEMBER, never per IP.
+   */
+  usernameCheckPerUser: { window: 10 * MINUTE, max: 60 },
+  profileSavePerUser: { window: HOUR, max: 20 },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;

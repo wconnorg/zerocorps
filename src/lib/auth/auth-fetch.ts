@@ -15,6 +15,8 @@ export type AuthFailure = {
   message: string;
   retryAfterSeconds?: number;
   attemptsLeft?: number;
+  /** Which input the refusal is about, when the server says. */
+  field?: string;
 };
 
 export type AuthResult<T> = { ok: true; data: T } | AuthFailure;
@@ -104,6 +106,7 @@ export async function authFetch<T = Record<string, unknown>>(
     message: response.status === 429 ? base + waitPhrase(retryAfterSeconds) : base,
     retryAfterSeconds,
     attemptsLeft: typeof payload.attemptsLeft === "number" ? payload.attemptsLeft : undefined,
+    field: typeof payload.field === "string" ? payload.field : undefined,
   };
 }
 

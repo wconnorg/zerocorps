@@ -67,7 +67,7 @@ possible.
 | --- | -------------------------------------------------------- | --------------------- |
 | 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel  |
 | 2   | Auth                                                     | Live since 2026-09-21 |
-| 3   | Onboarding                                               | Not started           |
+| 3   | Onboarding                                               | Username step on dev  |
 | 4   | Dashboard and settings                                   | Not started           |
 | 5   | Phone and 2FA                                            | Not started           |
 | 6   | Discord link and unlink                                  | Not started           |
@@ -76,9 +76,11 @@ possible.
 | 9   | Brain export for the owner's Obsidian vault              | Not started           |
 
 **The dashboard shell came before milestone 3** (owner, 2026-09-21): the first part of
-milestone 4, pulled forward. It is built on `dev` and waits for the owner's testing and
-release. After it: the username step, then profile-picture upload. DECISIONS.md has it
-under "The landing page is ZeroCorps's, and the dashboard shell comes next".
+milestone 4, pulled forward, and live. **The username step** (`/onboarding`, a minimal
+`/settings`, the two profile endpoints) is built on `dev` and waits for the owner's testing
+and release; its migration `0003_usernames` is already applied. After it: profile-picture
+upload, stored in the database, plan first. DECISIONS.md has it under "The username step,
+part two".
 
 **Read "Where milestone 2 stands" in DECISIONS.md first.** Milestone 2 is live and the
 owner's real sign-up worked. It lists what is still open from the release: the backup

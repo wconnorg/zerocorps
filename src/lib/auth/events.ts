@@ -24,7 +24,9 @@ export type AuthEventType =
   | "reset_completed"
   | "new_device"
   | "rate_limited"
-  | "email_failed";
+  | "email_failed"
+  | "username_claimed"
+  | "username_changed";
 
 export type AuthEventInput = {
   type: AuthEventType;

@@ -11,7 +11,11 @@ import { auth } from "@/lib/auth";
  * unavailable", not a sign-in page that will fail too.
  */
 export type SessionState =
-  | { status: "signed-in"; user: { id: string; email: string; displayName: string } }
+  | {
+      status: "signed-in";
+      /** `username` is null until the member has been through `/onboarding`. */
+      user: { id: string; email: string; displayName: string; username: string | null };
+    }
   | { status: "signed-out" }
   | { status: "unavailable" };
 
@@ -28,6 +32,7 @@ export async function getSessionState(): Promise<SessionState> {
         id: session.user.id,
         email: session.user.email,
         displayName: session.user.name ?? "",
+        username: session.user.username ?? null,
       },
     };
   } catch (error) {

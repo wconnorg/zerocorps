@@ -8,8 +8,7 @@ import { ProductFace, PRODUCTS } from "@/components/marketing/products";
  * says it is coming soon), and "COMING SOON", drawn as a button that cannot be pressed, on
  * ZeroBot and ZeroCharts.
  *
- * `signedInAs` is what to call the member: the username once usernames exist (the next
- * slice), the email address until then.
+ * `signedInAs` is what to call the member: their `@username`.
  *
  * It takes plain values and checks nothing, so it can be rendered in a test. The page
  * decides who may see it.

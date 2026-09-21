@@ -337,12 +337,16 @@ let clickingAProtectedLink = false;
     "/sign-in forms can only post to this site (form-action 'self')",
   );
 
-  await page.goto(`${base}/dashboard`, { waitUntil: "networkidle" });
-  note(
-    new URL(page.url()).pathname === "/sign-in" &&
-      new URL(page.url()).searchParams.get("next") === "/dashboard",
-    `/dashboard sends a signed-out visitor to sign in (${new URL(page.url()).pathname}${new URL(page.url()).search})`,
-  );
+  // Every signed-in page sends a signed-out visitor to sign in, and remembers where they
+  // were going. The dashboard goes last: the checks after the loop look at its sign-in page.
+  for (const path of ["/onboarding", "/settings", "/dashboard"]) {
+    await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
+    note(
+      new URL(page.url()).pathname === "/sign-in" &&
+        new URL(page.url()).searchParams.get("next") === path,
+      `${path} sends a signed-out visitor to sign in (${new URL(page.url()).pathname}${new URL(page.url()).search})`,
+    );
+  }
   note(await page.getByLabel("Email address").isVisible(), "/sign-in shows the form");
   note(
     (await page.getByLabel("Password", { exact: true }).getAttribute("autocomplete")) ===

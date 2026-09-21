@@ -4,8 +4,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 /**
  * The signed-in area: the wordmark in the middle, a bar under it as on the home page, the
- * theme switch and the profile button with its menu. Milestone 4 adds the menu's other
- * entries (profile, settings).
+ * theme switch and the profile button with its menu (settings and sign out).
  *
  * The session is NOT checked here: a layout is not re-rendered on every navigation, so
  * each protected page checks for itself with `getSessionState()`. The profile menu needs

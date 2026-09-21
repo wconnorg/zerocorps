@@ -801,8 +801,8 @@ owner watching the laptop's dev server and answering as it changed. Not released
 
 ### The username step, part one: the rules and the database (2026-09-21)
 
-Built on `dev`. **The migration is written but NOT applied**, and there is no screen yet:
-the endpoints and the pages are part two.
+Built on `dev`. The owner applied the migration `0003_usernames` on 2026-09-21, after a
+verified backup. The endpoints and the pages are part two, below.
 
 - **`src/lib/username.ts`** holds what a name may be, in one place, used by the browser as
   it is typed, by the server when it is claimed, and by the database constraint. The
@@ -833,13 +833,46 @@ the endpoints and the pages are part two.
   name at onboarding can put it right; after that a name cannot churn. The row is locked
   while the wait is judged, so two requests at once cannot both pass it.
 
+### The username step, part two: the endpoints and the screens (2026-09-21)
+
+Built on `dev`, not yet released. No migration: part one's columns are all it needs.
+
+- **`src/lib/auth/profile-plugin.ts`** is a small local Better Auth plugin with two
+  endpoints, so both sit behind what Better Auth already does for its own: the origin check
+  on any request that carries the session cookie, and the coarse per-IP limiter.
+  - `POST /api/auth/profile/username-available` is the "free / taken" hint while a member
+    types. It promises nothing; only saving decides.
+  - `POST /api/auth/profile/save` saves the username and the display name together. The
+    display name is judged BEFORE the username is touched, so a bad one changes nothing.
+- **Both are for a signed-in member only, and the member is taken from the session, never
+  from the request.** A test sends another member's id in the body and proves it is ignored.
+  Another sends the member's own cookies from another site's origin and proves it is refused.
+- **The hint is counted per member** (60 in 10 minutes), and saving too (20 an hour), so the
+  hint cannot be used to list the names that exist. The count is per member and never per
+  address, as everywhere else. A signed-out visitor cannot ask at all.
+- **`username` is on the session's user as a read-only field** (`input: false`), so no
+  Better Auth endpoint will ever accept it from a client; `/update-user` is disabled as well.
+  The pages read it from the session, which is never cached in a cookie, so it is always
+  what the database says.
+- **`/onboarding`** is the one step between a verified sign-up and the dashboard. The
+  dashboard sends everybody without a username there, and `/onboarding` sends everybody who
+  has one back. **`/settings`** is minimal for now: the same form, with the username locked
+  and the date shown while the 30-day wait is on. The date is a courtesy; the wait is judged
+  again on the server, under a lock, whatever the page said. The profile menu gained a
+  "Settings" entry, and the dashboard says "Signed in as @username" and no longer shows the
+  email address.
+- Two events were added to the log, `username_claimed` and `username_changed`. Neither
+  records the name: the log says that it happened, the `users` row says what it is.
+- **A member who signed up before this step has no username**, so they are sent through
+  `/onboarding` the next time they open the dashboard. That includes the owner's account.
+
 ### No source file may contain a character that cannot be seen (2026-09-21)
 
 `src/test/no-hidden-characters.test.ts` refuses a direction override or a zero-width
 character anywhere in `src/` or `scripts/`. A direction override reverses how the rest of
 a line is drawn, so a reviewer can be shown one thing while the computer runs another;
 that is the "Trojan Source" trick, and this repository is public, so what a reader sees
-must be what runs. Escapes such as `​` are fine and are what the rules above use.
+must be what runs. Escapes such as `\u200b` are fine and are what the rules above use.
 
 It was written because it happened: the display-name tests were first written with real
 invisible characters instead of escapes, and the guard then found a second one in the
@@ -908,8 +941,8 @@ The restore drill (`npm run db:restore:check`) is still to run.
   home page's hero sits behind the top of the page, and the signed-in area's header has
   the same bar under it as the home page's.
 - **"Signed in as ..." stays on the dashboard** and is to show the USERNAME, not the
-  email address. There are no usernames until the next slice, so it shows the email
-  address until then. A label on the profile button instead was tried and reversed at
+  email address. It showed the email address until the username step, and shows
+  `@username` since. A label on the profile button instead was tried and reversed at
   the owner's word within minutes.
 - The profile button and its menu ("Sign out") are as built; the owner approved them.
 
