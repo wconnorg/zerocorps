@@ -201,7 +201,27 @@ let clickingAProtectedLink = false;
   await page.goto(`${base}/`, { waitUntil: "networkidle" });
   await page.getByRole("link", { name: "Enter here: ZeroCorps Academy" }).first().click();
   await page.waitForURL("**/academy");
-  note(await page.getByRole("heading", { level: 1 }).isVisible(), "/academy shows its heading");
+  // Until the lessons exist: pitch black in BOTH themes, a red glow, and two small words.
+  note(
+    await page.getByText("COMING SOON", { exact: true }).isVisible(),
+    "/academy says coming soon",
+  );
+  note(
+    (await page.getByRole("heading", { level: 1 }).textContent())?.trim() === "ZeroCorps Academy",
+    "/academy still has its heading for screen readers and search engines",
+  );
+  for (const scheme of ["dark", "light"]) {
+    await page.evaluate(
+      (value) => document.documentElement.setAttribute("data-theme", value),
+      scheme,
+    );
+    const colour = await page.evaluate(
+      () => getComputedStyle(document.querySelector("main section")).backgroundColor,
+    );
+    note(colour === "rgb(0, 0, 0)", `/academy is pitch black in the ${scheme} theme (${colour})`);
+  }
+  const academyLinks = await page.evaluate(() => document.querySelectorAll("main a").length);
+  note(academyLinks === 0, `/academy offers nothing to click (${academyLinks} links)`);
 
   // A link that tries to leave the site through ?next= ends up on the dashboard road.
   await page.goto(`${base}/sign-in?next=/.//evil.example`, { waitUntil: "networkidle" });
@@ -209,22 +229,19 @@ let clickingAProtectedLink = false;
     await page.getByLabel("Email address").isVisible(),
     "/sign-in?next=/.//evil.example still renders the form (the unsafe path is ignored)",
   );
-  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
 
-  await page.getByRole("link", { name: "Sign up" }).click();
+  // An account is reached through sign-in, which offers to create one.
+  await page.goto(`${base}/sign-in`, { waitUntil: "networkidle" });
+  note(
+    await page.getByRole("heading", { level: 1, name: "Sign in" }).isVisible(),
+    "/sign-in renders",
+  );
+  await page.getByRole("link", { name: "Create an account" }).click();
   await page.waitForURL("**/sign-up");
   const signUpHeading = (await page.getByRole("heading", { level: 1 }).textContent())?.trim();
   note(
     ["Create your account", "Sign-ups open soon"].includes(signUpHeading ?? ""),
     `/sign-up renders ("${signUpHeading}")`,
-  );
-
-  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
-  await page.getByRole("link", { name: "Sign in" }).click();
-  await page.waitForURL("**/sign-in");
-  note(
-    await page.getByRole("heading", { level: 1, name: "Sign in" }).isVisible(),
-    "/sign-in renders",
   );
   note((await page.title()).includes("ZeroCorps"), `page title: "${await page.title()}"`);
 

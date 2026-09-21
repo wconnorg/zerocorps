@@ -804,6 +804,27 @@ owner watching the laptop's dev server and answering as it changed. Not released
   the owner's word within minutes.
 - The profile button and its menu ("Sign out") are as built; the owner approved them.
 
+### Profile pictures live in the database; the Academy's page for now (owner, 2026-09-21)
+
+- **Profile pictures will be stored in Postgres, not in Supabase Storage.** The owner's
+  words: "everything lives in the database". This replaces the brief's S3-compatible
+  storage for avatars and DECISIONS.md's earlier "Storage" entry, for pictures. Why it
+  fits the owner's priorities: no new service, no new keys, nothing new in the hosting
+  ledger, and the pictures are in the same encrypted backups as everything else. The
+  price, accepted: migrations are never undone, so the table stays even if pictures move
+  out one day; and every picture is served through the app. It is still behind the small
+  storage wrapper, so the place can change. Pictures are small (resized and re-encoded on
+  the server, which also strips metadata such as a phone's GPS position), so the
+  database stays small. **Not built:** it is the slice after the username step. The
+  brain export is unaffected: it is limited to usernames, ranks and progress.
+- **`/academy`, where "Enter here" leads, is pitch black with a red glow and two small
+  words, "COMING SOON", in the middle**, until the lessons exist (milestone 7). It is
+  black in BOTH themes: that part of the page carries its own `data-theme="dark"`. The
+  earlier landing content (the features, the calendar preview, the sign-up and sign-in
+  buttons) is gone from it. An account is reached through "Enter the dashboard", and the
+  sign-in page offers "Create an account". The page keeps a heading for screen readers
+  and search engines.
+
 ### The test-account cleanup can no longer delete a live account (2026-09-21)
 
 After the owner's real sign-up, the laptop's `EMAIL_ALLOWLIST` named the owner's REAL
