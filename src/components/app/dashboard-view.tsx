@@ -42,7 +42,14 @@ export function DashboardView({ signedInAs }: { signedInAs: string }) {
                 data-tone={product.tone}
                 className="product-tile relative flex min-h-44 items-center overflow-hidden border border-line-strong bg-surface p-6 sm:p-8"
               >
-                <ProductFace product={product} heading="h2" watermark={false} layout="row" />
+                <ProductFace
+                  product={product}
+                  heading="h2"
+                  watermark={false}
+                  layout="row"
+                  // A member is already through the door the product's own /dashboard opens.
+                  href={product.id === "academy" ? "/academy" : undefined}
+                />
               </article>
             </li>
           ))}

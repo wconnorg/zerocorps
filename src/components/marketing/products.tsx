@@ -1,3 +1,4 @@
+import type { Route } from "next";
 import Link from "next/link";
 import { ZeroMark } from "@/components/site/wordmark";
 import { buttonClasses } from "@/components/ui/button";
@@ -11,7 +12,13 @@ import { buttonClasses } from "@/components/ui/button";
  * turns that into the `--tone` colour the `tone-*` classes paint with: no inline styles.
  *
  * ZeroBot and ZeroCharts cannot be used yet, so they say "COMING SOON" and link nowhere.
- * The Academy tile says nothing on top: it leads to the Academy's public page.
+ * The Academy tile says nothing on top: it is the way in.
+ *
+ * **Where "Enter here" leads depends on who is looking** (owner, 2026-09-21). To a visitor
+ * on the home page it is the way IN: `/dashboard`, which sends a signed-out visitor to
+ * sign-in (offering "Create an account") and brings them back. A member who is already
+ * signed in is past that door, so the dashboard passes `/academy` instead, which says the
+ * Academy is coming.
  */
 
 // Placeholder copy: edit freely. The ZeroCharts line is the owner's pitch, cut down.
@@ -32,7 +39,7 @@ export const PRODUCTS = [
     blurb: "Order flow and market depth, decoded in real time.",
     href: null,
   },
-  { id: "academy", tone: "academy", rest: "Corps", line: "Academy", blurb: "", href: "/academy" },
+  { id: "academy", tone: "academy", rest: "Corps", line: "Academy", blurb: "", href: "/dashboard" },
 ] as const;
 
 export type Product = (typeof PRODUCTS)[number];
@@ -74,10 +81,17 @@ export function ProductFace({
   watermark = true,
   comingSoon,
   layout = "column",
+  href,
 }: {
   product: Product;
   heading: "h2" | "h3";
   linked?: boolean;
+  /**
+   * Where "Enter here" leads, when the product's own road is not the right one. The
+   * dashboard passes `/academy` here: a member is already through the door that the
+   * product's own `/dashboard` opens.
+   */
+  href?: Route;
   /** The large faint mark behind the content. The wheel's tiles have it; the section's do not. */
   watermark?: boolean;
   /**
@@ -94,6 +108,7 @@ export function ProductFace({
   layout?: "column" | "row";
 }) {
   const soon = comingSoon ?? !product.href;
+  const goesTo = href ?? product.href;
 
   const surface = (
     // A faint grid, scanlines, a wash of the tone, and the mark as a watermark.
@@ -118,10 +133,13 @@ export function ProductFace({
   );
 
   // A red button (owner). Its ::after covers the whole tile, so the tile is the target.
+  // It is never pre-loaded: /dashboard would redirect a signed-out visitor's browser and
+  // abort, a wasted request on every visit to the home page.
   const enter =
-    product.href && linked ? (
+    goesTo && linked ? (
       <Link
-        href={product.href}
+        href={goesTo}
+        prefetch={false}
         className={buttonClasses({ className: "after:absolute after:inset-0" })}
       >
         Enter here

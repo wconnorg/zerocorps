@@ -784,6 +784,28 @@ owner watching the laptop's dev server and answering as it changed. Not released
   hot reload ("you lost the colour scheme"). Changes that belong together should land
   together, and the owner should be told when a state is ready to judge.
 
+### The Academy tile is the way IN, and slow tests no longer read as failures (2026-09-21)
+
+- **On the home page, "Enter here" on the Academy tile leads to the sign-in and sign-up
+  road, not to the Academy's page** (owner: it "leads to a page that says coming soon;
+  direct it to sign in / sign up"). It goes to `/dashboard`, so a signed-out visitor
+  lands on sign-in, which offers "Create an account", and comes back; someone already
+  signed in goes straight through. It is never pre-loaded.
+- **On the dashboard the same tile still leads to `/academy`**, the black "coming soon"
+  page: a member is already through the door that `/dashboard` opens, and sending them
+  back to sign in would be a loop. `ProductFace` takes an `href` that the dashboard
+  passes; everywhere else the product's own road is used.
+- **Nothing on the home page links to `/academy` any more.** It stays in the sitemap and
+  keeps its heading, so search engines still reach it.
+- **Database tests get 60 seconds instead of Vitest's default 5** (`vitest.config.mts`).
+  Each one starts a whole Postgres (PGlite) in the test process, which takes longer than
+  5 seconds on the owner's laptop when anything else is running. Fifteen such tests had
+  no timeout of their own, and on 2026-09-21 two release checks failed for that reason
+  alone: once a worker died of memory pressure while the dev server, a backup and the
+  check all ran together, and once this test simply ran long. Nothing was wrong in the
+  code either time. A slow machine must not read as a broken build, least of all when it
+  stands between the owner and a release. The slowest tests keep their own longer limits.
+
 ### Released on 2026-09-21: the home page, the dashboard shell and the Academy's page
 
 On the owner's word ("looks good", "push all changes to the live website"), `dev` was

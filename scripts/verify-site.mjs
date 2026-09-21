@@ -162,11 +162,11 @@ let clickingAProtectedLink = false;
   const otherLinks = await page.evaluate(() =>
     [...document.querySelectorAll("main a")]
       .map((anchor) => anchor.getAttribute("href"))
-      .filter((href) => href !== "/dashboard" && href !== "/academy"),
+      .filter((href) => href !== "/dashboard"),
   );
   note(
     otherLinks.length === 0,
-    `every link in the home page body goes to /dashboard or /academy (others: ${JSON.stringify(otherLinks)})`,
+    `every link in the home page body is a way in, to /dashboard (others: ${JSON.stringify(otherLinks)})`,
   );
   note(
     (await page.getByRole("heading", { level: 1 }).textContent())?.trim() === "ZEROCORPS",
@@ -177,9 +177,10 @@ let clickingAProtectedLink = false;
     'the hero button is "Enter the dashboard"',
   );
 
-  // A signed-out visitor lands on sign-in, with the way back to the dashboard remembered,
-  // and sign-in offers to create an account.
-  for (const name of ["Enter the dashboard"]) {
+  // Every way in on the home page lands a signed-out visitor on sign-in, with the way back
+  // to the dashboard remembered, and sign-in offers to create an account. The Academy tile
+  // is a way IN (owner, 2026-09-21), not a link to the page about the Academy.
+  for (const name of ["Enter the dashboard", /Enter here.*ZeroCorps Academy/]) {
     await page.goto(`${base}/`, { waitUntil: "networkidle" });
     clickingAProtectedLink = true;
     await page.getByRole("link", { name }).first().click();
@@ -200,13 +201,9 @@ let clickingAProtectedLink = false;
     .catch(() => false);
   note(offersSignUp, "the sign-in page offers to create an account");
 
-  // The public page about the Academy is reachable from the home page without an account.
-  await page.goto(`${base}/`, { waitUntil: "networkidle" });
-  await page
-    .getByRole("link", { name: /Enter here.*ZeroCorps Academy/ })
-    .first()
-    .click();
-  await page.waitForURL("**/academy");
+  // /academy is where a SIGNED-IN member's Academy tile leads. Nothing on the home page
+  // points at it any more, so it is reached directly here.
+  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
   // Until the lessons exist: pitch black in BOTH themes, a red glow, and two small words.
   note(
     await page.getByText("COMING SOON", { exact: true }).isVisible(),
