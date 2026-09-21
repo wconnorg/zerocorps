@@ -832,8 +832,15 @@ step by the same number.
 3. **Done 2026-09-21 (the owner's report):** the Resend API key, sending access only,
    restricted to `zerocorps.org`, pasted straight into Vercel as `RESEND_API_KEY`
    (Production, sensitive). It was never in chat or in `.env.local`.
-4. GitHub: Dependabot alerts, secret scanning with push protection, private
-   vulnerability reporting. The reporting page's URL becomes `SECURITY_CONTACT`.
+   **Re-test on the laptop, 2026-09-21,** after the auth code changed (the `next` fix,
+   the pinned connection, the new landing page): the owner signed up with the
+   allowlisted address using the code from `.outbox/`, landed on the dashboard, and the
+   server log showed every request answering 200 (start 1.6 s, code check 1.9 s on the
+   laptop). The cleanup then removed exactly that 1 account, 1 event and 2 limit
+   counters, so `users` is 0 again before the release.
+4. **Done 2026-09-21 (the owner's report):** GitHub's Dependabot alerts, secret scanning
+   with push protection, and private vulnerability reporting. The reporting page's URL
+   becomes `SECURITY_CONTACT`.
 5. The Production variables in Vercel. Keep `NEXT_PUBLIC_APP_URL`. Add `APP_ENV`,
    `SIGNUP_MODE=allowlist`, `SIGNUP_ALLOWLIST`, `DATABASE_URL` (the `zerocorps_app`
    one), `RESEND_API_KEY`, `SECURITY_CONTACT`, `PRIVACY_CONTACT`, `DISCORD_INVITE_URL`
@@ -841,6 +848,11 @@ step by the same number.
    for `BETTER_AUTH_SECRET`, `HMAC_SECRET` and `CRON_SECRET` that differ from the
    laptop's and never appear in chat. **Never add** `DATABASE_URL_MIGRATIONS`,
    `BACKUP_DIR` or `EMAIL_ALLOWLIST`. Leave `EMAIL_FROM` and `TRUSTED_IP_HEADER` unset.
+   **`npm run env:handoff` carries the four sensitive ones** (built 2026-09-21): it makes
+   the three secrets fresh, reads the app's `DATABASE_URL` and refuses it unless its role
+   is `zerocorps_app`, puts one value at a time on the clipboard through the clipboard
+   program's standard input, never shows one, and clears the clipboard (and Windows's
+   clipboard history) afterwards. Nobody opens `.env.local` to copy a URL by hand.
    `PRIVACY_CONTACT` is the owner's `@zerocorps.org` address in the `mailto:` form; it
    goes into Vercel only, never into this repository. **`SIGNUP_ALLOWLIST` holds only
    the owner's own addresses** until the test message to that address has arrived (the

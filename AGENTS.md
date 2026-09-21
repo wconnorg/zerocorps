@@ -183,6 +183,9 @@ npm run db:check-role      # proves zerocorps_app cannot create, alter or drop (
 npm run db:counts          # rows per table, counts only (read-only); `users` is the live site's too
 
 # Owner only. These need a person at a terminal and refuse to run otherwise:
+npm run env:handoff        # carries values to the host's settings on the CLIPBOARD, one at a
+                           # time, never shown: three NEW secrets, and the app's DATABASE_URL
+                           # (refused unless its role is zerocorps_app)
 npm run db:backup          # encrypted backup, verified by decrypting it again
 npm run db:restore:check   # restores the newest backup into a throwaway Postgres
 npm run db:migrate         # the ONLY way to change the schema: host + pending list,
