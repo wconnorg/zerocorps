@@ -1,7 +1,5 @@
 ---
+id: how-markets-work
 title: How markets work
-summary: What actually happens between pressing the button and owning the thing.
+summary: What a market is, how an order fills, what a futures contract is, and how to read a chart.
 ---
-
-EXAMPLE, for the owner to replace. A module groups a handful of lessons that belong
-together. Say here what this group covers and why it comes at this point in the course.

@@ -1051,6 +1051,37 @@ confirmed all of them.
   quiz or a special box later. Only the example lesson exists, so it is a one-file
   rename. The recommendation is `.md`; the brief says MDX, so it waits for the owner.
 
+### The Academy's structure, ranks and lessons (owner, 2026-09-28)
+
+These answer the open question above and approve part of the order proposed below.
+
+- **Lessons are `.md`**, and **milestone 7 (the Academy) is built before milestones 5 and
+  6** (phone 2FA, Discord).
+- **Level 1 is Foundations. Level 2 is "The Platform"**, with two sections: Quantower (the
+  Backtesting School) and Sierra Chart, which shows as **coming soon**. The Platform is
+  **open from the start**: it is not locked behind Foundations, and no course has a
+  `rank_required` line.
+- **Ranks come from chapters and lessons completed, never from a platform.** Levels 1, 2
+  and a future Level 3 together are the **Rookie** stage: a member is a Rookie from
+  sign-up, and finishing each level is a step within it. What comes after Rookie is not
+  defined yet. The two earlier drafts (Recruit, Cadet, Analyst, Operator, and the
+  prototype's six ranks) are not used.
+- **A member gets the Rookie role when they link Discord.** That is milestones 6 and 8 as
+  the brief has them: the site links Discord through its own OAuth (scope `identify`), then
+  gives the role for the member's rank with the bot's token; Agent Zero asks the site for
+  the rank when a member rejoins the server.
+- **The owner approved the Academy prototype** (a private design on the owner's claude.ai
+  account) as the look to build: the Academy home with rank, "continue" and activity, the
+  chapter page, the lesson page with an ungraded quick check, the chapter checkpoint with
+  its rank-up moment, and the ranks page. It is to be built into the real site "with proper
+  everything", and its ranks follow the Rookie structure above.
+- **The planning assistant's 42 lesson stubs are imported** into `content/academy/`, after
+  checking every header, id, path and character: three courses, 13 chapters. Every stub
+  carries `draft: true`, so the site shows it as coming soon until the owner deletes the
+  line. The missing `_course.md` and `_module.md` files were added with ids, the example
+  lesson was removed (its id now belongs to the stub), the curriculum map's headings follow
+  the structure above, and its rank-ladder draft was left out.
+
 ### Where things stand on 2026-09-27
 
 - **Live on `main`:** milestone 1, milestone 2 (auth), the ZeroCorps home page with the

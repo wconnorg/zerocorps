@@ -40,12 +40,13 @@ function sourceFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
     if (entry.isDirectory()) return entry.name === "node_modules" ? [] : sourceFiles(path);
-    return /\.(ts|tsx|mts|mjs|js|css|json)$/.test(entry.name) ? [path] : [];
+    return /\.(ts|tsx|mts|mjs|js|css|json|md)$/.test(entry.name) ? [path] : [];
   });
 }
 
 describe("hidden characters in the source", () => {
-  const files = [...sourceFiles("src"), ...sourceFiles("scripts")];
+  // The lessons too: an invisible character inside an `id` makes two ids look the same.
+  const files = [...sourceFiles("src"), ...sourceFiles("scripts"), ...sourceFiles("content")];
 
   it("finds the files to look at", () => {
     expect(files.length).toBeGreaterThan(40);
