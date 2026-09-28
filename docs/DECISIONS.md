@@ -37,6 +37,9 @@ relevant section with a date; do not rewrite history.
   would let anyone block a number just by typing it into the signup form.
 - Usernames can be changed **once per 30 days**. The old name is released
   immediately. Users are always referenced by ID, so this is safe.
+  _Superseded on 2026-09-21 by the username step, which the owner approved: the first
+  change is free, and a name somebody leaves is held for 30 days instead of released at
+  once, so nobody can take it and pass for them. See "The username step, part one"._
 
 ### Pages
 
@@ -1024,7 +1027,56 @@ confirmed all of them.
   `SECURITY_CONTACT` is unaffected: it is GitHub's private vulnerability reporting page
   and still gates the release.
 
-### Where milestone 2 stands (keep this current; last updated 2026-09-21)
+### The Academy's two tracks, and writing lessons in Obsidian (2026-09-27)
+
+- **The owner's direction for the first education topics:** two tracks, both free to
+  take. A **Quantower** track, on its free version, is the backtesting school: it is
+  where members learn and prove a process in simulation. A **Sierra Chart** track comes
+  after it, for members who have income to pay for the platform; the Academy should not
+  push anyone to spend on a funded account without income behind it. The details come
+  from the owner later. The planning assistant's suggestions, not yet decided: write the
+  platform-neutral material once and split the tracks only at the platform lessons; let
+  finishing the backtesting school be the gate to the Sierra track, and let the rank
+  ladder follow the tracks. **The rank ladder is still owed before milestone 7.**
+- **Found on 2026-09-27: the folder README contradicted the approved "Academy content"
+  decision.** It said progress follows a lesson's file name, so renaming a lesson loses
+  it. The approved rule is a required, stable `id` in every lesson's frontmatter, and
+  progress is saved against that. The README and the example lesson now carry `id`, and
+  the README also says that the folder is public on GitHub, drafts included.
+- **Open question for the owner: lessons as `.md` instead of `.mdx`.** Obsidian does not
+  open `.mdx` files without a community plugin (checked 2026-09-27), and the brief says
+  the owner writes lessons in Obsidian. As `.md`, lessons open in Obsidian with nothing
+  added, and a bare `<` or `{` in a sentence ("price < VWAP") no longer breaks a page.
+  Callouts, which the "Academy content" decision already supports, stay the way to add a
+  quiz or a special box later. Only the example lesson exists, so it is a one-file
+  rename. The recommendation is `.md`; the brief says MDX, so it waits for the owner.
+
+### Where things stand on 2026-09-27
+
+- **Live on `main`:** milestone 1, milestone 2 (auth), the ZeroCorps home page with the
+  product wheel, the dashboard shell and the Academy's black "coming soon" page.
+- **On `dev`, not released:** the username step (`/onboarding`, a minimal `/settings`,
+  the two profile endpoints; 259 tests pass), the lesson folder and its README. The
+  migration `0003_usernames` is already applied to the one database. **Before release:**
+  the owner tests it on the laptop, then `npm run check` and `npm run verify` run with
+  the owner's dev server stopped, then the owner says "push".
+- **Owed by the owner:** the restore drill (`npm run db:restore:check`) for the backup
+  taken after the real sign-up; a look at Vercel's Firewall tab (every automated request
+  is still challenged, so `npm run verify` cannot check the live site); `/terms` and
+  `/privacy` read and approved, and the `PRIVACY_CONTACT` test message, before anyone is
+  invited; deleting `backup-dev-before-squash`; confirming the daily cleanup cron ran; an
+  answer on the development-only dependency alert (SECURITY.md); the rank ladder; and the
+  `.md` question above.
+- **Proposed order, not yet approved:** release the username step; the owner writes
+  lessons meanwhile; the gates before inviting friends; then **milestone 7 (the Academy
+  skeleton) pulled forward** ahead of the rest of 3, 4, 5 and 6, as the dashboard shell
+  was. It is what the business needs next, it costs nothing to run, and it needs no new
+  third party, where milestone 5 adds Twilio and SMS charges. The privacy page already
+  says account deletion is by request until the settings button exists. Profile-picture
+  upload, a new file-upload surface, follows the Academy. **The brain export (milestone 9) follows milestone 7:** with one member and no lesson progress its graph would be
+  empty, and its value is exactly the progress milestone 7 records.
+
+### Where milestone 2 stands (last updated 2026-09-21; see "Where things stand" above)
 
 A new session starts here. Milestone 2 is **built on `dev`, tested by the owner on
 the laptop, and in its release walkthrough**; `main` holds only milestone 1 and the

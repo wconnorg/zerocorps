@@ -82,8 +82,9 @@ and release; its migration `0003_usernames` is already applied. After it: profil
 upload, stored in the database, plan first. DECISIONS.md has it under "The username step,
 part two".
 
-**Read "Where milestone 2 stands" in DECISIONS.md first.** Milestone 2 is live and the
-owner's real sign-up worked. It lists what is still open from the release: the backup
+**Read "Where things stand on 2026-09-27" in DECISIONS.md first**, then "Where milestone
+2 stands" for the release's history. Milestone 2 is live and the owner's real sign-up
+worked. It lists what is still open from the release: the backup
 after that sign-up, Vercel challenging automated requests (so `npm run verify` has not
 run against the live site), and the gates before anyone else is invited.
 

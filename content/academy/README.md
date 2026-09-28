@@ -27,19 +27,22 @@ content/academy/
 
 ## The numbers at the front are the order, and nothing else
 
-`01-`, `02-` decide what comes first. They are **not** part of the address a lesson gets:
-`01-orders-and-fills.mdx` is reached at `orders-and-fills`.
+`01-`, `02-` decide what comes first. Leave gaps if you like (`10-`, `20-`, `30-`) so you
+can slot one in later without renaming its neighbours.
+
+## Every lesson has an `id`, and the id never changes
+
+The `id` at the top of a lesson is how the site knows it: members' progress is saved
+against the id, not against the file's name or folder (DECISIONS.md, "Academy content").
 
 So:
 
-- **To reorder, rename the numbers.** Nothing breaks: no address changes, and nobody
+- **Rename, reorder or move the file as much as you like.** Nothing breaks, and nobody
   loses their progress.
-- **To rename a lesson's words, think twice.** That changes its address, and progress is
-  remembered against it. Renaming `orders-and-fills` to `order-types` would look, to the
-  site, like the old lesson was deleted and a new one added.
-
-Leave gaps if you like (`10-`, `20-`, `30-`) so you can slot one in later without
-renaming its neighbours.
+- **Never change an `id` once members can see the lesson.** To the site, a new id is a new
+  lesson, and the old one's progress is left behind.
+- **Every id is different**, across the whole Academy: lower-case letters, numbers and
+  hyphens, such as `orders-and-fills`.
 
 ## What goes at the top of a file
 
@@ -49,6 +52,7 @@ A lesson (`.mdx`):
 
 ```mdx
 ---
+id: orders-and-fills
 title: Orders and fills
 summary: The two ways to ask for a trade, and what each one costs you.
 minutes: 6
@@ -68,6 +72,7 @@ summary: Where to start if you have never placed a trade.
 An optional longer description, shown on the course's page.
 ```
 
+- **`id`** is required on a lesson, and is described above.
 - **`title`** is required. It is what people see.
 - **`summary`** is one sentence, shown in lists and in search results.
 - **`minutes`** is your honest estimate of how long the lesson takes to read.
@@ -78,14 +83,25 @@ An optional longer description, shown on the course's page.
 components later (a chart, a quiz, a callout) without rewriting anything you have already
 written, which is why lessons are `.mdx` and not `.md`.
 
-Two things to keep in mind:
+Things to keep in mind:
 
 - **Start each lesson's headings at `##`.** The lesson's `title` is the page's one `#`.
+- **Obsidian callouts (`> [!note]`) and ordinary image links (`![what it shows](file.png)`)
+  work.** Obsidian's own `[[links]]` and `![[embeds]]` do not: turn off "Use [[Wikilinks]]"
+  in Obsidian's settings (Files and links) so it writes ordinary links instead.
+- **In an `.mdx` file, a bare `<` or `{` in a sentence breaks the page.** Write "price is
+  below VWAP", or put it in backticks: `price < VWAP`.
 - **Nothing here is financial advice**, and the site says so on every page. Keep lessons
   to what things are and how they work, which is what the disclaimer covers.
+
+## This folder is public
+
+The repository is public, so **everything in this folder can be read on GitHub as soon as
+it is pushed**, before the site shows it and even if the site never does. Keep private
+notes, plans and anything about members in a separate vault, never here.
 
 ## Drafts
 
 A file or folder whose name starts with an underscore, other than `_course.md` and
-`_module.md`, is ignored. So `_scratch-ideas.mdx` can sit beside your lessons without
-being published.
+`_module.md`, is left off the site. So `_scratch-ideas.mdx` can sit beside your lessons
+without appearing in the Academy. It is still public on GitHub, like everything here.
