@@ -4,6 +4,8 @@ import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
 import { eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { authSchema, knownDevices } from "../../db/schema.ts";
+import { academyPlugin } from "../academy/academy-plugin.ts";
+import type { Catalog } from "../academy/content.ts";
 import { looksLikeEmail, normalizeEmail } from "../email-address.ts";
 import { clientIp, coarseIpPrefix, userAgentFamily } from "./client-info.ts";
 import { profilePlugin } from "./profile-plugin.ts";
@@ -61,9 +63,16 @@ export type AuthDeps = {
    * serverless function returns, and the email would never be sent.
    */
   runAfterResponse?: (work: Promise<unknown>) => void;
+  /**
+   * The Academy's lessons, read from `content/academy/`. A function, so the laptop sees a
+   * lesson the owner has just edited. Without it the Academy has no lessons to complete.
+   */
+  academyCatalog?: () => Catalog;
 };
 
 const DAY = 60 * 60 * 24;
+
+const NO_LESSONS: Catalog = { courses: [], chapters: new Map(), lessons: new Map() };
 
 /**
  * Endpoints this milestone does not use. They are switched off and re-enabled in the
@@ -319,6 +328,7 @@ export function createAuth(deps: AuthDeps) {
         events,
       }),
       profilePlugin({ db, limiter, events }),
+      academyPlugin({ db, limiter, catalog: deps.academyCatalog ?? (() => NO_LESSONS) }),
     ],
 
     rateLimit: {

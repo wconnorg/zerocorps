@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { TERMS_VERSION } from "@/config/legal";
 import { db } from "@/db/client";
 import { env } from "@/env";
+import { getCatalog } from "@/lib/academy/catalog";
 import { createAuthMailer } from "@/lib/email/auth-emails";
 import { createEmailSender } from "@/lib/email/send-email";
 import { createAuth } from "./create-auth";
@@ -36,4 +37,5 @@ export const auth = createAuth({
   // the work is done, and works unchanged on a self-hosted Node server. A bare promise
   // that nobody awaits can be frozen when the function returns, and would never send.
   runAfterResponse: (work) => after(work),
+  academyCatalog: getCatalog,
 });

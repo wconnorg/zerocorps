@@ -34,6 +34,13 @@ export const LIMITS = {
    */
   usernameCheckPerUser: { window: 10 * MINUTE, max: 60 },
   profileSavePerUser: { window: HOUR, max: 20 },
+  /** Far above anyone reading lessons; there to stop a script, not a keen member. */
+  lessonCompletePerUser: { window: HOUR, max: 120 },
+  /**
+   * Counted pass or fail, so running through every combination of answers takes days.
+   * Six tries an hour is plenty for a person who rereads between attempts.
+   */
+  checkpointSubmitPerUser: { window: HOUR, max: 6 },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;

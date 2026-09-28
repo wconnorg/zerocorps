@@ -8,6 +8,7 @@ import {
   pgPolicy,
   pgRole,
   pgTable,
+  primaryKey,
   text,
   timestamp,
   uniqueIndex,
@@ -306,6 +307,83 @@ export const abuseCounters = pgTable(
     expiresAt: instant("expires_at").notNull(),
   },
   (table) => [index("abuse_counters_expires_at_idx").on(table.expiresAt), appAccess()],
+);
+
+// ── The Academy (milestone 7) ─────────────────────────────────────────────────
+//
+// The lessons themselves live in `content/academy/`, not here. These tables hold only
+// what a member has DONE, keyed by the ids in the lesson files, which never change. All
+// three go when the account goes (ON DELETE CASCADE), and none holds anything but ids,
+// dates and scores.
+
+/** The same shape `src/lib/academy/content.ts` enforces on every id. */
+const idShape = (column: unknown) =>
+  sql`${column} ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(${column}) <= 80`;
+
+/** A lesson a member marked complete. Once, at the first moment they did. */
+export const lessonProgress = pgTable(
+  "lesson_progress",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    lessonId: text("lesson_id").notNull(),
+    completedAt: instant("completed_at").notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ name: "lesson_progress_pkey", columns: [table.userId, table.lessonId] }),
+    check("lesson_progress_lesson_id_shape", idShape(table.lessonId)),
+    appAccess(),
+  ],
+);
+
+/**
+ * A chapter checkpoint a member passed: the first pass is kept. Failed attempts are not
+ * stored at all; the limiter counts them without knowing what they were.
+ */
+export const checkpointPasses = pgTable(
+  "checkpoint_passes",
+  {
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    chapterId: text("chapter_id").notNull(),
+    score: integer("score").notNull(),
+    outOf: integer("out_of").notNull(),
+    passedAt: instant("passed_at").notNull().defaultNow(),
+  },
+  (table) => [
+    primaryKey({ name: "checkpoint_passes_pkey", columns: [table.userId, table.chapterId] }),
+    check("checkpoint_passes_chapter_id_shape", idShape(table.chapterId)),
+    check(
+      "checkpoint_passes_score_range",
+      sql`${table.outOf} BETWEEN 1 AND 50 AND ${table.score} BETWEEN 0 AND ${table.outOf}`,
+    ),
+    appAccess(),
+  ],
+);
+
+/**
+ * Every step a member has earned, once, with when (the brief's `rank_history`). A step
+ * is never taken away, which is why it is stored rather than worked out each time: a
+ * lesson added to a finished level later must not undo anyone's step. Today the steps
+ * are `rookie-level-1` to `rookie-level-3` (`src/lib/academy/standing.ts`).
+ */
+export const rankHistory = pgTable(
+  "rank_history",
+  {
+    id: id(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    rank: text("rank").notNull(),
+    achievedAt: instant("achieved_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("rank_history_user_rank_unique").on(table.userId, table.rank),
+    check("rank_history_rank_shape", idShape(table.rank)),
+    appAccess(),
+  ],
 );
 
 /**

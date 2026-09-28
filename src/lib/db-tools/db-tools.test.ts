@@ -59,6 +59,12 @@ beforeAll(async () => {
            ('signin_failed', NULL, 'identifier-hash', NULL, 'production');
     INSERT INTO abuse_counters (key, count, window_started_at, expires_at)
     VALUES ('limit-key', 2, now(), now() + interval '1 hour');
+    INSERT INTO lesson_progress (user_id, lesson_id, completed_at)
+    VALUES ('11111111-1111-4111-8111-111111111111', 'orders-and-fills', '2026-09-28 10:00:00.5+00');
+    INSERT INTO checkpoint_passes (user_id, chapter_id, score, out_of)
+    VALUES ('11111111-1111-4111-8111-111111111111', 'how-markets-work', 3, 4);
+    INSERT INTO rank_history (user_id, rank)
+    VALUES ('11111111-1111-4111-8111-111111111111', 'rookie-level-1');
   `);
 }, 180_000);
 
@@ -77,6 +83,9 @@ const fingerprintOf = async (client: TestDatabase["client"]) => {
     "known_devices",
     "auth_events",
     "abuse_counters",
+    "lesson_progress",
+    "checkpoint_passes",
+    "rank_history",
   ];
   const result: Record<string, string> = {};
   for (const table of tables) {
@@ -98,8 +107,11 @@ describe("backup: dump, encrypt, decrypt, restore", () => {
       ["public.abuse_counters", 1],
       ["public.accounts", 1],
       ["public.auth_events", 2],
+      ["public.checkpoint_passes", 1],
       ["public.known_devices", 1],
+      ["public.lesson_progress", 1],
       ["public.pending_signups", 2],
+      ["public.rank_history", 1],
       ["public.rate_limits", 1],
       ["public.sessions", 1],
       ["public.users", 2],
@@ -262,7 +274,7 @@ describe("db:check-role", () => {
           "A real CREATE TABLE attempt is refused (rolled back either way)",
           "Cannot TRUNCATE, add triggers to, or add foreign keys to any table",
           "Row-level security is on for every table",
-          "Every table is opened to it by an explicit policy (10 tables)",
+          "Every table is opened to it by an explicit policy (13 tables)",
         ]);
       });
       const { rows } = await source.client.query(
@@ -293,8 +305,11 @@ describe("db:counts", () => {
       abuse_counters: 1,
       accounts: 1,
       auth_events: 2,
+      checkpoint_passes: 1,
       known_devices: 1,
+      lesson_progress: 1,
       pending_signups: 2,
+      rank_history: 1,
       rate_limits: 1,
       sessions: 1,
       users: 2,

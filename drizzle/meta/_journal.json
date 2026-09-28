@@ -29,6 +29,13 @@
       "when": 1790002881196,
       "tag": "0003_usernames",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790635283357,
+      "tag": "0004_academy",
+      "breakpoints": true
     }
   ]
 }
