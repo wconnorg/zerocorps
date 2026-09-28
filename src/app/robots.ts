@@ -14,6 +14,8 @@ export default function robots(): MetadataRoute.Robots {
         "/forgot-password",
         "/reset-password",
         "/onboarding",
+        // The Academy's own pages are for members; `/academy` itself stays public.
+        "/academy/",
         "/dashboard",
         "/settings",
         "/profile",

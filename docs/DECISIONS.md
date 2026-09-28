@@ -1082,6 +1082,52 @@ These answer the open question above and approve part of the order proposed belo
   lesson was removed (its id now belongs to the stub), the curriculum map's headings follow
   the structure above, and its rank-ladder draft was left out.
 
+### The Academy, built (milestone 7, 2026-09-28)
+
+Built on `dev` after the owner's "go", not released. **The migration `0004_academy` is
+written and NOT applied**: the owner runs `npm run db:backup`, then `npm run db:migrate`.
+It only adds three tables, so it can be applied before the code is released; the live site
+never touches them.
+
+- **Pages.** `/academy` serves both audiences, as the brief says: a visitor still sees the
+  black "coming soon" page (true, since every lesson is a draft), a member sees the
+  Academy's home. Below it, for members only: `/academy/<chapter>`,
+  `/academy/<chapter>/<lesson>`, `/academy/<chapter>/checkpoint` and `/academy/ranks`. The
+  look is the approved prototype, in both themes, with no inline styles. The ids `ranks`
+  and `checkpoint` are reserved so no chapter or lesson can hide a page.
+- **The lessons are read at run time** from `content/academy/` (`src/lib/academy/content.ts`),
+  strictly: a broken header or a repeated id stops the Academy with a list of every problem
+  and its file, shown on the laptop only. `npm run academy:check` prints the same list for
+  the owner, and a test reads the real folder, so a broken lesson cannot reach a release.
+  On the live site the folder is read once; on the laptop at every request, so an Obsidian
+  edit shows at the next refresh. `outputFileTracingIncludes` ships the files with the
+  server code (SECURITY.md, ledger).
+- **Markdown is rendered by markdown-it 14.1.0, pinned**, with raw HTML off. Version 15 had
+  been out for sixteen days and its type definitions had not caught up; 14.1.0 is the
+  long-established line. Obsidian callouts become styled boxes.
+- **Quick checks** are written in a lesson as a callout of type `check`, with the options as
+  `- [ ]` and the right one as `- [x]`. Ungraded, answered in the page, never stored.
+- **Checkpoints** are a chapter's `_checkpoint.md`: each `##` heading a question, `- [x]`
+  the right option, an optional `Reread: <lesson id>`, and an optional `pass:` (default 80%
+  rounded up). Graded on the server; the browser is never sent the right answers; six tries
+  an hour per member, pass or fail; the first pass is stored, a fail is not stored at all.
+  The answer keys are public on GitHub, which the owner accepted for the Rookie stage. One
+  example, from the prototype, is in the "Reading the results" chapter for the owner to
+  edit.
+- **Where the rank is kept: a deliberate change from the brief.** The brief caches the rank
+  on the user row. Instead, each Rookie step (`rookie-level-1` to `-3`) is a row in
+  `rank_history`, stored once, and the rank is read from there. A step must never be taken
+  away, so it has to be stored rather than worked out again; and keeping it off `users`
+  means the auth tables are untouched (Better Auth reads every column of `users` on every
+  request, so a new column there must exist in the database before the code that knows it).
+- **A level is finished only when it is fully written**: nobody earns a step for half a
+  level. While Sierra Chart is coming soon, finishing Level 2 means finishing the Quantower
+  course.
+- **Progress is the member's alone.** The two writes (`/api/auth/academy/complete` and
+  `/api/auth/academy/checkpoint`) are a local Better Auth plugin behind the origin and
+  session checks, like the username endpoints; the member comes from the session, never the
+  request.
+
 ### Where things stand on 2026-09-27
 
 - **Live on `main`:** milestone 1, milestone 2 (auth), the ZeroCorps home page with the

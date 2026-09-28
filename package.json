@@ -18,6 +18,7 @@
     "verify": "node scripts/verify-site.mjs",
     "check": "npm run typecheck && npm run lint && npm run test && npm run build && npm run audit:report",
     "audit:report": "node scripts/audit-report.mjs",
+    "academy:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/academy-check.mjs",
     "env:check": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/env-check.mjs",
     "env:secrets": "node scripts/env-secrets.mjs",
     "env:app-url": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/env-app-url.mjs",

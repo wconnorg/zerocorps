@@ -339,7 +339,14 @@ let clickingAProtectedLink = false;
 
   // Every signed-in page sends a signed-out visitor to sign in, and remembers where they
   // were going. The dashboard goes last: the checks after the loop look at its sign-in page.
-  for (const path of ["/onboarding", "/settings", "/dashboard"]) {
+  for (const path of [
+    "/onboarding",
+    "/settings",
+    "/academy/ranks",
+    "/academy/how-markets-work",
+    "/academy/how-markets-work/orders-and-fills",
+    "/dashboard",
+  ]) {
     await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
     note(
       new URL(page.url()).pathname === "/sign-in" &&

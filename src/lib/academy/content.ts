@@ -94,9 +94,14 @@ export type Catalog = {
 };
 
 export class ContentError extends Error {
-  constructor(readonly problems: string[]) {
+  // A plain property, not a constructor parameter property: Node's type stripping, which
+  // the owner's command-line tools rely on, does not support those.
+  readonly problems: string[];
+
+  constructor(problems: string[]) {
     super(`The Academy's content has ${problems.length} problem(s):\n- ${problems.join("\n- ")}`);
     this.name = "ContentError";
+    this.problems = problems;
   }
 }
 

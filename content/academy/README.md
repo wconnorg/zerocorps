@@ -85,6 +85,53 @@ coming soon (Sierra Chart, for now).
 - **Nothing here is financial advice**, and the site says so on every page. Keep lessons
   to what things are and how they work, which is what the disclaimer covers.
 
+## A quick check inside a lesson
+
+A question the reader answers on the page, to check they followed. It is not graded and
+nothing is saved. Write it as a callout of type `check`, tick the right answer with `[x]`,
+and add an optional line of explanation after the options:
+
+```md
+> [!check] You risk $50 on a trade and it makes $150. What is the result in R?
+> - [ ] +1R
+> - [x] +3R
+> - [ ] +150R
+> It made three times what it risked.
+```
+
+## A chapter's checkpoint
+
+The test at the end of a chapter, in a file called `_checkpoint.md` in the chapter's
+folder. Each `##` heading is a question; tick the right option with `[x]`; an optional
+`Reread:` line names the lesson (by its id) to send someone back to when they miss it:
+
+```md
+---
+pass: 3
+---
+
+## What does maximum drawdown measure?
+
+- [ ] The biggest single losing trade.
+- [x] The largest fall of the account from a peak, before a new high.
+- [ ] The average loss per day.
+
+Reread: drawdown
+```
+
+- **`pass`** is how many must be right. Leave it out and it is 80%, rounded up.
+- The checkpoint opens once every lesson in the chapter is complete. It is graded on the
+  site, and a member is never shown the right answers, only which ones they missed.
+- **The answers can be read on GitHub**, because this folder is public. That is accepted for
+  the Rookie stage.
+- `02-backtesting-school/04-reading-the-results/_checkpoint.md` is an example to copy.
+
+## Checking your work
+
+After writing, run `npm run academy:check` in the project folder. It reads the lessons the
+way the site does and says either "ready", with how many are written, or every problem
+with the file it is in. On the laptop, the Academy page shows the same list.
+
 ## New lessons from the template
 
 In Obsidian, turn on the core plugin **Templates** and set its template folder to
