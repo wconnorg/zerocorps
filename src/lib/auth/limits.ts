@@ -43,6 +43,13 @@ export const LIMITS = {
   checkpointSubmitPerUser: { window: HOUR, max: 6 },
   /** Starting a Discord link, and unlinking: a person does this a handful of times, ever. */
   discordLinkPerUser: { window: HOUR, max: 10 },
+  /**
+   * Every request that checks the member's password while they are signed in (changing
+   * it, deleting the account): a stolen session cannot guess its way to the password.
+   */
+  passwordCheckPerUser: { window: HOUR, max: 10 },
+  /** Signing out one of the member's other devices. */
+  sessionRevokePerUser: { window: HOUR, max: 30 },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;

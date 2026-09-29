@@ -28,7 +28,11 @@ export type AuthEventType =
   | "username_claimed"
   | "username_changed"
   | "discord_linked"
-  | "discord_unlinked";
+  | "discord_unlinked"
+  | "password_changed"
+  | "session_revoked"
+  | "other_sessions_revoked"
+  | "account_deleted";
 
 export type AuthEventInput = {
   type: AuthEventType;
