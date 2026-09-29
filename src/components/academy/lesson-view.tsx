@@ -1,7 +1,13 @@
 import type { Route } from "next";
 import Link from "next/link";
 import { isOpen, type Lesson } from "@/lib/academy/content";
-import { checkpointHref, chapterHref, lessonHref, type MemberAcademy } from "@/lib/academy/member";
+import {
+  checkpointHref,
+  chapterHref,
+  lessonHref,
+  type MemberAcademy,
+  rankClaimed,
+} from "@/lib/academy/member";
 import { renderInline, renderMarkdown } from "@/lib/academy/markdown";
 import { cn } from "@/lib/cn";
 import { LessonActions } from "./lesson-actions";
@@ -157,6 +163,7 @@ export function LessonView({ academy, lesson }: { academy: MemberAcademy; lesson
         )}
 
         <LessonActions
+          claimed={rankClaimed(academy)}
           lessonId={lesson.id}
           done={done}
           next={next}

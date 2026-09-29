@@ -17,7 +17,16 @@ export type MemberAcademy = {
   passed: ReadonlySet<string>;
   /** Every step earned, with when it was stored (null: earned, not yet stored). */
   steps: ReadonlyMap<string, Date | null>;
+  /**
+   * A rank is earned in the Academy and CLAIMED by linking Discord (owner, 2026-09-29):
+   * until then the page says "link Discord to claim it". `available` is false while the
+   * site's Discord application is not set up.
+   */
+  discord: { linked: boolean; available: boolean };
 };
+
+/** The member's rank shows as theirs only once claimed: earned AND Discord linked. */
+export const rankClaimed = (academy: Pick<MemberAcademy, "discord">) => academy.discord.linked;
 
 export const chapterHref = (chapter: Chapter) => `/academy/${chapter.id}` as Route;
 export const lessonHref = (lesson: Lesson) => `/academy/${lesson.chapterId}/${lesson.id}` as Route;

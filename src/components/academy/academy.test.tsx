@@ -34,7 +34,12 @@ const ACADEMY = buildCatalog({
   ],
 });
 
-function member(catalog: Catalog, completed: string[] = [], passed: string[] = []): MemberAcademy {
+function member(
+  catalog: Catalog,
+  completed: string[] = [],
+  passed: string[] = [],
+  discord = { linked: true, available: true },
+): MemberAcademy {
   const s = standing(catalog, new Set(completed), new Set(passed));
   return {
     userId: "u",
@@ -44,6 +49,7 @@ function member(catalog: Catalog, completed: string[] = [], passed: string[] = [
     completed: new Set(completed),
     passed: new Set(passed),
     steps: new Map(s.earnedSteps.map((step) => [step, null])),
+    discord,
   };
 }
 
@@ -109,6 +115,22 @@ describe("the Academy's home", () => {
     const rookie = home(member(ACADEMY, ["m1", "m2"]));
     expect(rookie).toContain("Current rank");
     expect(rookie).not.toContain("No rank yet");
+  });
+
+  it("an earned rank is claimed by linking Discord: until then the page says how", () => {
+    const unlinked = home(member(ACADEMY, ["m1", "m2"], [], { linked: false, available: true }));
+    expect(unlinked).toContain("Rank earned");
+    expect(unlinked).not.toContain("Current rank");
+    expect(unlinked).toContain('href="/settings#connections"');
+    expect(unlinked).toContain("to claim it");
+
+    const notOpenYet = home(member(ACADEMY, ["m1", "m2"], [], { linked: false, available: false }));
+    expect(notOpenYet).toContain("once Discord linking opens");
+    expect(notOpenYet).not.toContain('href="/settings#connections"');
+
+    const linked = home(member(ACADEMY, ["m1", "m2"], [], { linked: true, available: true }));
+    expect(linked).toContain("Current rank");
+    expect(linked).not.toContain("to claim it");
   });
 
   it("escapes whatever the lesson files say", () => {

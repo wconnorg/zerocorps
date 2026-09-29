@@ -16,12 +16,15 @@ export function LessonActions({
   done: initiallyDone,
   next,
   previous,
+  claimed,
 }: {
   lessonId: string;
   done: boolean;
   /** Where the button leads once the lesson is done, and a line saying so before. */
   next: { href: Route; label: string; hint: string };
   previous: { href: Route; label: string } | null;
+  /** Whether a newly earned rank shows as the member's: only once Discord is linked. */
+  claimed: boolean;
 }) {
   const router = useRouter();
   const [done, setDone] = useState(initiallyDone);
@@ -61,11 +64,11 @@ export function LessonActions({
           </p>
           <p className="relative mt-3 text-3xl font-light tracking-[0.24em] text-fg">ROOKIE</p>
           <Link
-            href="/academy/ranks"
+            href={earned === "rank" && !claimed ? "/settings#connections" : "/academy/ranks"}
             prefetch={false}
             className="relative mt-4 inline-block text-sm text-accent hover:text-accent/80"
           >
-            See your rank
+            {earned === "rank" && !claimed ? "Link Discord to claim it" : "See your rank"}
           </Link>
         </div>
       ) : null}
