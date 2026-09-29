@@ -101,6 +101,16 @@ describe("the Academy's home", () => {
     expect(html).toMatch(/Level 1 · Foundations<\/span><span[^>]*>COMPLETE/);
   });
 
+  it("before Chapter 1 is complete: no rank yet, and how to earn Rookie", () => {
+    const html = home(member(ACADEMY, ["m1"]));
+    expect(html).toContain("No rank yet");
+    expect(html).toContain("Finish Chapter 1,");
+    expect(html).toContain('href="/academy/markets"');
+    const rookie = home(member(ACADEMY, ["m1", "m2"]));
+    expect(rookie).toContain("Current rank");
+    expect(rookie).not.toContain("No rank yet");
+  });
+
   it("escapes whatever the lesson files say", () => {
     const hostile = buildCatalog({
       courses: [

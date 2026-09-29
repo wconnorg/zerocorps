@@ -6,7 +6,9 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { authSchema, knownDevices } from "../../db/schema.ts";
 import { academyPlugin } from "../academy/academy-plugin.ts";
 import type { Catalog } from "../academy/content.ts";
-import { type DiscordConfig, discordPlugin } from "../discord/discord-plugin.ts";
+import { readProgress } from "../academy/progress.ts";
+import { rankKeyOf } from "../academy/standing.ts";
+import { createRankSync, type DiscordConfig, discordPlugin } from "../discord/discord-plugin.ts";
 import { looksLikeEmail, normalizeEmail } from "../email-address.ts";
 import { clientIp, coarseIpPrefix, userAgentFamily } from "./client-info.ts";
 import { profilePlugin } from "./profile-plugin.ts";
@@ -115,6 +117,8 @@ const DISABLED_PATHS = [
 
 export function createAuth(deps: AuthDeps) {
   const { db } = deps;
+  /** A member's rank key from the steps stored for them: what Discord's roles follow. */
+  const rankOf = async (userId: string) => rankKeyOf((await readProgress(db, userId)).steps);
   const limiter = createLimiter(db, deps.hmacSecret);
   const emailBudget = createEmailBudget(limiter);
   const events = createEventLog(db, {
@@ -334,8 +338,20 @@ export function createAuth(deps: AuthDeps) {
         events,
       }),
       profilePlugin({ db, limiter, events }),
-      academyPlugin({ db, limiter, catalog: deps.academyCatalog ?? (() => NO_LESSONS) }),
-      discordPlugin({ db, limiter, events, baseUrl: deps.baseUrl, discord: deps.discord ?? null }),
+      academyPlugin({
+        db,
+        limiter,
+        catalog: deps.academyCatalog ?? (() => NO_LESSONS),
+        onRankChange: createRankSync({ db, discord: deps.discord ?? null, rankOf }),
+      }),
+      discordPlugin({
+        db,
+        limiter,
+        events,
+        baseUrl: deps.baseUrl,
+        discord: deps.discord ?? null,
+        rankOf,
+      }),
     ],
 
     rateLimit: {

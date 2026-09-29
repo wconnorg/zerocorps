@@ -201,31 +201,6 @@ let clickingAProtectedLink = false;
     .catch(() => false);
   note(offersSignUp, "the sign-in page offers to create an account");
 
-  // /academy is where a SIGNED-IN member's Academy tile leads. Nothing on the home page
-  // points at it any more, so it is reached directly here.
-  await page.goto(`${base}/academy`, { waitUntil: "networkidle" });
-  // Until the lessons exist: pitch black in BOTH themes, a red glow, and two small words.
-  note(
-    await page.getByText("COMING SOON", { exact: true }).isVisible(),
-    "/academy says coming soon",
-  );
-  note(
-    (await page.getByRole("heading", { level: 1 }).textContent())?.trim() === "ZeroCorps Academy",
-    "/academy still has its heading for screen readers and search engines",
-  );
-  for (const scheme of ["dark", "light"]) {
-    await page.evaluate(
-      (value) => document.documentElement.setAttribute("data-theme", value),
-      scheme,
-    );
-    const colour = await page.evaluate(
-      () => getComputedStyle(document.querySelector("main section")).backgroundColor,
-    );
-    note(colour === "rgb(0, 0, 0)", `/academy is pitch black in the ${scheme} theme (${colour})`);
-  }
-  const academyLinks = await page.evaluate(() => document.querySelectorAll("main a").length);
-  note(academyLinks === 0, `/academy offers nothing to click (${academyLinks} links)`);
-
   // A link that tries to leave the site through ?next= ends up on the dashboard road.
   await page.goto(`${base}/sign-in?next=/.//evil.example`, { waitUntil: "networkidle" });
   note(
@@ -339,9 +314,12 @@ let clickingAProtectedLink = false;
 
   // Every signed-in page sends a signed-out visitor to sign in, and remembers where they
   // were going. The dashboard goes last: the checks after the loop look at its sign-in page.
+  // /academy itself too (owner, 2026-09-29): the Academy is for members, and every
+  // address under it leads a visitor in through sign-in.
   for (const path of [
     "/onboarding",
     "/settings",
+    "/academy",
     "/academy/ranks",
     "/academy/how-markets-work",
     "/academy/how-markets-work/orders-and-fills",
@@ -416,7 +394,6 @@ let clickingAProtectedLink = false;
   ];
   const pages = [
     ["home", "/"],
-    ["academy", "/academy"],
     ["sign-up", "/sign-up"],
     ["sign-up-verify", "/sign-up/verify"],
     ["sign-in", "/sign-in"],

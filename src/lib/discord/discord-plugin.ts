@@ -12,7 +12,7 @@ import type { EventLog } from "../auth/events.ts";
 import { randomToken, safeEqual } from "../auth/keyed-hash.ts";
 import type { Limiter } from "../auth/limits.ts";
 import { authorizeUrl, type DiscordApp, type DiscordFetch, identify } from "./discord-api.ts";
-import { removeDiscordLink, saveDiscordLink } from "./links.ts";
+import { getDiscordLink, removeDiscordLink, saveDiscordLink } from "./links.ts";
 import { type RoleConfig, syncDiscordRoles } from "./role-sync.ts";
 
 /**
@@ -45,15 +45,48 @@ export type DiscordPluginOptions = {
   events: EventLog;
   baseUrl: string;
   discord: DiscordConfig | null;
+  /**
+   * The member's rank key, or null before they have one. The role in Discord follows it:
+   * Rookie is earned by completing Chapter 1 (DECISIONS.md, 2026-09-29).
+   */
+  rankOf: (userId: string) => Promise<string | null>;
 };
 
-/** Everyone who has a ZeroCorps account is a Rookie today (DECISIONS.md, 2026-09-28). */
-const CURRENT_RANK = "rookie";
 const STATE_COOKIE = "discord_state";
 const STATE_SECONDS = 10 * 60;
 
+/**
+ * Makes a linked member's Discord roles match their rank now: called when a rank is
+ * earned, so the Rookie role arrives the moment Chapter 1 is complete. Does nothing for a
+ * member without a link, or while roles are not set up. Never throws.
+ */
+export function createRankSync(options: {
+  db: AuthDatabase;
+  discord: DiscordConfig | null;
+  rankOf: (userId: string) => Promise<string | null>;
+}) {
+  const { db, discord, rankOf } = options;
+  return async (userId: string): Promise<void> => {
+    if (!discord?.roles) return;
+    try {
+      const link = await getDiscordLink(db, userId);
+      if (!link) return;
+      const result = await syncDiscordRoles(
+        discord.fetch ?? fetch,
+        discord.roles,
+        link.discordId,
+        await rankOf(userId),
+      );
+      if (result.status !== "synced") console.warn(`[discord] role sync: ${result.status}`);
+    } catch (error) {
+      console.error(`[discord] role sync failed: ${error instanceof Error ? error.name : "error"}`);
+    }
+  };
+}
+
 export type LinkOutcome =
   | "linked"
+  | "linked-no-rank"
   | "linked-join"
   | "unlinked"
   | "taken"
@@ -64,7 +97,7 @@ export type LinkOutcome =
   | "too-many";
 
 export function discordPlugin(options: DiscordPluginOptions) {
-  const { db, limiter, events, baseUrl, discord } = options;
+  const { db, limiter, events, baseUrl, discord, rankOf } = options;
   const fetcher: DiscordFetch = discord?.fetch ?? fetch;
   const app: DiscordApp | null = discord
     ? { ...discord.app, redirectUri: `${baseUrl}/api/auth/discord/callback` }
@@ -146,10 +179,16 @@ export function discordPlugin(options: DiscordPluginOptions) {
           const headers = ctx.request?.headers ?? null;
           await events.record({ type: "discord_linked", userId: session.user.id, headers });
           if (saved.replaced) await sync(saved.replaced.discordId, null);
-          const roles = await sync(who.id, CURRENT_RANK);
-          throw ctx.redirect(
-            settings(roles?.status === "not-in-server" ? "linked-join" : "linked"),
-          );
+          // The role follows the rank: none before Chapter 1 is complete.
+          const rank = await rankOf(session.user.id);
+          const roles = await sync(who.id, rank);
+          const outcome: LinkOutcome =
+            roles?.status === "not-in-server"
+              ? "linked-join"
+              : rank === null
+                ? "linked-no-rank"
+                : "linked";
+          throw ctx.redirect(settings(outcome));
         },
       ),
 

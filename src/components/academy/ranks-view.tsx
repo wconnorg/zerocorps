@@ -1,5 +1,13 @@
 import { type MemberAcademy } from "@/lib/academy/member";
-import { LEVEL_NAMES, levelStepKey, RANK_TITLE, ROOKIE_LEVELS } from "@/lib/academy/standing";
+import {
+  LEVEL_NAMES,
+  levelStepKey,
+  RANK_TITLE,
+  rankKeyOf,
+  ROOKIE_CHAPTER_NUMBER,
+  ROOKIE_KEY,
+  ROOKIE_LEVELS,
+} from "@/lib/academy/standing";
 import { cn } from "@/lib/cn";
 import { Kicker, Label, Rule, SegmentMeter, StatusIcon } from "./ui";
 
@@ -20,6 +28,11 @@ const dateOf = (date: Date) =>
 
 export function RanksView({ academy }: { academy: MemberAcademy }) {
   const done = ROOKIE_LEVELS.filter((level) => academy.steps.has(levelStepKey(level))).length;
+  const isRookie = rankKeyOf(academy.steps) === ROOKIE_KEY;
+  const rookieAt = academy.steps.get(ROOKIE_KEY);
+  const firstChapter = [...academy.standing.chapters.values()].find(
+    (entry) => entry.chapter.number === ROOKIE_CHAPTER_NUMBER,
+  );
   return (
     <div className="relative">
       <div
@@ -33,8 +46,18 @@ export function RanksView({ academy }: { academy: MemberAcademy }) {
             <h1 className="text-4xl font-light tracking-[0.2em] uppercase sm:text-5xl">Ranks</h1>
             <Rule />
             <p className="max-w-xl text-base/7 text-muted sm:text-lg/8">
-              You are a <strong className="font-semibold text-fg">{RANK_TITLE}</strong>. Every level
-              you finish is a step, and a step is never taken away.
+              {isRookie ? (
+                <>
+                  You are a <strong className="font-semibold text-fg">{RANK_TITLE}</strong>. Every
+                  level you finish is a step, and nothing earned is ever taken away.
+                </>
+              ) : (
+                <>
+                  Finish Chapter 1{firstChapter ? `, ${firstChapter.chapter.title},` : ""} to become
+                  a <strong className="font-semibold text-fg">{RANK_TITLE}</strong>. Nothing earned
+                  is ever taken away.
+                </>
+              )}
             </p>
           </header>
 
@@ -60,6 +83,29 @@ export function RanksView({ academy }: { academy: MemberAcademy }) {
               </div>
             </div>
             <ol>
+              <li className="flex min-h-20 items-center gap-5 border-b border-line/60 px-6 py-5 sm:px-8">
+                <StatusIcon state={isRookie ? "done" : "current"} className="size-6" />
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <span className="font-mono text-[0.6875rem] tracking-[0.2em] text-subtle">
+                    CHAPTER 01 · EARNS THE RANK
+                  </span>
+                  <span className="text-lg font-medium">
+                    {firstChapter?.chapter.title ?? "Chapter 1"}
+                  </span>
+                </div>
+                <span
+                  className={cn(
+                    "text-right font-mono text-xs tracking-[0.14em]",
+                    isRookie ? "text-success" : "text-accent",
+                  )}
+                >
+                  {isRookie
+                    ? rookieAt
+                      ? `ROOKIE · ${dateOf(rookieAt).toUpperCase()}`
+                      : "ROOKIE"
+                    : "IN REACH"}
+                </span>
+              </li>
               {ROOKIE_LEVELS.map((number) => {
                 const level = academy.standing.levels.find(
                   (candidate) => candidate.level === number,
@@ -124,8 +170,8 @@ export function RanksView({ academy }: { academy: MemberAcademy }) {
               "A chapter is complete when its lessons are done and its checkpoint, if it has one, is passed.",
             ],
             [
-              "Levels make you a Rookie",
-              "Finish every chapter of a level for a step. The Platform is open from the start, so the order is yours.",
+              "Chapter 1 makes you a Rookie",
+              "Finish Chapter 1 and pass its checkpoint to earn the rank. Then every level you finish is a step. The Platform is open from the start, so the order is yours.",
             ],
             [
               "Nothing is taken away",

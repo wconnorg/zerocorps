@@ -1189,6 +1189,33 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### The owner's answers of 2026-09-29: lessons stay open, /academy leads in, Rookie is earned
+
+These supersede the matching lines above ("The Academy's structure, ranks and lessons",
+"The Academy, built", "Discord linking and the Rookie role").
+
+- **All 42 lessons stay open** while the owner rewrites them; no draft flag goes back on.
+  The Sierra Chart course stays coming soon.
+- **`/academy` is for members, and every address under it leads a visitor in.** The black
+  "coming soon" page is gone: a visitor who is not signed in goes to sign-in (which offers
+  "Create an account") and comes back to the Academy afterwards. Whether sign-ups are open
+  or invite-only is said by the sign-up page itself, from `SIGNUP_MODE`, so no Academy
+  wording can drift from it. `/academy` left the sitemap and robots.txt keeps crawlers
+  out of it, as for the dashboard.
+- **The Rookie rank is earned by completing Chapter 1** ("chapter 1 ... gives rookie role on
+  completion"): the chapter the site numbers 01, today "How markets work", with its four
+  lessons done and its checkpoint passed. (The owner wrote "lesson 1 2 and 3"; the chapter
+  has four lessons and a checkpoint, and completing the chapter is the rule built. To be
+  confirmed.) Before that a member has no rank, and the page says how to earn it.
+  Finishing Levels 1 to 3 stays a step within Rookie. Stored once in `rank_history` as
+  `rookie`, never taken away.
+- **The Discord role follows the rank:** linking before Chapter 1 gives no role (the page
+  says so), and completing Chapter 1 gives the Rookie role at that moment, for a member
+  who has linked (`createRankSync`, called when the rank is earned; the start of
+  milestone 8's "call it on rank change").
+- **The Discord application is set up after the owner's content review**, not before.
+- **Rank names:** Rookie stays. The owner's note left the renaming line blank.
+
 ### Rollback for the next release (written before its migration, 2026-09-29)
 
 The release is two separate changes, and each has its own way back. **Reverting code never

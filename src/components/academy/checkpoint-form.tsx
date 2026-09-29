@@ -219,7 +219,7 @@ export function CheckpointForm({
           {result.newSteps.length > 0 ? (
             <>
               <p className="relative font-mono text-xs tracking-[0.42em] text-accent">
-                LEVEL COMPLETE
+                {result.newSteps.includes("rookie") ? "RANK EARNED" : "LEVEL COMPLETE"}
               </p>
               <p className="relative text-5xl font-light tracking-[0.24em] text-fg sm:text-6xl">
                 ROOKIE

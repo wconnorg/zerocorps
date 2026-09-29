@@ -6,6 +6,9 @@ import {
   type LevelStanding,
   levelStepKey,
   RANK_TITLE,
+  rankKeyOf,
+  ROOKIE_CHAPTER_NUMBER,
+  ROOKIE_KEY,
   ROOKIE_LEVELS,
 } from "@/lib/academy/standing";
 import { cn } from "@/lib/cn";
@@ -184,6 +187,10 @@ function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone:
   const levels = academy.standing.levels.filter((level) =>
     (ROOKIE_LEVELS as readonly number[]).includes(level.level),
   );
+  const isRookie = rankKeyOf(academy.steps) === ROOKIE_KEY;
+  const firstChapter = [...academy.standing.chapters.values()].find(
+    (entry) => entry.chapter.number === ROOKIE_CHAPTER_NUMBER,
+  );
   return (
     <aside
       aria-label="Your rank"
@@ -194,13 +201,46 @@ function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone:
         className="pointer-events-none absolute -right-28 -bottom-40 size-[26rem] rounded-full bg-accent/10 blur-3xl"
       />
       <div className="relative flex items-center justify-between">
-        <Label>Current rank</Label>
+        <Label>{isRookie ? "Current rank" : "No rank yet"}</Label>
         <Label>Levels {rookieDone} of 3</Label>
       </div>
-      <p className="relative text-4xl leading-none font-light tracking-[0.2em] uppercase sm:text-5xl">
+      <p
+        className={cn(
+          "relative text-4xl leading-none font-light tracking-[0.2em] uppercase sm:text-5xl",
+          !isRookie && "text-subtle",
+        )}
+      >
         {RANK_TITLE}
       </p>
-      <SegmentMeter total={3} filled={rookieDone} className="relative" />
+      {isRookie ? (
+        <SegmentMeter total={3} filled={rookieDone} className="relative" />
+      ) : firstChapter ? (
+        <div className="relative flex flex-col gap-2.5">
+          <Bar
+            value={
+              firstChapter.openLessons
+                ? (firstChapter.doneLessons + (firstChapter.checkpointPassed ? 1 : 0)) /
+                  (firstChapter.openLessons + (firstChapter.hasCheckpoint ? 1 : 0))
+                : 0
+            }
+          />
+          <p className="text-sm text-muted">
+            Finish Chapter 1,{" "}
+            {firstChapter.open ? (
+              <Link
+                href={chapterHref(firstChapter.chapter)}
+                prefetch={false}
+                className="text-fg underline-offset-4 hover:underline"
+              >
+                {firstChapter.chapter.title}
+              </Link>
+            ) : (
+              <span className="text-fg">{firstChapter.chapter.title}</span>
+            )}
+            , {firstChapter.hasCheckpoint ? "and pass its checkpoint " : ""}to earn it.
+          </p>
+        </div>
+      ) : null}
       <ul className="relative flex flex-col gap-2.5 text-sm">
         {ROOKIE_LEVELS.map((number) => {
           const level = levels.find((candidate) => candidate.level === number);

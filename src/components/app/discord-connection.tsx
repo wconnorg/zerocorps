@@ -21,9 +21,13 @@ export const DISCORD_OUTCOMES: Record<
     tone: "success",
     text: "Discord linked. Your Rookie role is on its way in the ZeroCorps server.",
   },
+  "linked-no-rank": {
+    tone: "success",
+    text: "Discord linked. Finish Chapter 1 in the Academy to become a Rookie, and the role follows in the ZeroCorps server.",
+  },
   "linked-join": {
     tone: "info",
-    text: "Discord linked. Join the ZeroCorps server and your Rookie role follows.",
+    text: "Discord linked. Join the ZeroCorps server and your rank role follows.",
   },
   unlinked: { tone: "success", text: "Discord unlinked, and your rank role was removed." },
   taken: {
@@ -91,7 +95,7 @@ export function DiscordConnection({
                   Linked as <span className="text-fg">{linkedAs}</span>
                 </>
               ) : available ? (
-                "Link your Discord account to get your Rookie role in the ZeroCorps server."
+                "Link your Discord account and your Academy rank follows you to the ZeroCorps server as a role."
               ) : (
                 "Coming soon."
               )}

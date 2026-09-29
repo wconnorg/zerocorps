@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildCatalog as build, TWO_QUESTIONS } from "../../test/academy-fixture.ts";
-import { levelStepKey, standing } from "./standing.ts";
+import { levelStepKey, rankKeyOf, ROOKIE_KEY, standing } from "./standing.ts";
 
 /**
  * The rank rules, on a small made-up Academy: Level 1 with two chapters, Level 2 with a
@@ -71,7 +71,8 @@ describe("a level, and the Rookie steps", () => {
   it("Level 1 is finished when all its chapters are complete, and that is step 1", () => {
     const s = standing(ACADEMY, done("m1", "m2", "r1"), done("risk"));
     expect(s.levels.find((l) => l.level === 1)?.finished).toBe(true);
-    expect(s.earnedSteps).toEqual([levelStepKey(1)]);
+    // Chapter 1 is complete too, so the rank comes with it.
+    expect(s.earnedSteps).toEqual([ROOKIE_KEY, levelStepKey(1)]);
   });
 
   it("a level with a draft left in it cannot be finished yet, even with everything open done", () => {
@@ -95,7 +96,11 @@ describe("a level, and the Rookie steps", () => {
         },
       ],
     });
-    expect(standing(written, done("q1"), done()).earnedSteps).toEqual([levelStepKey(2)]);
+    // Here the Quantower chapter is the Academy's first, so it is Chapter 1 as well.
+    expect(standing(written, done("q1"), done()).earnedSteps).toEqual([
+      ROOKIE_KEY,
+      levelStepKey(2),
+    ]);
   });
 
   it("levels can be finished in any order: The Platform is open from the start", () => {
@@ -124,6 +129,38 @@ describe("a level, and the Rookie steps", () => {
 
   it("a lesson id that no longer exists counts for nothing", () => {
     expect(standing(ACADEMY, done("renamed-away"), done("gone")).lessonsDone).toBe(0);
+  });
+});
+
+describe("the Rookie rank", () => {
+  it("is earned by completing Chapter 1: its lessons AND its checkpoint", () => {
+    const withCheckpoint = build({
+      courses: [
+        {
+          id: "foundations",
+          level: 1,
+          chapters: [
+            { id: "markets", lessons: [{ id: "m1" }, { id: "m2" }], checkpoint: TWO_QUESTIONS },
+            { id: "risk", lessons: [{ id: "r1" }] },
+          ],
+        },
+      ],
+    });
+    expect(standing(withCheckpoint, done("m1"), done()).earnedSteps).toEqual([]);
+    expect(standing(withCheckpoint, done("m1", "m2"), done()).earnedSteps).toEqual([]);
+    expect(standing(withCheckpoint, done("m1", "m2"), done("markets")).earnedSteps).toEqual([
+      ROOKIE_KEY,
+    ]);
+  });
+
+  it("is not earned by completing some other chapter first", () => {
+    expect(standing(ACADEMY, done("r1"), done("risk")).earnedSteps).toEqual([]);
+  });
+
+  it("is what Discord's roles follow: the rank key, or none before it is earned", () => {
+    expect(rankKeyOf(new Set([ROOKIE_KEY, levelStepKey(1)]))).toBe(ROOKIE_KEY);
+    expect(rankKeyOf(new Set([levelStepKey(2)]))).toBeNull();
+    expect(rankKeyOf(new Set())).toBeNull();
   });
 });
 

@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { buildCatalog } from "../../test/academy-fixture.ts";
 import { createTestClient, type TestClient } from "../../test/auth-client.ts";
 import { createTestAuth, TEST_BASE_URL, type TestAuth } from "../../test/test-auth.ts";
 import { createTestDatabase, type TestDatabase } from "../../test/test-database.ts";
@@ -94,7 +95,13 @@ beforeAll(async () => {
     roles: { botToken: "bot-token-abc", guildId: GUILD, roleIds: { rookie: ROOKIE_ROLE } },
     fetch: fakeDiscord,
   };
-  t = createTestAuth(database, { discord });
+  // Chapter 1 has one lesson, so completing it earns the Rookie rank.
+  const academy = buildCatalog({
+    courses: [
+      { id: "foundations", level: 1, chapters: [{ id: "markets", lessons: [{ id: "m1" }] }] },
+    ],
+  });
+  t = createTestAuth(database, { discord, academyCatalog: () => academy });
   unconfigured = createTestAuth(database);
 }, 180_000);
 afterAll(async () => {
@@ -139,6 +146,8 @@ describe("starting a link", () => {
 describe("coming back from Discord", () => {
   it("links the member, stores id, username and date only, revokes the token, gives the Rookie role", async () => {
     const member = await signedIn(t, "discord.happy@example.com");
+    await member.post("/academy/complete", { lessonId: "m1" }); // Chapter 1: Rookie
+    calls = [];
     const state = await startLink(member);
     const back = await member.get(`/discord/callback?code=good-code-1&state=${state}`);
     expect(back.location).toBe(`${TEST_BASE_URL}/settings?discord=linked`);
@@ -258,6 +267,29 @@ describe("coming back from Discord", () => {
       `/discord/callback?code=good-code-8&state=${await startLink(member)}`,
     );
     expect(back.location).toBe(`${TEST_BASE_URL}/settings?discord=linked-join`);
+  });
+});
+
+describe("the role follows the rank", () => {
+  it("linked before Chapter 1: no role yet, and the page says how to earn it", async () => {
+    identity = "823456789012345678";
+    const member = await signedIn(t, "discord.early@example.com");
+    const back = await member.get(
+      `/discord/callback?code=good-code-11&state=${await startLink(member)}`,
+    );
+    expect(back.location).toBe(`${TEST_BASE_URL}/settings?discord=linked-no-rank`);
+    expect(calls.filter((call) => call.method === "PUT")).toEqual([]);
+  });
+
+  it("completing Chapter 1 later gives the Rookie role at that moment", async () => {
+    identity = "923456789012345678";
+    const member = await signedIn(t, "discord.later@example.com");
+    await member.get(`/discord/callback?code=good-code-12&state=${await startLink(member)}`);
+    calls = [];
+    const done = await member.post("/academy/complete", { lessonId: "m1" });
+    expect(done.json).toMatchObject({ ok: true, newSteps: ["rookie", "rookie-level-1"] });
+    const put = calls.find((call) => call.method === "PUT");
+    expect(put?.url).toContain(`/members/923456789012345678/roles/${ROOKIE_ROLE}`);
   });
 });
 

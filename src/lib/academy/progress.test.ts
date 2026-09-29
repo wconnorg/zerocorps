@@ -207,9 +207,15 @@ describe("a chapter's checkpoint", () => {
 });
 
 describe("the Rookie steps", () => {
-  it("finishing Level 1 stores step 1, once, at the moment it was earned", async () => {
+  it("Chapter 1 earns the rank, Level 1 the step: each stored once, when it was earned", async () => {
     const userId = await member();
-    await completeLesson(database.db, WRITTEN, { userId, lessonId: "m1", now: NOW });
+    const chapterOne = await completeLesson(database.db, WRITTEN, {
+      userId,
+      lessonId: "m1",
+      now: NOW,
+    });
+    // Chapter 1 (one lesson, no checkpoint here) is complete: the Rookie rank.
+    expect(chapterOne).toMatchObject({ ok: true, newSteps: ["rookie"] });
     const lessonsDone = await completeLesson(database.db, WRITTEN, {
       userId,
       lessonId: "r1",
@@ -234,8 +240,14 @@ describe("the Rookie steps", () => {
     });
     expect(again).toMatchObject({ ok: true, newSteps: [] });
     expect(
-      await rows("SELECT rank, achieved_at FROM rank_history WHERE user_id = $1::uuid", [userId]),
-    ).toEqual([{ rank: "rookie-level-1", achieved_at: later }]);
+      await rows(
+        "SELECT rank, achieved_at FROM rank_history WHERE user_id = $1::uuid ORDER BY achieved_at",
+        [userId],
+      ),
+    ).toEqual([
+      { rank: "rookie", achieved_at: NOW },
+      { rank: "rookie-level-1", achieved_at: later },
+    ]);
   });
 
   it("a step once earned is kept, even when the level grows a lesson the member has not done", async () => {

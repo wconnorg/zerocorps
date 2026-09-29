@@ -15,11 +15,14 @@ import { type Catalog, type Chapter, type Course, isOpen, type Lesson } from "./
  *   left) and complete. A course that is coming soon does not count, so while Sierra Chart
  *   is coming soon, finishing Level 2 means finishing the Quantower course. A level that is
  *   not fully written yet cannot be finished: nobody earns a step for half a level.
- * - **Levels 1, 2 and 3 are the Rookie stage.** A member is a Rookie from sign-up; each
- *   finished level is a step within it, earned in any order, since The Platform is open
- *   from the start. What comes after Rookie is not defined yet.
- * - **Nothing is ever taken away.** Steps are stored once earned (`rank_history`), so a
- *   lesson added to a finished level later does not undo anyone's step.
+ * - **The Rookie rank is earned by completing Chapter 1** (owner, 2026-09-29): the chapter
+ *   the site shows as "Chapter 01", its lessons done and its checkpoint passed. Before
+ *   that a member has no rank. The Discord role follows the rank.
+ * - **Levels 1, 2 and 3 are the Rookie stage:** each finished level is a step within it,
+ *   earned in any order, since The Platform is open from the start. What comes after
+ *   Rookie is not defined yet.
+ * - **Nothing is ever taken away.** The rank and the steps are stored once earned
+ *   (`rank_history`), so a lesson added later does not undo anyone's rank.
  */
 
 export const LEVEL_NAMES: Readonly<Record<number, string>> = {
@@ -33,8 +36,21 @@ export const ROOKIE_LEVELS = [1, 2, 3] as const;
 
 export const RANK_TITLE = "Rookie";
 
+/** The key stored in `rank_history` when Chapter 1 is complete: the Rookie rank itself. */
+export const ROOKIE_KEY = "rookie";
+
+/** Which chapter earns the Rookie rank: the one numbered 1, the first in the Academy. */
+export const ROOKIE_CHAPTER_NUMBER = 1;
+
 /** The key stored in `rank_history` when a level is finished. */
 export const levelStepKey = (level: number) => `rookie-level-${level}`;
+
+/**
+ * The member's rank key from the steps stored for them, or null before they have one. It
+ * is what Discord's roles follow (`DISCORD_RANK_ROLE_IDS`).
+ */
+export const rankKeyOf = (steps: { has(key: string): boolean }): string | null =>
+  steps.has(ROOKIE_KEY) ? ROOKIE_KEY : null;
 
 export type ChapterStanding = {
   chapter: Chapter;
@@ -134,9 +150,17 @@ export function standing(
     };
   });
 
-  const earnedSteps = levels
-    .filter((level) => level.finished && (ROOKIE_LEVELS as readonly number[]).includes(level.level))
-    .map((level) => levelStepKey(level.level));
+  const rookieChapter = [...chapters.values()].find(
+    (entry) => entry.chapter.number === ROOKIE_CHAPTER_NUMBER,
+  );
+  const earnedSteps = [
+    ...(rookieChapter?.complete ? [ROOKIE_KEY] : []),
+    ...levels
+      .filter(
+        (level) => level.finished && (ROOKIE_LEVELS as readonly number[]).includes(level.level),
+      )
+      .map((level) => levelStepKey(level.level)),
+  ];
 
   return { chapters, levels, earnedSteps, lessonsOpen, lessonsDone, checkpointsPassed, next };
 }

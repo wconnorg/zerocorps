@@ -108,9 +108,10 @@ describe("who may call them", () => {
 describe("marking a lesson complete", () => {
   it("works for an open lesson, and answers 404 for a draft or an unknown one", async () => {
     const member = await signedInMember("academy.marker@example.com");
+    // m1 is the whole of Chapter 1 in this fixture, so it earns the Rookie rank.
     expect((await member.post("/academy/complete", { lessonId: "m1" })).json).toEqual({
       ok: true,
-      newSteps: [],
+      newSteps: ["rookie"],
     });
     for (const lessonId of ["r-draft", "no-such-lesson"]) {
       const refused = await member.post("/academy/complete", { lessonId });

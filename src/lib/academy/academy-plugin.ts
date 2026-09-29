@@ -10,6 +10,7 @@ import type { AuthDatabase } from "../auth/create-auth.ts";
 import type { Limiter } from "../auth/limits.ts";
 import type { Catalog } from "./content.ts";
 import { completeLesson, submitCheckpoint } from "./progress.ts";
+import { ROOKIE_KEY } from "./standing.ts";
 
 /**
  * The Academy's two writes: marking a lesson complete, and submitting a checkpoint.
@@ -27,6 +28,11 @@ export type AcademyPluginOptions = {
   db: AuthDatabase;
   limiter: Limiter;
   catalog: () => Catalog;
+  /**
+   * Called when a member earns a rank (today: Rookie, for completing Chapter 1), so the
+   * Discord role can follow straight away. Must not throw.
+   */
+  onRankChange?: (userId: string) => Promise<void>;
 };
 
 const tooMany = (retryAfterSeconds: number) =>
@@ -45,7 +51,10 @@ const notFound = () =>
 const idField = z.string().min(1).max(80);
 
 export function academyPlugin(options: AcademyPluginOptions) {
-  const { db, limiter, catalog } = options;
+  const { db, limiter, catalog, onRankChange } = options;
+  const rankChanged = async (userId: string, newSteps: string[]) => {
+    if (onRankChange && newSteps.includes(ROOKIE_KEY)) await onRankChange(userId);
+  };
 
   return {
     id: "zerocorps-academy",
@@ -68,6 +77,7 @@ export function academyPlugin(options: AcademyPluginOptions) {
             now: new Date(),
           });
           if (!result.ok) throw notFound();
+          await rankChanged(userId, result.newSteps);
           return ctx.json({ ok: true, newSteps: result.newSteps });
         },
       ),
@@ -107,6 +117,7 @@ export function academyPlugin(options: AcademyPluginOptions) {
               message: "Answer every question, then submit.",
             });
           }
+          await rankChanged(userId, result.newSteps);
           return ctx.json({
             score: result.score,
             outOf: result.outOf,

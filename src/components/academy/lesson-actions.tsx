@@ -27,7 +27,7 @@ export function LessonActions({
   const [done, setDone] = useState(initiallyDone);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [levelUp, setLevelUp] = useState(false);
+  const [earned, setEarned] = useState<"rank" | "level" | null>(null);
 
   async function complete() {
     setBusy(true);
@@ -41,21 +41,24 @@ export function LessonActions({
       return;
     }
     setDone(true);
-    setLevelUp(result.data.newSteps.length > 0);
+    const steps = result.data.newSteps;
+    setEarned(steps.includes("rookie") ? "rank" : steps.length > 0 ? "level" : null);
     // The rail, the chapter and the Academy's home read progress on the server.
     router.refresh();
   }
 
   return (
     <div className="mt-12 flex flex-col gap-6 border-t border-line pt-8">
-      {levelUp ? (
+      {earned ? (
         <div
           role="status"
           className="bg-black relative overflow-hidden border border-line-strong p-8 text-center"
           data-theme="dark"
         >
           <div aria-hidden="true" className="void-glow pointer-events-none absolute inset-0" />
-          <p className="relative font-mono text-xs tracking-[0.42em] text-accent">LEVEL COMPLETE</p>
+          <p className="relative font-mono text-xs tracking-[0.42em] text-accent">
+            {earned === "rank" ? "RANK EARNED" : "LEVEL COMPLETE"}
+          </p>
           <p className="relative mt-3 text-3xl font-light tracking-[0.24em] text-fg">ROOKIE</p>
           <Link
             href="/academy/ranks"
