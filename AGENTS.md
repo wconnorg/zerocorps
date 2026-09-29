@@ -67,12 +67,12 @@ possible.
 | --- | -------------------------------------------------------- | ------------------------------------- |
 | 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel                  |
 | 2   | Auth                                                     | Live since 2026-09-21                 |
-| 3   | Onboarding                                               | Username live; avatar next            |
+| 3   | Onboarding                                               | Username live; pictures later         |
 | 4   | Dashboard and settings                                   | Self-service live; email change later |
 | 5   | Phone and 2FA                                            | On hold: before the brain export      |
-| 6   | Discord link and unlink                                  | Live, off until set up                |
+| 6   | Discord link and unlink                                  | Live                                  |
 | 7   | Academy: lessons, progress, rank, heatmap                | Live since 2026-09-29                 |
-| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Role sync live                        |
+| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Site side live; bot in its repo       |
 | 9   | Brain export for the owner's Obsidian vault              | Not started                           |
 
 **The dashboard shell came before milestone 3** (owner, 2026-09-21): the first part of
@@ -82,9 +82,8 @@ and release; its migration `0003_usernames` is already applied. After it: profil
 upload, stored in the database, plan first. DECISIONS.md has it under "The username step,
 part two".
 
-**Read "Where things stand on 2026-09-28" in DECISIONS.md first**, then "The Academy's
-structure, ranks and lessons", "The Academy, built" and "Discord linking and the Rookie role", then "Where milestone 2 stands" for
-the release's history. Milestone 7 comes before 5 and 6 (owner, 2026-09-28); its migration
+**Read "Where things stand at the end of 2026-09-29" in DECISIONS.md first.** It says
+what is live, what the owner does next and what is not built.
 `0004_academy` is not applied yet. Milestone 2 is live and the owner's real sign-up
 worked. It lists what is still open from the release: the backup
 after that sign-up, Vercel challenging automated requests (so `npm run verify` has not

@@ -1189,6 +1189,43 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Where things stand at the end of 2026-09-29 (a new session starts HERE)
+
+This replaces "Where things stand on 2026-09-28" and the older status sections below it.
+
+**Live on zerocorps.org (`main` = `de345c9`, same tree as `dev` then):**
+
+- Milestones 1 and 2; **sign-ups open to everyone** (`SIGNUP_MODE=open`).
+- Usernames: `/onboarding`, changes in `/settings` (first free, then 30 days).
+- **The Academy (milestone 7):** 42 lessons in first draft (the owner rewrites them), 9
+  chapter checkpoints, quick checks, progress, heatmap. **Rookie** is earned by completing
+  Chapter 1 and **claimed by linking Discord**; each finished level is a step.
+- **Settings (milestone 4):** password, devices, security activity, delete account.
+- **Discord linking (milestone 6)**, switched on by the owner's `DISCORD_CLIENT_ID` and
+  `DISCORD_CLIENT_SECRET` ("ZeroCorps Web", linking only, no bot on the site).
+- **Agent Zero's internal API (milestone 8)**, off until `INTERNAL_API_SECRET` is set.
+
+**The owner's, next:**
+
+1. `INTERNAL_API_SECRET` in Vercel and in the bot's `.env` (same value), then a redeploy.
+2. Vercel's Firewall: the challenge on automated requests blocks the bot; switch it off
+   or let `/api/internal/` through.
+3. Where Agent Zero runs (the laptop while testing; a host later is a new service: ask).
+4. Delete the test and main accounts in Settings and sign up again, as planned.
+5. Still open from milestone 2: read and approve `/terms` and `/privacy` (now that anyone
+   can sign up), confirm the `PRIVACY_CONTACT` mailbox, run `npm run db:restore:check`,
+   delete the `backup-dev-before-squash` branch; before public promotion, a paid database
+   plan so it never pauses; redirect `zerocorps.vercel.app` to the domain.
+
+**Not built (the owner's order):** Discord and ease of use first; then profile pictures
+(milestone 3's rest) and changing the email address (milestone 4's rest); two-factor
+(milestone 5) is on hold until before the brain export (milestone 9).
+
+**How releases work now:** `npm run check` (or at least lint and the tests) on `dev`, a
+scan for secrets, one `--no-ff` merge commit on `main` made with `git commit-tree`
+without leaving `dev`, pushed only on the owner's "push"; the deploy is confirmed through
+GitHub's public deployments API from PowerShell (the `gh` tool is not installed).
+
 ### Released on 2026-09-29, fourth: Agent Zero's internal API, Discord linking on
 
 - On the owner's "push": `dev` (`0d2e1b8`) merged into `main` as `de345c9` (parents
