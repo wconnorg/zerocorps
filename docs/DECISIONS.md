@@ -1189,6 +1189,28 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Released on 2026-09-29, third: milestone 4's account self-service; the owner's new order
+
+- **Released** on the owner's "skip browser check, test on live deployment": `dev`
+  (`41bf317`) merged into `main` as `6d22fe4` (parents `17f336d` and `41bf317`),
+  scanned, pushed; GitHub recorded the production deployment as a success. `npm run check`
+  passed first (380 tests, production build); `npm run verify` was skipped at the owner's
+  word.
+- **"I want all databases cleared":** not by a wipe. The one database is shared with the
+  live site and rows are deleted only through documented, guarded paths. The owner deletes
+  the test account and the main account from Settings, Delete account (every row tied to
+  each goes by cascade), then signs up again with the main address.
+- **The owner's order from here:** two-factor (milestone 5) waits until before the brain
+  export; first **Discord linking and the bot, and general ease of use**. Discord linking
+  is to be switched on now: the owner creates the site's own Discord application (steps
+  below) while building Agent Zero in its own repository.
+- **Agent Zero gives members the server and a "verified" role by a reaction** to one of
+  its messages. The site never touches that role: role sync only adds and removes the rank
+  roles listed in `DISCORD_RANK_ROLE_IDS`, so the verified role must never be listed there.
+- **Next here:** the rest of milestone 8, the internal API Agent Zero calls
+  (`/api/internal/discord/:discordId/profile` and `/api/internal/stats`, behind
+  `INTERNAL_API_SECRET`).
+
 ### Milestone 4, account self-service: built (2026-09-29)
 
 Built on `dev` on the owner's "as far deep as we can get", while the owner tested the

@@ -63,17 +63,17 @@ possible.
   or a placeholder only.
 - Update the status table below when a milestone is finished.
 
-| #   | Milestone                                                | Status                     |
-| --- | -------------------------------------------------------- | -------------------------- |
-| 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel       |
-| 2   | Auth                                                     | Live since 2026-09-21      |
-| 3   | Onboarding                                               | Username live; avatar next |
-| 4   | Dashboard and settings                                   | Self-service on dev        |
-| 5   | Phone and 2FA                                            | Not started                |
-| 6   | Discord link and unlink                                  | Live, off until set up     |
-| 7   | Academy: lessons, progress, rank, heatmap                | Live since 2026-09-29      |
-| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Role sync live             |
-| 9   | Brain export for the owner's Obsidian vault              | Not started                |
+| #   | Milestone                                                | Status                                |
+| --- | -------------------------------------------------------- | ------------------------------------- |
+| 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel                  |
+| 2   | Auth                                                     | Live since 2026-09-21                 |
+| 3   | Onboarding                                               | Username live; avatar next            |
+| 4   | Dashboard and settings                                   | Self-service live; email change later |
+| 5   | Phone and 2FA                                            | On hold: before the brain export      |
+| 6   | Discord link and unlink                                  | Live, off until set up                |
+| 7   | Academy: lessons, progress, rank, heatmap                | Live since 2026-09-29                 |
+| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Role sync live                        |
+| 9   | Brain export for the owner's Obsidian vault              | Not started                           |
 
 **The dashboard shell came before milestone 3** (owner, 2026-09-21): the first part of
 milestone 4, pulled forward, and live. **The username step** (`/onboarding`, a minimal
