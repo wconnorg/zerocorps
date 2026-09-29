@@ -131,7 +131,10 @@ export function RanksView({ academy }: { academy: MemberAcademy }) {
               "Nothing is taken away",
               "New lessons can be added to a level you have finished. Your step stays.",
             ],
-            ["On Discord", "Linking Discord gives you the Rookie role there. That is coming soon."],
+            [
+              "On Discord",
+              "Link your Discord account in settings, under Connections, and your rank follows you to the ZeroCorps server as a role.",
+            ],
           ].map(([title, text]) => (
             <div
               key={title}

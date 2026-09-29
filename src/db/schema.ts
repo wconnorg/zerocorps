@@ -386,6 +386,35 @@ export const rankHistory = pgTable(
   ],
 );
 
+// ── Discord (milestone 6) ─────────────────────────────────────────────────────
+
+/**
+ * A member's linked Discord account: the Discord id, the Discord username and when it was
+ * linked, and nothing else (hard rule 5). No token is ever stored anywhere. One row per
+ * member, and the unique index makes one Discord account link to one member only.
+ *
+ * Its own table rather than columns on `users` (a deliberate change from the brief, like
+ * `rank_history`): Better Auth reads every column of `users` on every request, so the
+ * auth tables stay untouched, and unlinking is deleting one row.
+ */
+export const discordLinks = pgTable(
+  "discord_links",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    discordId: text("discord_id").notNull(),
+    discordUsername: text("discord_username").notNull(),
+    linkedAt: instant("linked_at").notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("discord_links_discord_id_unique").on(table.discordId),
+    check("discord_links_discord_id_shape", sql`${table.discordId} ~ '^[0-9]{17,20}$'`),
+    check("discord_links_username_length", sql`length(${table.discordUsername}) BETWEEN 1 AND 64`),
+    appAccess(),
+  ],
+);
+
 /**
  * The schema object handed to Better Auth's Drizzle adapter, keyed by Better Auth's
  * own model names. Explicit on purpose: no pluralising magic to get wrong.

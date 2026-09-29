@@ -1102,9 +1102,7 @@ never touches them.
   On the live site the folder is read once; on the laptop at every request, so an Obsidian
   edit shows at the next refresh. `outputFileTracingIncludes` ships the files with the
   server code (SECURITY.md, ledger).
-- **Markdown is rendered by markdown-it 14.1.0, pinned**, with raw HTML off. Version 15 had
-  been out for sixteen days and its type definitions had not caught up; 14.1.0 is the
-  long-established line. Obsidian callouts become styled boxes.
+- **Markdown is rendered by markdown-it 14.3.2, pinned**, with raw HTML off. Corrected the same day: 14.1.0 was picked first as the long-established line, and the dependency audit in `npm run check` then reported two moderate advisories in it (GHSA-38c4-r59v-3vqw, a regular-expression DoS, and GHSA-6v5v-wf23-fmfq, quadratic time in the smartquotes rule). Neither was reachable here (the lessons are the owner's files, and smartquotes is off), and 14.3.2, in the same major version, fixes both. Obsidian callouts become styled boxes.
 - **Quick checks** are written in a lesson as a callout of type `check`, with the options as
   `- [ ]` and the right one as `- [x]`. Ungraded, answered in the page, never stored.
 - **Checkpoints** are a chapter's `_checkpoint.md`: each `##` heading a question, `- [x]`
@@ -1127,6 +1125,72 @@ never touches them.
   `/api/auth/academy/checkpoint`) are a local Better Auth plugin behind the origin and
   session checks, like the username endpoints; the member comes from the session, never the
   request.
+
+### Discord linking and the Rookie role, built (milestone 6, and the start of 8; 2026-09-28)
+
+Built on `dev` on the owner's word ("ensure every function works including discord account
+linkage ... do whatever you need"), not released. **Switched off until the owner sets up
+the site's Discord application** (the steps are in "Where things stand" below). The
+migration `0005_discord` adds one table and waits for `npm run db:migrate` with `0004`.
+
+- **The standard OAuth2 flow, scope `identify` only, with no new crypto.** The `state` is a
+  random token in a signed, httpOnly cookie (Better Auth's own signed-cookie helper, the one
+  the sign-up uses), bound to the member who started it, valid ten minutes, used once. A
+  callback that did not start in this browser for this member links nothing, and Discord is
+  never asked. A mutation check proved the test that guards it: with the member check
+  removed, it fails.
+- **The access token is used once and revoked at once**, never stored (hard rule 5). Only
+  the Discord id, the Discord username and the date are kept.
+- **Discord is never a way to sign in** (hard rule 2): every step needs a signed-in member,
+  nothing creates a session, and no row is written to Better Auth's `accounts`. A test
+  checks that.
+- **Addresses: `/api/auth/discord/link`, `/callback` and `/unlink`**, not the brief's
+  `/api/discord/*`: a Better Auth plugin like the others, so unlinking sits behind the same
+  origin and session checks. The Discord application's redirect is
+  `<site>/api/auth/discord/callback`.
+- **Its own table, `discord_links`, not columns on `users`**, for the same reason as
+  `rank_history`: the auth table stays untouched. A unique index makes one Discord account
+  link to one member only; a second member trying it is told so and nothing changes.
+- **The Rookie role on linking, and every rank role removed on unlinking** (`syncDiscordRoles`,
+  the brief's contract: idempotent, a member not in the server is not an error, a short rate
+  limit is waited out once). It never blocks linking: if Discord is slow or refuses, the
+  link is still made and the page says so. The retry queue and the internal API for Agent
+  Zero are the rest of milestone 8, not built.
+- **The site's OWN Discord application, not Agent Zero's.** Its bot needs only Manage Roles.
+  Giving the website Agent Zero's token would give anyone who broke into the site
+  everything the bot can do.
+- **The owner wants sign-ups open, not the allowlist** (2026-09-28, reversing the private
+  beta decision of 2026-09-20). That is `SIGNUP_MODE=open` in Vercel, then a redeploy: the
+  owner's to change. The owner's own gates for inviting anyone are not met yet: `/terms` and
+  `/privacy` are drafts nobody has approved, and the `PRIVACY_CONTACT` test message has not
+  been confirmed.
+
+### Where things stand on 2026-09-28 (read this first)
+
+- **Live on `main`:** milestones 1 and 2, the home page, the dashboard shell.
+- **On `dev`, not released:** the username step, the Academy (milestone 7) with first-draft
+  lessons, Discord linking with the Rookie role (milestone 6, switched off until set up).
+  `npm run check` and `npm run verify` pass on the production build.
+- **The release, in this order (the owner's steps):**
+  1. `npm run db:backup`, then `npm run db:migrate`, which applies `0004_academy` and
+     `0005_discord` (three and one new tables; nothing else changes). Before the push: the
+     code that uses them must never run against a database without them.
+  2. The owner says "push": `dev` is merged into `main` as one `--no-ff` commit and pushed.
+  3. On zerocorps.org, signed in with the owner's real account: "Choose your username",
+     the dashboard, "Enter here" into the Academy, a lesson, "Mark complete", a checkpoint.
+- **To switch Discord linking on (the owner, in the Discord developer portal, then Vercel):**
+  1. A new application for the website (not Agent Zero's). Under OAuth2, add the redirects
+     `https://zerocorps.org/api/auth/discord/callback` and
+     `http://localhost:3000/api/auth/discord/callback`.
+  2. Its client id and client secret into Vercel as `DISCORD_CLIENT_ID` and
+     `DISCORD_CLIENT_SECRET` (and `.env.local` for the laptop). Never into chat.
+  3. For the Rookie role: add a bot to that application, invite it to the ZeroCorps server
+     with only "Manage Roles", create a "Rookie" role BELOW the bot's own role, then set
+     `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` (the server's id) and
+     `DISCORD_RANK_ROLE_IDS` as `{"rookie":"<the Rookie role's id>"}`.
+  4. Redeploy. Settings then shows "Link Discord".
+- **Sign-ups open:** the owner's `SIGNUP_MODE=open` in Vercel and a redeploy, after reading
+  `/terms` and `/privacy` (still drafts) and confirming the privacy contact works.
 
 ### Where things stand on 2026-09-27
 

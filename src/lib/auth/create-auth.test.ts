@@ -325,6 +325,7 @@ describe("schema invariants that every future migration must keep", () => {
       "accounts",
       "auth_events",
       "checkpoint_passes",
+      "discord_links",
       "known_devices",
       "lesson_progress",
       "pending_signups",

@@ -63,17 +63,17 @@ possible.
   or a placeholder only.
 - Update the status table below when a milestone is finished.
 
-| #   | Milestone                                                | Status                |
-| --- | -------------------------------------------------------- | --------------------- |
-| 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel  |
-| 2   | Auth                                                     | Live since 2026-09-21 |
-| 3   | Onboarding                                               | Username step on dev  |
-| 4   | Dashboard and settings                                   | Not started           |
-| 5   | Phone and 2FA                                            | Not started           |
-| 6   | Discord link and unlink                                  | Not started           |
-| 7   | Academy: lessons, progress, rank, heatmap                | Built on dev          |
-| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Not started           |
-| 9   | Brain export for the owner's Obsidian vault              | Not started           |
+| #   | Milestone                                                | Status                 |
+| --- | -------------------------------------------------------- | ---------------------- |
+| 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel   |
+| 2   | Auth                                                     | Live since 2026-09-21  |
+| 3   | Onboarding                                               | Username step on dev   |
+| 4   | Dashboard and settings                                   | Not started            |
+| 5   | Phone and 2FA                                            | Not started            |
+| 6   | Discord link and unlink                                  | Built on dev, off      |
+| 7   | Academy: lessons, progress, rank, heatmap                | Built on dev           |
+| 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Role sync only, on dev |
+| 9   | Brain export for the owner's Obsidian vault              | Not started            |
 
 **The dashboard shell came before milestone 3** (owner, 2026-09-21): the first part of
 milestone 4, pulled forward, and live. **The username step** (`/onboarding`, a minimal
@@ -82,8 +82,8 @@ and release; its migration `0003_usernames` is already applied. After it: profil
 upload, stored in the database, plan first. DECISIONS.md has it under "The username step,
 part two".
 
-**Read "The Academy's structure, ranks and lessons", "The Academy, built" and "Where
-things stand on 2026-09-27" in DECISIONS.md first**, then "Where milestone 2 stands" for
+**Read "Where things stand on 2026-09-28" in DECISIONS.md first**, then "The Academy's
+structure, ranks and lessons", "The Academy, built" and "Discord linking and the Rookie role", then "Where milestone 2 stands" for
 the release's history. Milestone 7 comes before 5 and 6 (owner, 2026-09-28); its migration
 `0004_academy` is not applied yet. Milestone 2 is live and the owner's real sign-up
 worked. It lists what is still open from the release: the backup

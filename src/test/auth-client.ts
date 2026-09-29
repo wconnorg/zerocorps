@@ -65,7 +65,14 @@ export function createTestClient(
     } catch {
       json = null;
     }
-    return { status: response.status, json, text, setCookies: response.headers.getSetCookie() };
+    return {
+      status: response.status,
+      json,
+      text,
+      setCookies: response.headers.getSetCookie(),
+      /** Where a redirect points, as a browser would follow it. */
+      location: response.headers.get("location"),
+    };
   }
 
   return {

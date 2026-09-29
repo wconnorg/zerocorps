@@ -41,6 +41,8 @@ export const LIMITS = {
    * Six tries an hour is plenty for a person who rereads between attempts.
    */
   checkpointSubmitPerUser: { window: HOUR, max: 6 },
+  /** Starting a Discord link, and unlinking: a person does this a handful of times, ever. */
+  discordLinkPerUser: { window: HOUR, max: 10 },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;

@@ -26,7 +26,9 @@ export type AuthEventType =
   | "rate_limited"
   | "email_failed"
   | "username_claimed"
-  | "username_changed";
+  | "username_changed"
+  | "discord_linked"
+  | "discord_unlinked";
 
 export type AuthEventInput = {
   type: AuthEventType;

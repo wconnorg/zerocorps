@@ -1,11 +1,14 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { DiscordConnection } from "@/components/app/discord-connection";
 import { ProfileForm } from "@/components/app/profile-form";
 import { Unavailable } from "@/components/site/unavailable";
 import { ButtonLink } from "@/components/ui/button";
 import { db } from "@/db/client";
+import { discordEnabled } from "@/lib/auth";
 import { getSessionState } from "@/lib/auth/session";
 import { nextUsernameChangeAt } from "@/lib/auth/username-claim";
+import { getDiscordLink } from "@/lib/discord/links";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -13,13 +16,13 @@ export const metadata: Metadata = {
 };
 
 /**
- * Settings, for now only the profile: the username and the display name. Milestone 4 adds
- * the rest (password, sessions, and later the phone and Discord).
+ * Settings: the profile (username and display name) and connections (Discord). Milestone 4
+ * adds the rest (password, sessions, deleting the account).
  *
  * The date shown here is a courtesy. Whether a name may change is judged again when it is
  * saved, under a lock, whatever this page said.
  */
-export default async function SettingsPage() {
+export default async function SettingsPage({ searchParams }: PageProps<"/settings">) {
   const state = await getSessionState();
   if (state.status === "unavailable") return <Unavailable />;
   if (state.status === "signed-out") redirect("/sign-in?next=/settings");
@@ -31,6 +34,16 @@ export default async function SettingsPage() {
   } catch {
     return <Unavailable />;
   }
+
+  // Discord is a courtesy on this page: if it cannot be read, the rest still works.
+  let linkedAs: string | null = null;
+  let discordReadable = true;
+  try {
+    linkedAs = (await getDiscordLink(db, state.user.id))?.discordUsername ?? null;
+  } catch {
+    discordReadable = false;
+  }
+  const outcome = (await searchParams).discord;
 
   return (
     <div className="relative mx-auto w-full max-w-xl px-6 py-12 lg:py-16">
@@ -52,6 +65,21 @@ export default async function SettingsPage() {
           initialUsername={state.user.username}
           initialDisplayName={state.user.displayName}
           changeAvailableOn={changeAvailableAt?.toISOString().slice(0, 10) ?? null}
+        />
+      </section>
+
+      <section
+        id="connections"
+        aria-labelledby="connections-heading"
+        className="mt-6 rounded-2xl border border-line bg-surface p-8"
+      >
+        <h2 id="connections-heading" className="mb-5 text-lg font-semibold tracking-tight">
+          Connections
+        </h2>
+        <DiscordConnection
+          available={discordEnabled && discordReadable}
+          linkedAs={linkedAs}
+          outcome={typeof outcome === "string" ? outcome : null}
         />
       </section>
 

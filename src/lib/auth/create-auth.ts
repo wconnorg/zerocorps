@@ -6,6 +6,7 @@ import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { authSchema, knownDevices } from "../../db/schema.ts";
 import { academyPlugin } from "../academy/academy-plugin.ts";
 import type { Catalog } from "../academy/content.ts";
+import { type DiscordConfig, discordPlugin } from "../discord/discord-plugin.ts";
 import { looksLikeEmail, normalizeEmail } from "../email-address.ts";
 import { clientIp, coarseIpPrefix, userAgentFamily } from "./client-info.ts";
 import { profilePlugin } from "./profile-plugin.ts";
@@ -68,6 +69,11 @@ export type AuthDeps = {
    * lesson the owner has just edited. Without it the Academy has no lessons to complete.
    */
   academyCatalog?: () => Catalog;
+  /**
+   * The site's Discord application, for linking (milestone 6) and the rank role. Null or
+   * absent: "Link Discord" says it is not switched on yet.
+   */
+  discord?: DiscordConfig | null;
 };
 
 const DAY = 60 * 60 * 24;
@@ -329,6 +335,7 @@ export function createAuth(deps: AuthDeps) {
       }),
       profilePlugin({ db, limiter, events }),
       academyPlugin({ db, limiter, catalog: deps.academyCatalog ?? (() => NO_LESSONS) }),
+      discordPlugin({ db, limiter, events, baseUrl: deps.baseUrl, discord: deps.discord ?? null }),
     ],
 
     rateLimit: {

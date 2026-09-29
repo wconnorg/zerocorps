@@ -65,6 +65,8 @@ beforeAll(async () => {
     VALUES ('11111111-1111-4111-8111-111111111111', 'how-markets-work', 3, 4);
     INSERT INTO rank_history (user_id, rank)
     VALUES ('11111111-1111-4111-8111-111111111111', 'rookie-level-1');
+    INSERT INTO discord_links (user_id, discord_id, discord_username)
+    VALUES ('11111111-1111-4111-8111-111111111111', '123456789012345678', 'trader');
   `);
 }, 180_000);
 
@@ -86,6 +88,7 @@ const fingerprintOf = async (client: TestDatabase["client"]) => {
     "lesson_progress",
     "checkpoint_passes",
     "rank_history",
+    "discord_links",
   ];
   const result: Record<string, string> = {};
   for (const table of tables) {
@@ -108,6 +111,7 @@ describe("backup: dump, encrypt, decrypt, restore", () => {
       ["public.accounts", 1],
       ["public.auth_events", 2],
       ["public.checkpoint_passes", 1],
+      ["public.discord_links", 1],
       ["public.known_devices", 1],
       ["public.lesson_progress", 1],
       ["public.pending_signups", 2],
@@ -274,7 +278,7 @@ describe("db:check-role", () => {
           "A real CREATE TABLE attempt is refused (rolled back either way)",
           "Cannot TRUNCATE, add triggers to, or add foreign keys to any table",
           "Row-level security is on for every table",
-          "Every table is opened to it by an explicit policy (13 tables)",
+          "Every table is opened to it by an explicit policy (14 tables)",
         ]);
       });
       const { rows } = await source.client.query(
@@ -306,6 +310,7 @@ describe("db:counts", () => {
       accounts: 1,
       auth_events: 2,
       checkpoint_passes: 1,
+      discord_links: 1,
       known_devices: 1,
       lesson_progress: 1,
       pending_signups: 2,
