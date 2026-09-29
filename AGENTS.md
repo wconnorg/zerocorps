@@ -75,19 +75,9 @@ possible.
 | 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Site side live; bot in its repo       |
 | 9   | Brain export for the owner's Obsidian vault              | Not started                           |
 
-**The dashboard shell came before milestone 3** (owner, 2026-09-21): the first part of
-milestone 4, pulled forward, and live. **The username step** (`/onboarding`, a minimal
-`/settings`, the two profile endpoints) is built on `dev` and waits for the owner's testing
-and release; its migration `0003_usernames` is already applied. After it: profile-picture
-upload, stored in the database, plan first. DECISIONS.md has it under "The username step,
-part two".
-
 **Read "Where things stand at the end of 2026-09-29" in DECISIONS.md first.** It says
-what is live, what the owner does next and what is not built.
-`0004_academy` is not applied yet. Milestone 2 is live and the owner's real sign-up
-worked. It lists what is still open from the release: the backup
-after that sign-up, Vercel challenging automated requests (so `npm run verify` has not
-run against the live site), and the gates before anyone else is invited.
+what is live, what the owner does next and what is not built. All migrations up to
+`0005_discord` are applied; sign-ups are open to everyone.
 
 Deployment, environments, DNS and the release checklist are described in
 DECISIONS.md. A push to `main` deploys to production, so never push `main` without
