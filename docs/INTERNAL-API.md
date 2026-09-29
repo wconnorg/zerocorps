@@ -73,6 +73,32 @@ length of this list (linked Discord accounts), so it does not use `/stats`.
 
 zerocorps.org sits behind Vercel, which has challenged automated requests to its pages
 (a "Security Checkpoint", HTTP 403). The bot's first request to `/api/internal/` on
-2026-09-29 was NOT challenged: it got the API's own 503 (no secret set yet). If the
-challenge ever appears for the bot, a Firewall rule letting `/api/internal/` through is
-the fix. The bot backs off on a 403 checkpoint either way.
+2026-09-29 was NOT challenged: it got the API's own 503 (no secret set yet). After the
+secret was set, a request without it got the API's own `401 {"error":"unauthorized"}`,
+also unchallenged. If the challenge ever appears for the bot, a Firewall rule letting
+`/api/internal/` through is the fix. The bot backs off on a 403 checkpoint either way.
+
+## What Agent Zero relies on (keep these true on the website)
+
+From the bot's own handoff, 2026-09-29. Breaking one of these stops the role sync.
+
+- **Only `https://zerocorps.org`.** The bot refuses `http://` and anything on the laptop,
+  so the website's dev server is never called.
+- **No redirect, ever, on `/api/internal/*`.** The bot never follows one, because the
+  secret header would travel with it, so a trailing-slash, `www`, locale or host redirect
+  (in `next.config`, a proxy or Vercel's domain settings) breaks every call. Vercel's
+  challenge must stay off these paths too.
+- **The answers stay exactly as documented above.** One malformed entry rejects the whole
+  ranks list, and an HTML page (Next's own 404 included) counts as an error; either way
+  the bot changes no role. Off is `503 {"error":"disabled"}`.
+- **How it calls:** the ranks list at start and every 5 minutes, the profile once per
+  member who joins, about 12 calls an hour; `/stats` is not called. It waits out a `429`
+  (`retryAfterSeconds`, else `Retry-After`, else 60 seconds), pauses 10 minutes on a `403`
+  and backs off to at most 30 minutes on repeated failures.
+- **A new rank key needs the bot first.** An unknown key only logs a warning and changes
+  nothing for the members holding it. A new rank needs a line in the bot's config, a role
+  id in its environment and the role in Discord, so the owner sets those up before the
+  site sends the key. The site's keys come from `rankKeyOf` in
+  `src/lib/academy/standing.ts`; today only `rookie`.
+- **Verified is the bot's own:** a ✅ on its welcome message gives it, removing the ✅
+  takes it away. The website plays no part.

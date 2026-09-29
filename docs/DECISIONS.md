@@ -1212,7 +1212,14 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
 
 1. Try a picture and an email change on the live site.
 2. Run Agent Zero against the live site and test linking with a friend. Where it runs
-   for good (the laptop while testing; a host later is a new service: ask).
+   for good (the laptop while testing; a host later is a new service: ask). What the bot
+   relies on is in [INTERNAL-API.md](INTERNAL-API.md), "What Agent Zero relies on".
+   **Security, from the bot's setup:** the bot's `.env` first held the BOT token of
+   "ZeroCorps Web", the website's linking application (never in a repository). Reset that
+   application's bot token (Bot tab, Reset Token, copied nowhere) and switch its Public
+   Bot off. **Not** its OAuth2 Client Secret: that is the website's
+   `DISCORD_CLIENT_SECRET`, and resetting it stops "Link Discord" until Vercel has the new
+   one and a redeploy. The website never uses that bot token, so the reset cannot break it.
 3. Delete the test and main accounts in Settings and sign up again, as planned.
 4. Still open from milestone 2: read and approve `/terms` and `/privacy` (now that anyone
    can sign up; the privacy page now describes pictures), confirm the `PRIVACY_CONTACT`
