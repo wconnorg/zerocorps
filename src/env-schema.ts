@@ -240,6 +240,13 @@ export function createEnvSchema(isProductionBuild: boolean) {
         "Set both DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET, or neither",
       );
     }
+    // Agent Zero's key to the internal API: as long as the other secrets, or unset (off).
+    if (env.INTERNAL_API_SECRET && env.INTERNAL_API_SECRET.length < MIN_SECRET_LENGTH) {
+      issue(
+        "INTERNAL_API_SECRET",
+        `Must be at least ${MIN_SECRET_LENGTH} characters, or left empty to keep the internal API off`,
+      );
+    }
     if (env.DISCORD_RANK_ROLE_IDS && !parseRoleIds(env.DISCORD_RANK_ROLE_IDS)) {
       issue(
         "DISCORD_RANK_ROLE_IDS",

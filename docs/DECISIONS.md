@@ -1189,6 +1189,66 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Agent Zero is the only bot; the website's Discord app is for linking only (owner, 2026-09-29)
+
+The owner: "i'm just wanting the agent zero bot ... making sure they're separate". This
+supersedes "the site's OWN Discord application ... its bot needs only Manage Roles" above.
+
+- **"ZeroCorps Web"**, the Discord application the owner created, powers only the "Link
+  Discord" button (OAuth2, scope `identify`; redirect
+  `https://zerocorps.org/api/auth/discord/callback`). Only `DISCORD_CLIENT_ID` and
+  `DISCORD_CLIENT_SECRET` are set; **no bot token on the website**, so
+  `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` and `DISCORD_RANK_ROLE_IDS` stay empty and the
+  site's own role sync stays off (its code and tests stay, unused).
+- **Agent Zero gives every role**, the rank roles included, by syncing from the website:
+  `GET /api/internal/discord/ranks` lists every linked member's Discord id and rank key
+  (one query however many there are). A pull every few minutes needs no retry queue: a
+  sync that fails is simply done again. Contract in [INTERNAL-API.md](INTERNAL-API.md).
+- **Why not the bot's application for the button, or its token on the site:** the site
+  holding the bot's token would give anyone who broke into the site everything the bot can
+  do. The link button needs no bot power at all.
+
+### Milestone 8: the internal API for Agent Zero, built (2026-09-29)
+
+Built on `dev`, not released. The contract, for the bot's own repository, is
+[INTERNAL-API.md](INTERNAL-API.md).
+
+- `GET /api/internal/discord/:discordId/profile` answers `{ linked, username, rank }` or
+  404; `GET /api/internal/stats` answers `{ academyMembers }` (verified and onboarded).
+  Plain Next route handlers over a tested module (`src/lib/internal/internal-api.ts`).
+- **Behind `INTERNAL_API_SECRET`** in `X-Internal-Secret`, compared in constant time; unset
+  means off (503 for everything, fail closed); the env schema refuses one shorter than 32
+  characters. Counted after the secret check (120 a minute), so a stranger cannot lock the
+  bot out. Never an email or a phone; `username` is the ZeroCorps username.
+- **Not built yet:** the retry queue for role changes that failed while Discord was down
+  (the brief's "small retry queue"). Today a failed role change is logged, and linking or
+  earning the rank again, or the bot's restore on join, puts it right.
+- **To use it:** a secret in Vercel and in the bot's environment (the same value), and
+  Vercel's challenge on automated requests switched off or bypassed for `/api/internal/`
+  (the open Firewall item from milestone 2).
+
+### Released on 2026-09-29, third: milestone 4's account self-service; the owner's new order
+
+- **Released** on the owner's "skip browser check, test on live deployment": `dev`
+  (`41bf317`) merged into `main` as `6d22fe4` (parents `17f336d` and `41bf317`),
+  scanned, pushed; GitHub recorded the production deployment as a success. `npm run check`
+  passed first (380 tests, production build); `npm run verify` was skipped at the owner's
+  word.
+- **"I want all databases cleared":** not by a wipe. The one database is shared with the
+  live site and rows are deleted only through documented, guarded paths. The owner deletes
+  the test account and the main account from Settings, Delete account (every row tied to
+  each goes by cascade), then signs up again with the main address.
+- **The owner's order from here:** two-factor (milestone 5) waits until before the brain
+  export; first **Discord linking and the bot, and general ease of use**. Discord linking
+  is to be switched on now: the owner creates the site's own Discord application (steps
+  below) while building Agent Zero in its own repository.
+- **Agent Zero gives members the server and a "verified" role by a reaction** to one of
+  its messages. The site never touches that role: role sync only adds and removes the rank
+  roles listed in `DISCORD_RANK_ROLE_IDS`, so the verified role must never be listed there.
+- **Next here:** the rest of milestone 8, the internal API Agent Zero calls
+  (`/api/internal/discord/:discordId/profile` and `/api/internal/stats`, behind
+  `INTERNAL_API_SECRET`).
+
 ### Milestone 4, account self-service: built (2026-09-29)
 
 Built on `dev` on the owner's "as far deep as we can get", while the owner tested the
@@ -1359,10 +1419,8 @@ restores data; only a backup does** (SECURITY.md, "Restore from backup").
      `http://localhost:3000/api/auth/discord/callback`.
   2. Its client id and client secret into Vercel as `DISCORD_CLIENT_ID` and
      `DISCORD_CLIENT_SECRET` (and `.env.local` for the laptop). Never into chat.
-  3. For the Rookie role: add a bot to that application, invite it to the ZeroCorps server
-     with only "Manage Roles", create a "Rookie" role BELOW the bot's own role, then set
-     `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` (the server's id) and
-     `DISCORD_RANK_ROLE_IDS` as `{"rookie":"<the Rookie role's id>"}`.
+  3. (Superseded 2026-09-29: no bot on the website. Agent Zero gives the roles, synced from
+     `/api/internal/discord/ranks`.)
   4. Redeploy. Settings then shows "Link Discord".
 - **Sign-ups open:** the owner's `SIGNUP_MODE=open` in Vercel and a redeploy, after reading
   `/terms` and `/privacy` (still drafts) and confirming the privacy contact works.

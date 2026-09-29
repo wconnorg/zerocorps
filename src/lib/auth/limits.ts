@@ -50,6 +50,8 @@ export const LIMITS = {
   passwordCheckPerUser: { window: HOUR, max: 10 },
   /** Signing out one of the member's other devices. */
   sessionRevokePerUser: { window: HOUR, max: 30 },
+  /** Agent Zero's calls to the internal API: a bot catching up after a restart, no more. */
+  internalApi: { window: MINUTE, max: 120 },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;
