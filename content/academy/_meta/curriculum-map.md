@@ -2,7 +2,7 @@
 
 Tick a lesson when it is written. Ids are permanent - rename titles and files freely, renumber folders and files to reorder, but never change an `id` once the site has seen it. The site carries the not-financial-advice disclaimer on every page, so lessons do not repeat it.
 
-Every lesson starts with `draft: true` in its header, and the site shows it as coming soon. Delete that line when the lesson is written.
+Every lesson has a first draft by Claude Code (2026-09-28), live on the site, so the Academy works end to end. **Tick a lesson when you have rewritten or approved it.** A new lesson starts with `draft: true` in its header, which the site shows as coming soon; delete that line when it is written.
 
 ## Level 1 · Foundations
 

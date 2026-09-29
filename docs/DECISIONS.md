@@ -1165,11 +1165,35 @@ migration `0005_discord` adds one table and waits for `npm run db:migrate` with 
   `/privacy` are drafts nobody has approved, and the `PRIVACY_CONTACT` test message has not
   been confirmed.
 
+### The lessons: first drafts, for the owner to rewrite (2026-09-28)
+
+The owner asked for filler so every function can be tested ("I'll edit the lessons if I
+don't like them"). All 42 lessons now have a first draft (495 to 650 words, one quick
+check each) and the 9 open chapters have a checkpoint (4 questions, pass with 3). Written
+by one background agent from the planning assistant's briefs, checked by the site's own
+reader, then reviewed before import: no firm, broker or product is named, no price is
+stated, nothing is recommended, and every sizing example was recalculated.
+
+- **Facts worth the owner's check:** the CME equity-index hours and quarterly expiries,
+  first-come-first-served fills at one price on ES; for Sierra Chart (still coming soon):
+  signing in at first launch, the Data folder in the install folder, the Trade Window's
+  attached stop and target, trade simulation mode, splitting and merging TPO profiles.
+  Anything uncertain about Quantower's or Sierra's plans, menus or data is written as
+  "check your own version", never as fact.
+- **Choices the owner may want to change:** "about 100 trades" as the course's floor for a
+  first read of a backtest (repeated in checkpoints); "the Backtesting School is designed
+  to be done without paying for software"; one worked example setup (a prior-day low
+  reclaim on MES) through the "Defining a setup" chapter, marked as an illustration; and
+  invented example numbers (a backtest-versus-sim table, a $50,000 evaluation account),
+  all labelled as examples.
+- The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
+  approved.
+
 ### Where things stand on 2026-09-28 (read this first)
 
 - **Live on `main`:** milestones 1 and 2, the home page, the dashboard shell.
-- **On `dev`, not released:** the username step, the Academy (milestone 7) with first-draft
-  lessons, Discord linking with the Rookie role (milestone 6, switched off until set up).
+- **On `dev`, not released:** the username step, the Academy (milestone 7) with all 42
+  lessons in first draft and 9 checkpoints, Discord linking with the Rookie role (milestone 6, switched off until set up).
   `npm run check` and `npm run verify` pass on the production build.
 - **The release, in this order (the owner's steps):**
   1. `npm run db:backup`, then `npm run db:migrate`, which applies `0004_academy` and
