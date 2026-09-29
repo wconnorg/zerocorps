@@ -1193,34 +1193,32 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `de345c9`, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `0b44103`, same tree as `dev` then):**
 
 - Milestones 1 and 2; **sign-ups open to everyone** (`SIGNUP_MODE=open`).
 - Usernames: `/onboarding`, changes in `/settings` (first free, then 30 days).
+- **Profile pictures** (milestone 3's rest) and **changing the email address**
+  (milestone 4's rest), in Settings; see their "built" sections below.
 - **The Academy (milestone 7):** 42 lessons in first draft (the owner rewrites them), 9
   chapter checkpoints, quick checks, progress, heatmap. **Rookie** is earned by completing
   Chapter 1 and **claimed by linking Discord**; each finished level is a step.
 - **Settings (milestone 4):** password, devices, security activity, delete account.
 - **Discord linking (milestone 6)**, switched on by the owner's `DISCORD_CLIENT_ID` and
   `DISCORD_CLIENT_SECRET` ("ZeroCorps Web", linking only, no bot on the site).
-- **Agent Zero's internal API (milestone 8)**, off until `INTERNAL_API_SECRET` is set.
+- **Agent Zero's internal API (milestone 8), on:** `INTERNAL_API_SECRET` is set in
+  Vercel and in the bot's `.env`, and a request without it reaches the site and gets 401.
 
 **The owner's, next:**
 
-1. `INTERNAL_API_SECRET` in Vercel and in the bot's `.env` (same value), then a redeploy.
-2. Vercel's Firewall: the challenge on automated requests blocks the bot; switch it off
-   or let `/api/internal/` through.
-3. Where Agent Zero runs (the laptop while testing; a host later is a new service: ask).
-4. Delete the test and main accounts in Settings and sign up again, as planned.
-5. Still open from milestone 2: read and approve `/terms` and `/privacy` (now that anyone
-   can sign up), confirm the `PRIVACY_CONTACT` mailbox, run `npm run db:restore:check`,
-   delete the `backup-dev-before-squash` branch; before public promotion, a paid database
-   plan so it never pauses; redirect `zerocorps.vercel.app` to the domain.
-
-**Built on `dev`, not live yet:** profile pictures (milestone 3's rest) and changing the
-email address (milestone 4's rest); see their "built" sections below. The pictures'
-migration `0006_avatars` must be applied by the owner (`npm run db:backup`, then
-`npm run db:migrate`) **before** the release that carries them.
+1. Try a picture and an email change on the live site.
+2. Run Agent Zero against the live site and test linking with a friend. Where it runs
+   for good (the laptop while testing; a host later is a new service: ask).
+3. Delete the test and main accounts in Settings and sign up again, as planned.
+4. Still open from milestone 2: read and approve `/terms` and `/privacy` (now that anyone
+   can sign up; the privacy page now describes pictures), confirm the `PRIVACY_CONTACT`
+   mailbox, run `npm run db:restore:check`, delete the `backup-dev-before-squash` branch;
+   before public promotion, a paid database plan so it never pauses; redirect
+   `zerocorps.vercel.app` to the domain.
 
 **Not built:** two-factor (milestone 5) is on hold until before the brain export
 (milestone 9).
@@ -1262,7 +1260,7 @@ Built on `dev`; **no migration** (the pending change lives in Better Auth's exis
 ### Profile pictures, built (milestone 3's rest, 2026-09-29)
 
 Built on `dev` as decided on 2026-09-21 ("everything lives in the database"). Migration
-`0006_avatars` is additive (one new table) and waits for the owner's `db:migrate`.
+`0006_avatars` is additive (one new table); the owner applied it on 2026-09-29.
 
 - **Where:** Settings, Profile: "Add a picture", "Change picture", "Remove". The header's
   profile button shows it on every signed-in page. Onboarding stays a single step (the
@@ -1286,6 +1284,23 @@ Built on `dev` as decided on 2026-09-21 ("everything lives in the database"). Mi
   browser that already has the picture gets a 304 without the picture being read.
 - **Backups:** the backup test now carries a binary row (a zero byte, 0xff, a backslash,
   quotes, a newline) and proves it comes back exactly.
+
+### Released on 2026-09-29, fifth: profile pictures and changing the email address
+
+- **Before the push, the owner's:** `npm run db:backup`, then `npm run db:migrate`, which
+  applied `0006_avatars` (the only pending migration; 7 applied now). `npm run db:counts`
+  then listed the `avatars` table, empty. `INTERNAL_API_SECRET` went into Vercel
+  (Production) and the bot's `.env` (the bot's `npm run secret:new`), so this release's
+  deploy carried it; the website's own `.env.local` does not need it.
+- On the owner's "push": `dev` (`1e90abc`) merged into `main` as `0b44103` (parents
+  `de345c9` and `1e90abc`), scanned, pushed; GitHub recorded the production deployment as
+  a success. `npm run check` (417 tests and the production build) passed on `dev` first;
+  the browser check was not run.
+- **Checked from outside afterwards, signed out:** `/api/avatar` answers 401 (the route is
+  new; before the release it was a 404), `/api/internal/discord/ranks` without the secret
+  answers `401 {"error":"unauthorized"}` in JSON, not 503, so the secret is set and
+  Vercel's Firewall lets the request reach the site; `/settings` redirects to sign-in.
+- **Not tried live yet:** uploading a picture, changing an address, and the bot's sync.
 
 ### Released on 2026-09-29, fourth: Agent Zero's internal API, Discord linking on
 
