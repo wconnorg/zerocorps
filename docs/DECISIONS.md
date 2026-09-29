@@ -1189,6 +1189,19 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Released on 2026-09-29, fourth: Agent Zero's internal API, Discord linking on
+
+- On the owner's "push": `dev` (`0d2e1b8`) merged into `main` as `de345c9` (parents
+  `6d22fe4` and `0d2e1b8`), scanned, pushed; GitHub recorded the production deployment
+  as a success. `npm run lint` and `npm run test` (390 tests) passed first; the local
+  build and the browser check were skipped for speed at the owner's word.
+- The build passing means the env schema accepted the Discord settings: both of
+  `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`, or neither. Settings, Connections shows
+  "Link Discord" when they are set.
+- **Next, the owner's:** deploying Agent Zero and testing with a friend. The bot needs
+  `INTERNAL_API_SECRET` (the same value in Vercel and in the bot's environment) and
+  Vercel's challenge on automated requests switched off or bypassed for `/api/internal/`.
+
 ### Agent Zero is the only bot; the website's Discord app is for linking only (owner, 2026-09-29)
 
 The owner: "i'm just wanting the agent zero bot ... making sure they're separate". This
