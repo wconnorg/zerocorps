@@ -1189,6 +1189,43 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Rollback for the next release (written before its migration, 2026-09-29)
+
+The release is two separate changes, and each has its own way back. **Reverting code never
+restores data; only a backup does** (SECURITY.md, "Restore from backup").
+
+- **What changes.** The database gains four tables (`0004_academy`: `lesson_progress`,
+  `checkpoint_passes`, `rank_history`; `0005_discord`: `discord_links`) and nothing else:
+  no column is added to, changed in or removed from an existing table. The code moves from
+  `main` at `723e092` to the merge of `dev`.
+- **Before the migration, in this order:** `npm run db:backup`; `npm run db:restore:check`
+  (the restore drill still owed from 2026-09-21: it proves this backup can be read back);
+  then `npm run db:migrate`, which refuses to run without a backup from the last hour.
+- **If the migration fails,** nothing is applied: every pending migration runs in one
+  transaction (drizzle's migrator), so a failure leaves the database exactly as it was.
+  The live site is untouched either way. Read the error; do not push.
+- **If the site misbehaves after the push (the expected kind of rollback):**
+  1. **Vercel, straight away:** the project's Deployments, the previous production
+     deployment (the one built from `723e092`), "Instant Rollback". The old code is live
+     again in seconds, with no rebuild. Vercel may then stop promoting new deployments
+     from `main` on its own until a deployment is promoted by hand; the dashboard says so.
+  2. **The database stays as it is.** The old code never reads the four new tables, and
+     every table and column it does read is unchanged, so no data needs to move back.
+     The new tables are never dropped (the additive-only rule); usernames, progress and
+     links written meanwhile are kept, ready for the fixed release.
+  3. **Git:** the fix goes onto `dev` and is released as usual. If `main` itself must
+     match the old code, `git revert -m 1 <the merge commit>` is a NEW commit on `main`,
+     pushed on the owner's word. Never a reset or a force-push.
+- **If data itself were damaged (not expected from this release: it only adds tables):**
+  the SECURITY.md restore, which never overwrites: a new, empty database, the migrations,
+  the restore from the pre-migration backup, the app role's password set by hand, then
+  `DATABASE_URL` pointed at it in Vercel and `.env.local`, and a redeploy. Everything
+  written after that backup (sign-ups, usernames, progress) is lost, so it is the last
+  resort, never the first.
+- **Discord** is switched off until the owner configures it, so this release needs no
+  rollback for it. Once it is on, removing `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`
+  in Vercel and redeploying switches it off again.
+
 ### Where things stand on 2026-09-28 (read this first)
 
 - **Live on `main`:** milestones 1 and 2, the home page, the dashboard shell.
@@ -1196,7 +1233,7 @@ stated, nothing is recommended, and every sizing example was recalculated.
   lessons in first draft and 9 checkpoints, Discord linking with the Rookie role (milestone 6, switched off until set up).
   `npm run check` and `npm run verify` pass on the production build.
 - **The release, in this order (the owner's steps):**
-  1. `npm run db:backup`, then `npm run db:migrate`, which applies `0004_academy` and
+  1. `npm run db:backup`, `npm run db:restore:check`, then `npm run db:migrate`, which applies `0004_academy` and
      `0005_discord` (three and one new tables; nothing else changes). Before the push: the
      code that uses them must never run against a database without them.
   2. The owner says "push": `dev` is merged into `main` as one `--no-ff` commit and pushed.
