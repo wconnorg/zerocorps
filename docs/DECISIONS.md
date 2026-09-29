@@ -1189,6 +1189,25 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Milestone 8: the internal API for Agent Zero, built (2026-09-29)
+
+Built on `dev`, not released. The contract, for the bot's own repository, is
+[INTERNAL-API.md](INTERNAL-API.md).
+
+- `GET /api/internal/discord/:discordId/profile` answers `{ linked, username, rank }` or
+  404; `GET /api/internal/stats` answers `{ academyMembers }` (verified and onboarded).
+  Plain Next route handlers over a tested module (`src/lib/internal/internal-api.ts`).
+- **Behind `INTERNAL_API_SECRET`** in `X-Internal-Secret`, compared in constant time; unset
+  means off (503 for everything, fail closed); the env schema refuses one shorter than 32
+  characters. Counted after the secret check (120 a minute), so a stranger cannot lock the
+  bot out. Never an email or a phone; `username` is the ZeroCorps username.
+- **Not built yet:** the retry queue for role changes that failed while Discord was down
+  (the brief's "small retry queue"). Today a failed role change is logged, and linking or
+  earning the rank again, or the bot's restore on join, puts it right.
+- **To use it:** a secret in Vercel and in the bot's environment (the same value), and
+  Vercel's challenge on automated requests switched off or bypassed for `/api/internal/`
+  (the open Firewall item from milestone 2).
+
 ### Released on 2026-09-29, third: milestone 4's account self-service; the owner's new order
 
 - **Released** on the owner's "skip browser check, test on live deployment": `dev`
