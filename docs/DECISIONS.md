@@ -1217,14 +1217,45 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    delete the `backup-dev-before-squash` branch; before public promotion, a paid database
    plan so it never pauses; redirect `zerocorps.vercel.app` to the domain.
 
-**Not built (the owner's order):** Discord and ease of use first; then profile pictures
-(milestone 3's rest) and changing the email address (milestone 4's rest); two-factor
-(milestone 5) is on hold until before the brain export (milestone 9).
+**Built on `dev`, not live yet:** profile pictures (milestone 3's rest; see "Profile
+pictures, built" below). Its migration `0006_avatars` must be applied by the owner
+(`npm run db:backup`, then `npm run db:migrate`) **before** the release that carries it.
+
+**Not built (the owner's order):** changing the email address (milestone 4's rest);
+two-factor (milestone 5) is on hold until before the brain export (milestone 9).
 
 **How releases work now:** `npm run check` (or at least lint and the tests) on `dev`, a
 scan for secrets, one `--no-ff` merge commit on `main` made with `git commit-tree`
 without leaving `dev`, pushed only on the owner's "push"; the deploy is confirmed through
 GitHub's public deployments API from PowerShell (the `gh` tool is not installed).
+
+### Profile pictures, built (milestone 3's rest, 2026-09-29)
+
+Built on `dev` as decided on 2026-09-21 ("everything lives in the database"). Migration
+`0006_avatars` is additive (one new table) and waits for the owner's `db:migrate`.
+
+- **Where:** Settings, Profile: "Add a picture", "Change picture", "Remove". The header's
+  profile button shows it on every signed-in page. Onboarding stays a single step (the
+  username); a picture is added afterwards in Settings.
+- **What is stored:** never the upload. The browser shrinks the picture to at most 1024
+  pixels a side and sends it as a JPEG; the server decodes it with **sharp** (libvips,
+  already installed as Next's own image library, now pinned at 0.35.4), turns it upright,
+  crops it to a square and re-encodes it as a **256 x 256 WebP**. Only pixels survive, so a
+  phone's GPS position, the camera's details and anything appended to the file are gone.
+  One row per member in `avatars` (`bytea`, at most 128 KB by a table check, typically
+  10 to 40 KB), deleted with the account by the foreign key.
+- **What is refused:** anything that is not JPEG, PNG or WebP (SVG can carry script; GIF
+  is not needed), a file that does not decode or is damaged, a picture over 40 megapixels
+  (checked from the header before any pixel is read, which stops "decompression bombs"),
+  an upload over 2 MB, a request from another website, and more than 20 changes an hour
+  per member. Each case has a test.
+- **How it is served:** `GET /api/avatar` returns the signed-in member's own picture and
+  nobody else's: there is no id to ask for, so nothing to enumerate. `private, no-cache`
+  with an ETag. The picture's version (a short hash) sits in `users.avatar_url`, Better
+  Auth's `image`, which no endpoint lets a member write (`/update-user` stays off), so a
+  browser that already has the picture gets a 304 without the picture being read.
+- **Backups:** the backup test now carries a binary row (a zero byte, 0xff, a backslash,
+  quotes, a newline) and proves it comes back exactly.
 
 ### Released on 2026-09-29, fourth: Agent Zero's internal API, Discord linking on
 

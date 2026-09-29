@@ -43,6 +43,13 @@
       "when": 1790640070585,
       "tag": "0005_discord",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790703557128,
+      "tag": "0006_avatars",
+      "breakpoints": true
     }
   ]
 }

@@ -67,6 +67,9 @@ beforeAll(async () => {
     VALUES ('11111111-1111-4111-8111-111111111111', 'rookie-level-1');
     INSERT INTO discord_links (user_id, discord_id, discord_username)
     VALUES ('11111111-1111-4111-8111-111111111111', '123456789012345678', 'trader');
+    -- Binary: a zero byte, 0xff, a backslash, both quotes and a newline must come back exact.
+    INSERT INTO avatars (user_id, image, content_type)
+    VALUES ('11111111-1111-4111-8111-111111111111', decode('00ff5c27220a52494646', 'hex'), 'image/webp');
   `);
 }, 180_000);
 
@@ -89,6 +92,7 @@ const fingerprintOf = async (client: TestDatabase["client"]) => {
     "checkpoint_passes",
     "rank_history",
     "discord_links",
+    "avatars",
   ];
   const result: Record<string, string> = {};
   for (const table of tables) {
@@ -110,6 +114,7 @@ describe("backup: dump, encrypt, decrypt, restore", () => {
       ["public.abuse_counters", 1],
       ["public.accounts", 1],
       ["public.auth_events", 2],
+      ["public.avatars", 1],
       ["public.checkpoint_passes", 1],
       ["public.discord_links", 1],
       ["public.known_devices", 1],
@@ -278,7 +283,7 @@ describe("db:check-role", () => {
           "A real CREATE TABLE attempt is refused (rolled back either way)",
           "Cannot TRUNCATE, add triggers to, or add foreign keys to any table",
           "Row-level security is on for every table",
-          "Every table is opened to it by an explicit policy (14 tables)",
+          "Every table is opened to it by an explicit policy (15 tables)",
         ]);
       });
       const { rows } = await source.client.query(
@@ -309,6 +314,7 @@ describe("db:counts", () => {
       abuse_counters: 1,
       accounts: 1,
       auth_events: 2,
+      avatars: 1,
       checkpoint_passes: 1,
       discord_links: 1,
       known_devices: 1,

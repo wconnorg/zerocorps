@@ -48,6 +48,8 @@ export const LIMITS = {
    * it, deleting the account): a stolen session cannot guess its way to the password.
    */
   passwordCheckPerUser: { window: HOUR, max: 10 },
+  /** Changing or removing the profile picture. Each upload is decoded, so it is counted. */
+  avatarChangePerUser: { window: HOUR, max: 20 },
   /** Signing out one of the member's other devices. */
   sessionRevokePerUser: { window: HOUR, max: 30 },
   /** Agent Zero's calls to the internal API: a bot catching up after a restart, no more. */
