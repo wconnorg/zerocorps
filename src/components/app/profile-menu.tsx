@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { authFetch } from "@/lib/auth/auth-fetch";
-import { Avatar } from "./avatar";
+import { AccountAvatar } from "./account-avatar";
 
 /**
  * The profile button at the top right of the signed-in area, and its small menu.
@@ -70,7 +70,7 @@ export function ProfileMenu({
         onClick={() => setOpen((value) => !value)}
         className="inline-flex rounded-full transition-opacity hover:opacity-80"
       >
-        <Avatar />
+        <AccountAvatar />
       </button>
 
       {open ? (

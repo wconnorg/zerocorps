@@ -81,6 +81,8 @@ export const ACTIVITY_WORDS: Readonly<Record<string, string>> = {
   new_device: "Signed in from a new browser",
   reset_completed: "Password reset by email",
   password_changed: "Password changed",
+  email_change_started: "Email change asked for (code sent)",
+  email_changed: "Email address changed",
   username_claimed: "Username chosen",
   username_changed: "Username changed",
   discord_linked: "Discord linked",

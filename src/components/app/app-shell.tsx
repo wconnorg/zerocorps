@@ -10,8 +10,8 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
  *
  * It checks no session: a layout is not re-rendered on every navigation, so each
  * protected page checks for itself with `getSessionState()`. The profile menu needs
- * nothing from the session: everyone has the grey default picture, and signing out is
- * safe to offer to anybody.
+ * nothing from the session: the picture asks `/api/avatar` for itself, and signing out
+ * is safe to offer to anybody.
  */
 export function AppShell({ children }: { children: ReactNode }) {
   return (

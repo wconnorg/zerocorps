@@ -18,6 +18,7 @@ import { accountPlugin } from "./account-plugin.ts";
 import { looksLikeEmail, normalizeEmail } from "../email-address.ts";
 import { clientIp, coarseIpPrefix, userAgentFamily } from "./client-info.ts";
 import { profilePlugin } from "./profile-plugin.ts";
+import { emailChangePlugin, type EmailChangeMailer } from "./email-change.ts";
 import { emailCodeSignUp, type SignUpMailer, type SignUpMode } from "./email-code-signup.ts";
 import { createEventLog } from "./events.ts";
 import { ensureDeviceToken } from "./known-device.ts";
@@ -39,16 +40,17 @@ import { createEmailBudget, createLimiter } from "./limits.ts";
 export type AuthDatabase = PgDatabase<PgQueryResultHKT, any, any>;
 
 /** The emails the auth layer sends. The app passes real senders; tests pass recorders. */
-export type AuthMailer = SignUpMailer & {
-  sendPasswordReset(message: { to: string; url: string }): Promise<void>;
-  sendPasswordChanged(message: { to: string }): Promise<void>;
-  sendNewDevice(message: {
-    to: string;
-    when: Date;
-    device: string;
-    resetUrl: string;
-  }): Promise<void>;
-};
+export type AuthMailer = SignUpMailer &
+  EmailChangeMailer & {
+    sendPasswordReset(message: { to: string; url: string }): Promise<void>;
+    sendPasswordChanged(message: { to: string }): Promise<void>;
+    sendNewDevice(message: {
+      to: string;
+      when: Date;
+      device: string;
+      resetUrl: string;
+    }): Promise<void>;
+  };
 
 export type AuthDeps = {
   db: AuthDatabase;
@@ -107,9 +109,10 @@ const DISABLED_PATHS = [
   "/account-info",
   "/get-access-token",
   "/refresh-token",
-  // Change-email asks for no password (20): it comes back only behind our own password
-  // check, when email changes are built. The rest are replaced by our own reads of the
-  // member's sessions, which never send a session token to the browser.
+  // Change-email asks for no password and works by links on /verify-email (20): our own
+  // /account/email/* (email-change.ts) replaces it, with the password and an emailed code.
+  // The rest are replaced by our own reads of the member's sessions, which never send a
+  // session token to the browser.
   // (Milestone 4 switched on /change-password, /delete-user and /revoke-other-sessions,
   // each behind the checks in `hooks.before`.)
   "/change-email",
@@ -427,6 +430,14 @@ export function createAuth(deps: AuthDeps) {
       }),
       profilePlugin({ db, limiter, events }),
       accountPlugin({ db, limiter, events }),
+      emailChangePlugin({
+        db,
+        hmacSecret: deps.hmacSecret,
+        limiter,
+        events,
+        mailer: deps.mailer,
+        deliver,
+      }),
       academyPlugin({
         db,
         limiter,

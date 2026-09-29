@@ -106,7 +106,7 @@ function refuse(code: ErrorCode, extra: Record<string, unknown> = {}): never {
 
 class PendingSignUpGone extends Error {}
 
-const isUniqueViolation = (error: unknown): boolean => {
+export const isUniqueViolation = (error: unknown): boolean => {
   for (let cause: unknown = error, depth = 0; cause && depth < 5; depth++) {
     const candidate = cause as { code?: unknown; cause?: unknown; message?: unknown };
     if (candidate.code === "23505") return true;
@@ -121,7 +121,7 @@ const isUniqueViolation = (error: unknown): boolean => {
   return false;
 };
 
-const maskEmail = (email: string) => email.replace(/^(.).*(@.*)$/, "$1***$2");
+export const maskEmail = (email: string) => email.replace(/^(.).*(@.*)$/, "$1***$2");
 
 export function emailCodeSignUp(options: EmailCodeSignUpOptions) {
   const { db, events, limiter } = options;

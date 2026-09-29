@@ -38,7 +38,11 @@ export default function PrivacyPage() {
         </LegalList>
         <p>As more of the site opens, and only if you use those parts:</p>
         <LegalList>
-          <li>A username, an optional display name and an optional profile picture.</li>
+          <li>
+            A username, an optional display name and an optional profile picture. We keep only a
+            small square copy of the picture, without its location or camera details, and only you
+            are shown it. Removing it, or deleting your account, deletes it.
+          </li>
           <li>
             A phone number, only if you choose text-message codes as your second sign-in step. It is
             used only to text you security codes.

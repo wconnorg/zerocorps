@@ -324,6 +324,7 @@ describe("schema invariants that every future migration must keep", () => {
       "abuse_counters",
       "accounts",
       "auth_events",
+      "avatars",
       "checkpoint_passes",
       "discord_links",
       "known_devices",

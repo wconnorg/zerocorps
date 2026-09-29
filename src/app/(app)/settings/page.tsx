@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
+import { AvatarForm } from "@/components/app/avatar-form";
 import { DeleteAccount } from "@/components/app/delete-account";
 import { DevicesList } from "@/components/app/devices-list";
+import { EmailForm } from "@/components/app/email-form";
 import { DiscordConnection } from "@/components/app/discord-connection";
 import { PasswordForm } from "@/components/app/password-form";
 import { ProfileForm } from "@/components/app/profile-form";
@@ -22,6 +24,7 @@ export const metadata: Metadata = {
 const SECTIONS = [
   ["profile", "Profile"],
   ["connections", "Connections"],
+  ["email", "Email address"],
   ["password", "Password"],
   ["devices", "Devices"],
   ["activity", "Security activity"],
@@ -110,12 +113,15 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
 
       <div className="flex flex-col gap-6">
         <Section id="profile" title="Profile">
-          <ProfileForm
-            mode="settings"
-            initialUsername={state.user.username}
-            initialDisplayName={state.user.displayName}
-            changeAvailableOn={changeAvailableAt?.toISOString().slice(0, 10) ?? null}
-          />
+          <div className="flex flex-col gap-8">
+            <AvatarForm version={state.user.avatar} />
+            <ProfileForm
+              mode="settings"
+              initialUsername={state.user.username}
+              initialDisplayName={state.user.displayName}
+              changeAvailableOn={changeAvailableAt?.toISOString().slice(0, 10) ?? null}
+            />
+          </div>
         </Section>
 
         <Section id="connections" title="Connections">
@@ -124,6 +130,14 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
             linkedAs={linkedAs}
             outcome={typeof outcome === "string" ? outcome : null}
           />
+        </Section>
+
+        <Section
+          id="email"
+          title="Email address"
+          intro="Where your codes and security notices go, and how you sign in."
+        >
+          <EmailForm current={state.user.email} />
         </Section>
 
         <Section

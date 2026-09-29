@@ -14,7 +14,14 @@ export type SessionState =
   | {
       status: "signed-in";
       /** `username` is null until the member has been through `/onboarding`. */
-      user: { id: string; email: string; displayName: string; username: string | null };
+      user: {
+        id: string;
+        email: string;
+        displayName: string;
+        username: string | null;
+        /** The profile picture's version, or null for the grey default (src/lib/avatars/). */
+        avatar: string | null;
+      };
       /** This browser's session id (not its token): settings marks it as "this device". */
       sessionId: string;
     }
@@ -35,6 +42,7 @@ export async function getSessionState(): Promise<SessionState> {
         email: session.user.email,
         displayName: session.user.name ?? "",
         username: session.user.username ?? null,
+        avatar: session.user.image ?? null,
       },
       sessionId: session.session.id,
     };

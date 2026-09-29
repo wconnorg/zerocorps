@@ -14,9 +14,9 @@ not already public.
   earned by completing Chapter 1 and claimed by linking Discord). The website never holds
   the bot's token.
 - **How the bot knows ranks:** it asks the website. On start and every few minutes it
-  reads every linked member's rank (`GET /api/internal/discord/ranks`) and makes the rank
-  roles match: add the role for each listed rank, and take rank roles from anyone not
-  listed or listed with `rank: null`. When someone joins it can ask about that one member
+  reads every linked member's rank (`GET /api/internal/discord/ranks`) and gives the role
+  for each listed rank. **A linked member never loses a rank role** (owner, 2026-09-29):
+  only a member missing from the list, which is what unlinking Discord does, loses them. When someone joins it can ask about that one member
   (`GET /api/internal/discord/{discordId}/profile`). The verified role is the bot's own
   business and never part of this.
 
@@ -59,7 +59,9 @@ the Discord role configured for that rank. Rank keys today: `rookie`.
 | 200    | `{ "members": [{ "discordId": "123456789012345678", "rank": "rookie" }, { "discordId": "…", "rank": null }] }` | Every linked member, once. Discord ids and rank keys only. |
 
 A member who unlinks disappears from the list, so the bot takes their rank roles away on
-its next sync. Rank keys today: `rookie`.
+its next sync; a listed member keeps every rank role they hold, even with `rank: null`.
+Rank keys today: `rookie`. The bot also names its "Academy Users: N" channel after the
+length of this list (linked Discord accounts), so it does not use `/stats`.
 
 ## GET /api/internal/stats
 
@@ -69,7 +71,8 @@ its next sync. Rank keys today: `rookie`.
 
 ## Before the bot can reach it
 
-zerocorps.org sits behind Vercel, which currently challenges automated requests (a
-"Security Checkpoint" page, HTTP 403). A bot is automated, so either that challenge is
-switched off in the project's Firewall settings or a Firewall rule lets `/api/internal/`
-through. The owner checks which applies in the Vercel dashboard.
+zerocorps.org sits behind Vercel, which has challenged automated requests to its pages
+(a "Security Checkpoint", HTTP 403). The bot's first request to `/api/internal/` on
+2026-09-29 was NOT challenged: it got the API's own 503 (no secret set yet). If the
+challenge ever appears for the bot, a Firewall rule letting `/api/internal/` through is
+the fix. The bot backs off on a 403 checkpoint either way.

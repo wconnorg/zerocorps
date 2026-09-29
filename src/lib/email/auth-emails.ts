@@ -2,7 +2,7 @@ import type { AuthMailer } from "../auth/create-auth.ts";
 import type { EmailMessage, SendEmail } from "./send-email.ts";
 
 /**
- * The five emails the auth layer sends. Plain on purpose: no images, no tracking, no
+ * The emails the auth layer sends. Plain on purpose: no images, no tracking, no
  * remote fonts, a text version of everything. Every value that is put into the HTML is
  * escaped, including the ones that come from our own fixed vocabularies.
  *
@@ -58,9 +58,13 @@ function compose(
 
 const formatWhen = (when: Date) => `${when.toISOString().slice(0, 16).replace("T", " ")} UTC`;
 
-export function createAuthMailer(sendEmail: SendEmail, options: { baseUrl: string }): AuthMailer {
+export function createAuthMailer(
+  sendEmail: SendEmail,
+  options: { baseUrl: string; /** https:// or mailto:, for "it wasn't me". */ contact?: string },
+): AuthMailer {
   const signInUrl = `${options.baseUrl}/sign-in`;
   const resetUrl = `${options.baseUrl}/forgot-password`;
+  const contactUrl = options.contact ?? `${options.baseUrl}/privacy`;
 
   return {
     sendSignUpCode: ({ to, code: value, reference, expiresInMinutes }) =>
@@ -129,6 +133,49 @@ export function createAuthMailer(sendEmail: SendEmail, options: { baseUrl: strin
           paragraph(`Browser: ${device}`),
           paragraph("If that was you, there is nothing more to do."),
           link("If it wasn't you, reset your password now", url),
+        ]),
+      ),
+
+    sendEmailChangeCode: ({ to, code: value, expiresInMinutes }) =>
+      sendEmail(
+        compose("email-change-code", to, "Your ZeroCorps email change code", [
+          paragraph(
+            "Enter this code in your ZeroCorps settings to make this your account's email address:",
+          ),
+          code(value),
+          paragraph(`It expires in ${expiresInMinutes} minutes.`),
+          paragraph("Never share this code. ZeroCorps will never ask you for it."),
+          paragraph(
+            "If you didn't ask for this, you can ignore this email. Nothing changes without the code.",
+          ),
+        ]),
+      ),
+
+    sendEmailChangeTaken: ({ to }) =>
+      sendEmail(
+        compose("email-change-taken", to, "This address already has a ZeroCorps account", [
+          paragraph(
+            "Someone, probably you, just asked to move a different ZeroCorps account to this email address.",
+          ),
+          paragraph(
+            "This address already has an account, so nothing was changed and no code was sent.",
+          ),
+          link("Sign in", signInUrl),
+          paragraph(
+            "If this wasn't you, you don't need to do anything. Your account has not changed.",
+          ),
+        ]),
+      ),
+
+    sendEmailChanged: ({ to, newEmail }) =>
+      sendEmail(
+        compose("email-changed", to, "Your ZeroCorps email address was changed", [
+          paragraph(
+            `The email address of your ZeroCorps account was just changed to ${newEmail}. ` +
+              "This address will no longer receive anything about the account.",
+          ),
+          paragraph("If that was you, there is nothing more to do."),
+          link("If it wasn't you, contact ZeroCorps straight away", contactUrl),
         ]),
       ),
   };

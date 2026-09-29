@@ -3,6 +3,7 @@ import {
   bigint,
   boolean,
   check,
+  customType,
   index,
   integer,
   pgPolicy,
@@ -411,6 +412,40 @@ export const discordLinks = pgTable(
     uniqueIndex("discord_links_discord_id_unique").on(table.discordId),
     check("discord_links_discord_id_shape", sql`${table.discordId} ~ '^[0-9]{17,20}$'`),
     check("discord_links_username_length", sql`length(${table.discordUsername}) BETWEEN 1 AND 64`),
+    appAccess(),
+  ],
+);
+
+// ── Profile pictures (milestone 3) ────────────────────────────────────────────
+
+/**
+ * Raw bytes. postgres.js returns a Buffer and PGlite a Uint8Array; both come out a Buffer.
+ */
+const bytea = customType<{ data: Buffer; driverData: Buffer | Uint8Array }>({
+  dataType: () => "bytea",
+  fromDriver: (value) => Buffer.from(value),
+});
+
+/**
+ * A member's profile picture, in the database like everything else (owner, 2026-09-21:
+ * "everything lives in database"). Only what the server made is ever stored: the upload
+ * is decoded, resized to 256 by 256 and re-encoded as WebP, which also drops everything
+ * but the pixels (a phone's GPS position, the camera, the original file). One per member,
+ * gone with the account, and never more than the size check below.
+ */
+export const avatars = pgTable(
+  "avatars",
+  {
+    userId: uuid("user_id")
+      .primaryKey()
+      .references(() => users.id, { onDelete: "cascade" }),
+    image: bytea("image").notNull(),
+    contentType: text("content_type").notNull(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [
+    check("avatars_content_type", sql`${table.contentType} = 'image/webp'`),
+    check("avatars_size", sql`octet_length(${table.image}) BETWEEN 1 AND 131072`),
     appAccess(),
   ],
 );

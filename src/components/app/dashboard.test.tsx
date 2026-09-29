@@ -68,7 +68,7 @@ describe("the dashboard", () => {
 });
 
 describe("the profile menu", () => {
-  it("is a closed menu button with the grey default picture", () => {
+  it("is a closed menu button with the grey default picture, and the member's own on top", () => {
     const html = renderToStaticMarkup(<ProfileMenu onSignOut={() => {}} />);
     expect(html).toContain('aria-label="Account menu"');
     expect(html).toContain('aria-haspopup="menu"');
@@ -76,6 +76,8 @@ describe("the profile menu", () => {
     expect(html).not.toContain('role="menu"');
     expect(html).not.toContain("Sign out");
     expect(html).toContain("<svg");
+    // The member's own picture, hidden until it loads, so a missing one shows nothing broken.
+    expect(html).toMatch(/<img [^>]*src="\/api\/avatar"[^>]*opacity-0/);
   });
 
   it("holds two entries when open: Settings, then Sign out", () => {
@@ -84,7 +86,9 @@ describe("the profile menu", () => {
     expect(html).toContain('role="menu"');
     expect(html.match(/role="menuitem"/g)).toHaveLength(2);
     expect(html).toMatch(/<a [^>]*role="menuitem"[^>]*>Settings</);
-    expect([...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1])).toEqual(["/settings"]);
+    expect([...html.matchAll(/<a [^>]*href="([^"]+)"/g)].map((match) => match[1])).toEqual([
+      "/settings",
+    ]);
     expect(html).toMatch(/role="menuitem"[^>]*>Sign out</);
     expect(html.indexOf("Settings")).toBeLessThan(html.indexOf("Sign out"));
     // The button points at the very menu it opened.

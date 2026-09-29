@@ -48,6 +48,15 @@ export const LIMITS = {
    * it, deleting the account): a stolen session cannot guess its way to the password.
    */
   passwordCheckPerUser: { window: HOUR, max: 10 },
+  /** Changing or removing the profile picture. Each upload is decoded, so it is counted. */
+  avatarChangePerUser: { window: HOUR, max: 20 },
+  /**
+   * Starting an email change: each one emails a code to an address the member typed, so it
+   * is kept low. The password check before it is counted as `passwordCheckPerUser`.
+   */
+  emailChangeStartPerUser: { window: HOUR, max: 5 },
+  /** Guesses at ONE email-change code (keyed by the pending change), as for sign-up codes. */
+  emailChangeCodePerChange: { window: 15 * MINUTE, max: 5 },
   /** Signing out one of the member's other devices. */
   sessionRevokePerUser: { window: HOUR, max: 30 },
   /** Agent Zero's calls to the internal API: a bot catching up after a restart, no more. */
@@ -101,9 +110,20 @@ export type Limiter = ReturnType<typeof createLimiter>;
 
 /** The kinds of email we send. Security notices must always get through. */
 export type EmailKind =
-  "signup-code" | "already-registered" | "password-reset" | "password-changed" | "new-device";
+  | "signup-code"
+  | "already-registered"
+  | "password-reset"
+  | "password-changed"
+  | "new-device"
+  | "email-change-code"
+  | "email-change-taken"
+  | "email-changed";
 
-const SECURITY_NOTICES: ReadonlySet<EmailKind> = new Set(["password-changed", "new-device"]);
+const SECURITY_NOTICES: ReadonlySet<EmailKind> = new Set([
+  "password-changed",
+  "new-device",
+  "email-changed",
+]);
 
 /**
  * The daily cap on email to one address, across every kind. It answers whether THIS
