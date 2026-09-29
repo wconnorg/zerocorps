@@ -1189,6 +1189,41 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Milestone 4, account self-service: built (2026-09-29)
+
+Built on `dev` on the owner's "as far deep as we can get", while the owner tested the
+live site. Not released. No migration: it uses the tables that exist.
+
+- **Settings** now has Profile, Connections, Password, Devices, Security activity, a
+  Two-factor placeholder ("coming soon", milestone 5) and Delete account, with a side menu.
+- **Change password:** Better Auth's `/change-password`, switched on. It demands the
+  current password itself; our `hooks.before` refuses a request that would not sign the
+  other devices out, so a new password always does; the after hook records
+  `password_changed` and sends the existing "your password was changed" email.
+- **Delete account:** Better Auth's `/delete-user`, switched on, **always with the
+  password**: our `hooks.before` refuses a request without one, or with an emailed token
+  (`/delete-user/callback` stays off). Without that guard Better Auth deletes on a fresh
+  session alone: a mutation check proved it (the test fails with the guard removed).
+  `beforeDelete` takes the member's Discord rank roles back, then records
+  `account_deleted` with no user id, only the keyed hash of the address, so the record
+  outlives the account. Everything else goes by `ON DELETE CASCADE`: sessions, accounts,
+  known devices, events, progress, checkpoints, rank, Discord link. The page asks for the
+  password and "DELETE" typed out. The privacy page now says deletion is self-service.
+- **Both password checks are counted per member** (`passwordCheckPerUser`, 10 an hour),
+  so a stolen session cannot guess its way to the password.
+- **Devices:** read on the server from `sessions` (browser family, coarse network prefix,
+  signed in, last active; this device first). No session token reaches the browser. "Sign
+  out" per device is our one new endpoint, `/api/auth/account/sessions/revoke`, by session
+  id, only the member's own and never the current one; "Sign out everywhere else" is Better
+  Auth's `/revoke-other-sessions`. `/list-sessions`, `/revoke-session` and
+  `/revoke-sessions` stay off (they deal in tokens).
+- **Security activity:** the member's own last 15 events, in words, with browser family
+  and network prefix. Events not meant for members (failed sign-ins by address) are not
+  listed.
+- **Not built in this slice:** changing the email address (it needs its own verification
+  flow and our own password check, finding 20), appearance settings (the header's theme
+  switch covers it), profile pictures (milestone 3's remainder).
+
 ### Released on 2026-09-29, second: the rank claim, and sign-ups open to everyone
 
 - **The owner set `SIGNUP_MODE=open` in Vercel** ("i changed signup") and said "push".

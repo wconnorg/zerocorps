@@ -115,9 +115,9 @@ export default function PrivacyPage() {
 
       <LegalSection heading="Deleting your data">
         <p>
-          You can ask us to delete your account and everything connected to it, or to send you a
-          copy of what we hold. A delete button in your account settings is on the way; until then,
-          contact us and we will do it for you.
+          You can delete your account and everything connected to it yourself, at any time, in your
+          account settings under &ldquo;Delete account&rdquo;. It takes effect at once. You can also
+          ask us to do it for you, or to send you a copy of what we hold.
         </p>
         <LegalContact contact={env.PRIVACY_CONTACT} />
       </LegalSection>

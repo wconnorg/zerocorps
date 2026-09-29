@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
-import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
+import { APIError, createAuthMiddleware, getSessionFromCtx, isAPIError } from "better-auth/api";
 import { eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { authSchema, knownDevices } from "../../db/schema.ts";
@@ -8,7 +8,13 @@ import { academyPlugin } from "../academy/academy-plugin.ts";
 import type { Catalog } from "../academy/content.ts";
 import { readProgress } from "../academy/progress.ts";
 import { rankKeyOf } from "../academy/standing.ts";
-import { createRankSync, type DiscordConfig, discordPlugin } from "../discord/discord-plugin.ts";
+import {
+  createRankSync,
+  createRoleRemoval,
+  type DiscordConfig,
+  discordPlugin,
+} from "../discord/discord-plugin.ts";
+import { accountPlugin } from "./account-plugin.ts";
 import { looksLikeEmail, normalizeEmail } from "../email-address.ts";
 import { clientIp, coarseIpPrefix, userAgentFamily } from "./client-info.ts";
 import { profilePlugin } from "./profile-plugin.ts";
@@ -101,24 +107,26 @@ const DISABLED_PATHS = [
   "/account-info",
   "/get-access-token",
   "/refresh-token",
-  // Milestone 4 (settings). Change-email asks for no password (20), so it comes back
-  // only behind our own password check.
+  // Change-email asks for no password (20): it comes back only behind our own password
+  // check, when email changes are built. The rest are replaced by our own reads of the
+  // member's sessions, which never send a session token to the browser.
+  // (Milestone 4 switched on /change-password, /delete-user and /revoke-other-sessions,
+  // each behind the checks in `hooks.before`.)
   "/change-email",
-  "/change-password",
   "/update-user",
   "/update-session",
-  "/delete-user",
+  // Deleting by an emailed link: never. Deleting needs the password, every time.
   "/delete-user/callback",
   "/list-sessions",
   "/revoke-session",
   "/revoke-sessions",
-  "/revoke-other-sessions",
 ];
 
 export function createAuth(deps: AuthDeps) {
   const { db } = deps;
   /** A member's rank key from the steps stored for them: what Discord's roles follow. */
   const rankOf = async (userId: string) => rankKeyOf((await readProgress(db, userId)).steps);
+  const removeDiscordRoles = createRoleRemoval({ db, discord: deps.discord ?? null });
   const limiter = createLimiter(db, deps.hmacSecret);
   const emailBudget = createEmailBudget(limiter);
   const events = createEventLog(db, {
@@ -176,6 +184,22 @@ export function createAuth(deps: AuthDeps) {
         // `input: false`: nothing a client sends can set it. A name is only ever written
         // by `setUsername`, which holds the rules, the hold and the wait.
         username: { type: "string", required: false, input: false },
+      },
+      // Milestone 4: a member can delete their own account, with their password (the
+      // check is in `hooks.before`). Everything tied to the account goes with it (ON
+      // DELETE CASCADE); their Discord role is taken back first.
+      deleteUser: {
+        enabled: true,
+        beforeDelete: async (user, request) => {
+          await removeDiscordRoles(user.id);
+          // Kept without the member's id, so the record outlives the account's own rows:
+          // only a keyed hash of the address, as for every event.
+          await events.record({
+            type: "account_deleted",
+            identifier: user.email,
+            headers: request?.headers ?? null,
+          });
+        },
       },
     },
 
@@ -255,6 +279,44 @@ export function createAuth(deps: AuthDeps) {
           }
         }
 
+        // Milestone 4. Changing the password and deleting the account both check the
+        // member's password; both are counted per member, so a stolen session cannot guess
+        // its way to it. Deleting ALWAYS needs the password (Better Auth would otherwise
+        // accept a recent session alone, or an emailed token), and a new password always
+        // signs out every other device.
+        if (ctx.path === "/change-password" || ctx.path === "/delete-user") {
+          const session = await getSessionFromCtx(ctx);
+          if (session) {
+            if (
+              ctx.path === "/delete-user" &&
+              (typeof ctx.body?.password !== "string" ||
+                ctx.body.password.length === 0 ||
+                ctx.body?.token !== undefined)
+            ) {
+              throw new APIError("BAD_REQUEST", {
+                code: "PASSWORD_REQUIRED",
+                message: "Enter your password to delete your account.",
+              });
+            }
+            if (ctx.path === "/change-password" && ctx.body?.revokeOtherSessions !== true) {
+              throw new APIError("BAD_REQUEST", {
+                code: "REVOKE_REQUIRED",
+                message: "A new password signs out your other devices.",
+              });
+            }
+            const limit = await limiter.hit("passwordCheckPerUser", session.user.id);
+            if (!limit.allowed) {
+              await events.record({
+                type: "rate_limited",
+                userId: session.user.id,
+                headers,
+                detail: "password_check",
+              });
+              throw tooManyRequests(limit.retryAfterSeconds);
+            }
+          }
+        }
+
         if (ctx.path === "/request-password-reset" && email) {
           const address = await limiter.hit("passwordResetPerAddress", email);
           const perIp = await limiter.hit("passwordResetPerIp", ip);
@@ -273,8 +335,34 @@ export function createAuth(deps: AuthDeps) {
       }),
 
       after: createAuthMiddleware(async (ctx) => {
-        if (ctx.path !== "/sign-in/email") return;
         const headers = ctx.headers ?? ctx.request?.headers ?? null;
+        const failed = isAPIError(ctx.context.returned);
+
+        if (ctx.path === "/change-password" && !failed) {
+          // The new session Better Auth made for this browser after signing out the rest.
+          const user = ctx.context.newSession?.user;
+          if (user) {
+            await events.record({ type: "password_changed", userId: user.id, headers });
+            await ctx.context.runInBackgroundOrAwait(
+              deliver(user.email, "password-changed", () =>
+                deps.mailer.sendPasswordChanged({ to: user.email }),
+              ),
+            );
+          }
+          return;
+        }
+        if (ctx.path === "/revoke-other-sessions" && !failed) {
+          const session = await getSessionFromCtx(ctx);
+          if (session) {
+            await events.record({
+              type: "other_sessions_revoked",
+              userId: session.user.id,
+              headers,
+            });
+          }
+          return;
+        }
+        if (ctx.path !== "/sign-in/email") return;
         const fresh = ctx.context.newSession;
 
         if (!fresh) {
@@ -338,6 +426,7 @@ export function createAuth(deps: AuthDeps) {
         events,
       }),
       profilePlugin({ db, limiter, events }),
+      accountPlugin({ db, limiter, events }),
       academyPlugin({
         db,
         limiter,

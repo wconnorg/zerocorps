@@ -68,7 +68,7 @@ possible.
 | 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel       |
 | 2   | Auth                                                     | Live since 2026-09-21      |
 | 3   | Onboarding                                               | Username live; avatar next |
-| 4   | Dashboard and settings                                   | Not started                |
+| 4   | Dashboard and settings                                   | Self-service on dev        |
 | 5   | Phone and 2FA                                            | Not started                |
 | 6   | Discord link and unlink                                  | Live, off until set up     |
 | 7   | Academy: lessons, progress, rank, heatmap                | Live since 2026-09-29      |

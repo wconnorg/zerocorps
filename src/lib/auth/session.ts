@@ -15,6 +15,8 @@ export type SessionState =
       status: "signed-in";
       /** `username` is null until the member has been through `/onboarding`. */
       user: { id: string; email: string; displayName: string; username: string | null };
+      /** This browser's session id (not its token): settings marks it as "this device". */
+      sessionId: string;
     }
   | { status: "signed-out" }
   | { status: "unavailable" };
@@ -34,6 +36,7 @@ export async function getSessionState(): Promise<SessionState> {
         displayName: session.user.name ?? "",
         username: session.user.username ?? null,
       },
+      sessionId: session.session.id,
     };
   } catch (error) {
     console.error(

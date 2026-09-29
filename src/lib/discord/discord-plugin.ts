@@ -84,6 +84,27 @@ export function createRankSync(options: {
   };
 }
 
+/**
+ * Takes every rank role back in Discord before an account is deleted, so a deleted member
+ * does not keep a role they can no longer be tied to. Never throws: deleting the account
+ * must not depend on Discord being up.
+ */
+export function createRoleRemoval(options: { db: AuthDatabase; discord: DiscordConfig | null }) {
+  const { db, discord } = options;
+  return async (userId: string): Promise<void> => {
+    if (!discord?.roles) return;
+    try {
+      const link = await getDiscordLink(db, userId);
+      if (!link) return;
+      await syncDiscordRoles(discord.fetch ?? fetch, discord.roles, link.discordId, null);
+    } catch (error) {
+      console.error(
+        `[discord] roles not removed before deletion: ${error instanceof Error ? error.name : "error"}`,
+      );
+    }
+  };
+}
+
 export type LinkOutcome =
   | "linked"
   | "linked-no-rank"
