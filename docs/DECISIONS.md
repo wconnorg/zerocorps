@@ -1189,6 +1189,18 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Released on 2026-09-29, second: the rank claim, and sign-ups open to everyone
+
+- **The owner set `SIGNUP_MODE=open` in Vercel** ("i changed signup") and said "push".
+  `dev` (`97d3e8b`) was merged into `main` as `17f336d` (parents `803d4e8` and
+  `97d3e8b`), scanned first, and pushed; GitHub recorded the production deployment as a
+  success. That deploy read the new setting, so **anyone can create an account now.**
+- `npm run check` (367 tests, production build) and `npm run verify` (85 checks) passed
+  on the dev tip first. No migration.
+- The owner tests with a brand-new address on the live site next. Such an account stays
+  until milestone 4's "delete my account" is released: the test-account cleanup never
+  deletes a live account, by design.
+
 ### A rank is earned in the Academy and claimed by linking Discord (owner, 2026-09-29)
 
 The owner: "ranks should be tied behind discord account linkage", then chose "earn it,
