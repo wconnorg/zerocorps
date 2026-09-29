@@ -1189,6 +1189,28 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Released on 2026-09-29: usernames, the Academy, Discord linking (off)
+
+- **The owner ran the release steps:** `npm run db:backup` (4 migrations recorded),
+  `npm run db:migrate` ("applied 2 migrations": `0004_academy`, `0005_discord`). Then,
+  read-only: `npm run db:counts` showed the four new tables, empty, and
+  `npm run db:check-role` passed every line with 13 tables. Whether the restore drill
+  (`npm run db:restore:check`) was run and passed was not reported: still owed.
+- **On the owner's explicit "push":** `dev` (`5ed7a1a`) was merged into `main` as one
+  `--no-ff` merge commit, `803d4e8` (parents `723e092` and `5ed7a1a`), made without
+  switching the working folder off `dev`, and pushed. The whole range was scanned for env
+  files, secrets and real addresses first: nothing. GitHub recorded Vercel's production deployment of
+  `803d4e8` as a success within a minute (read from GitHub's public API: the `gh` tool is
+  not installed in this shell).
+- **Sign-ups for everyone** (the owner: "make sure any user and their grandma can make an
+  account"): `SIGNUP_MODE=open` in Vercel, then a redeploy, the owner's to change. The
+  owner's own gates for inviting people (approved `/terms` and `/privacy`, a confirmed
+  privacy contact) are still open; the owner has decided to go ahead.
+- **Next, on the owner's word "as far deep as we can get":** milestone 4's account
+  self-service first, because open sign-ups make it matter most: change password, see and
+  end other sessions, recent security events, and deleting the account (the privacy page
+  promises it). Built on `dev`, released only on the owner's "push".
+
 ### The owner's answers of 2026-09-29: lessons stay open, /academy leads in, Rookie is earned
 
 These supersede the matching lines above ("The Academy's structure, ranks and lessons",
