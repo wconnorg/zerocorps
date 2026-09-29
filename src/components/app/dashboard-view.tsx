@@ -13,7 +13,14 @@ import { ProductFace, PRODUCTS } from "@/components/marketing/products";
  * It takes plain values and checks nothing, so it can be rendered in a test. The page
  * decides who may see it.
  */
-export function DashboardView({ signedInAs }: { signedInAs: string }) {
+export function DashboardView({
+  signedInAs,
+  linkDiscord = false,
+}: {
+  signedInAs: string;
+  /** Show the "link Discord" card: linking is on and this member has not linked. */
+  linkDiscord?: boolean;
+}) {
   const ordered = [
     ...PRODUCTS.filter((product) => product.id === "academy"),
     ...PRODUCTS.filter((product) => product.id !== "academy"),
@@ -33,6 +40,26 @@ export function DashboardView({ signedInAs }: { signedInAs: string }) {
         <p className="mt-5 font-mono text-xs tracking-[0.12em] text-subtle">
           Signed in as <span className="text-muted">{signedInAs}</span>
         </p>
+
+        {linkDiscord ? (
+          <div className="mt-8 flex flex-col gap-4 border border-line-strong bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex flex-col gap-1">
+              <p className="font-mono text-[0.6875rem] tracking-[0.22em] text-accent">DISCORD</p>
+              <p className="text-base font-medium">Link your Discord account</p>
+              <p className="text-sm/6 text-muted">
+                Your Academy rank becomes a role in the ZeroCorps server. It takes a few seconds.
+              </p>
+            </div>
+            {/* A full navigation on purpose: the server answers with a redirect to Discord. */}
+            {/* eslint-disable-next-line @next/next/no-html-link-for-pages -- see above */}
+            <a
+              href="/api/auth/discord/link"
+              className="inline-flex h-11 shrink-0 items-center justify-center bg-accent px-5 text-sm font-semibold text-accent-fg transition-colors hover:bg-accent/90"
+            >
+              Link Discord
+            </a>
+          </div>
+        ) : null}
 
         <ul className="mt-10 grid gap-5">
           {ordered.map((product) => (

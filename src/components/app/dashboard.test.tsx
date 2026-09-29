@@ -51,6 +51,13 @@ describe("the dashboard", () => {
     expect(html).not.toContain("<button");
   });
 
+  it("offers to link Discord only when asked to, with one full-page link to the server", () => {
+    const withCard = renderToStaticMarkup(<DashboardView signedInAs="@trader_99" linkDiscord />);
+    expect(withCard).toContain("Link your Discord account");
+    expect(withCard).toContain('href="/api/auth/discord/link"');
+    expect(html).not.toContain("discord/link");
+  });
+
   it("escapes whatever it is given", () => {
     const hostile = renderToStaticMarkup(
       <DashboardView signedInAs={'"><img src=x onerror=alert(1)>'} />,
