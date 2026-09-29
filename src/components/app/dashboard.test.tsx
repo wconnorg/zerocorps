@@ -9,7 +9,7 @@ import { ProfileMenu } from "./profile-menu";
  */
 
 describe("the dashboard", () => {
-  const html = renderToStaticMarkup(<DashboardView signedInAs="member@example.com" />);
+  const html = renderToStaticMarkup(<DashboardView signedInAs="@trader_99" />);
   const tiles = html.split("<article").slice(1);
 
   it("has ONE heading that says Dashboard, and says who is signed in", () => {
@@ -17,7 +17,7 @@ describe("the dashboard", () => {
     // The owner saw "Dashboard" twice (a label above the heading). Once is enough.
     expect(html.match(/dashboard/gi)).toHaveLength(1);
     expect(html).toContain("Signed in as");
-    expect(html).toContain("member@example.com");
+    expect(html).toContain("@trader_99");
   });
 
   it("stacks the three products in their tones, the Academy first", () => {
@@ -71,12 +71,15 @@ describe("the profile menu", () => {
     expect(html).toContain("<svg");
   });
 
-  it("holds exactly one entry when open: Sign out", () => {
+  it("holds two entries when open: Settings, then Sign out", () => {
     const html = renderToStaticMarkup(<ProfileMenu onSignOut={() => {}} defaultOpen />);
     expect(html).toContain('aria-expanded="true"');
     expect(html).toContain('role="menu"');
-    expect(html.match(/role="menuitem"/g)).toHaveLength(1);
+    expect(html.match(/role="menuitem"/g)).toHaveLength(2);
+    expect(html).toMatch(/<a [^>]*role="menuitem"[^>]*>Settings</);
+    expect([...html.matchAll(/href="([^"]+)"/g)].map((match) => match[1])).toEqual(["/settings"]);
     expect(html).toMatch(/role="menuitem"[^>]*>Sign out</);
+    expect(html.indexOf("Settings")).toBeLessThan(html.indexOf("Sign out"));
     // The button points at the very menu it opened.
     const controls = /aria-controls="([^"]+)"/.exec(html)?.[1];
     const menuId = /<div id="([^"]+)" role="menu"/.exec(html)?.[1];

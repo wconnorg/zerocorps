@@ -51,6 +51,11 @@ describe("the daily cleanup", () => {
       INSERT INTO known_devices (user_id, device_hash, last_seen_at) VALUES
         ('11111111-1111-4111-8111-111111111111', 'gone', now() - interval '401 days'),
         ('11111111-1111-4111-8111-111111111111', 'here', now() - interval '3 days');
+      INSERT INTO users (id, email, username, previous_username, username_changed_at) VALUES
+        ('22222222-2222-4222-8222-222222222222', 'moved.long.ago@example.com',
+         'settled', 'letgo', now() - interval '31 days'),
+        ('33333333-3333-4333-8333-333333333333', 'moved.recently@example.com',
+         'renamed', 'stillheld', now() - interval '2 days');
     `);
 
     const result = await database.asAppRole(() => runCleanup(database.db));
@@ -62,7 +67,15 @@ describe("the daily cleanup", () => {
       abuseCounters: 1,
       authEvents: 1,
       knownDevices: 1,
+      usernameHolds: 1,
     });
+
+    // The hold that ran out is let go; the recent one is untouched, so nobody can take
+    // that name and be mistaken for the member who just left it.
+    const holds = await query(
+      "SELECT username, previous_username FROM users WHERE previous_username IS NOT NULL",
+    );
+    expect(holds).toEqual([{ username: "renamed", previous_username: "stillheld" }]);
     for (const table of [
       "pending_signups",
       "verifications",
@@ -74,7 +87,8 @@ describe("the daily cleanup", () => {
     ]) {
       expect(await count(table), table).toBe(1);
     }
-    expect(await count("users")).toBe(1);
+    // Every member is still here: the cleanup lets go of a held name, never of a person.
+    expect(await count("users")).toBe(3);
 
     // A second run finds nothing to do.
     expect(Object.values(await runCleanup(database.db)).every((removed) => removed === 0)).toBe(

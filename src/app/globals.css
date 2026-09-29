@@ -390,16 +390,10 @@
 }
 
 /*
- * The Academy's page until the lessons exist (owner, 2026-09-21): pitch black, a red glow
- * in the middle, and two small words. True black, in both themes: the section carries its
- * own `data-theme="dark"`.
+ * The red glow in the middle of a black panel: the "rank earned" and "level complete"
+ * moments in the Academy. Such a panel carries its own `data-theme="dark"`, so it is
+ * black in both themes.
  */
-.void {
-  /* The whole space between the header and the footer, so no strip of the page shows. */
-  min-height: max(72vh, calc(100vh - 14rem));
-  background-color: #000000;
-}
-
 .void-glow {
   background-image: radial-gradient(
     38% 42% at 50% 50%,
@@ -408,6 +402,193 @@
   );
 }
 
-.void-text {
-  letter-spacing: 0.42em;
+/*
+ * A lesson's text (milestone 7): the HTML `src/lib/academy/markdown.ts` renders from the
+ * owner's Markdown. Long-form reading: a comfortable measure and line height, headings
+ * with room above them, and the site's tokens only, so it reads the same in both themes.
+ */
+.lesson-prose {
+  font-size: 1.0625rem;
+  line-height: 1.8;
+  color: color-mix(in oklab, var(--fg) 88%, var(--muted));
+}
+
+.lesson-prose > * + * {
+  margin-top: 1.25em;
+}
+
+.lesson-prose h2 {
+  margin-top: 2.25em;
+  font-size: 1.625rem;
+  line-height: 1.25;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+.lesson-prose h3 {
+  margin-top: 1.9em;
+  font-size: 1.25rem;
+  line-height: 1.35;
+  font-weight: 500;
+  color: var(--fg);
+}
+
+.lesson-prose h4,
+.lesson-prose h5,
+.lesson-prose h6 {
+  margin-top: 1.6em;
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.lesson-prose > :first-child {
+  margin-top: 0;
+}
+
+.lesson-prose strong {
+  font-weight: 600;
+  color: var(--fg);
+}
+
+.lesson-prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.lesson-prose ul,
+.lesson-prose ol {
+  padding-left: 1.4em;
+}
+
+.lesson-prose ul {
+  list-style: square;
+}
+
+.lesson-prose ol {
+  list-style: decimal;
+}
+
+.lesson-prose li + li {
+  margin-top: 0.4em;
+}
+
+.lesson-prose li::marker {
+  color: var(--accent);
+}
+
+.lesson-prose blockquote {
+  border-left: 1px solid var(--line-strong);
+  padding-left: 1.25em;
+  color: var(--muted);
+}
+
+.lesson-prose code {
+  font-family: var(--font-mono);
+  font-size: 0.9em;
+  padding: 0.1em 0.35em;
+  background-color: var(--raised);
+  border: 1px solid var(--line);
+}
+
+.lesson-prose pre {
+  overflow-x: auto;
+  padding: 1.1em 1.25em;
+  background-color: var(--surface);
+  border: 1px solid var(--line);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.lesson-prose pre code {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.lesson-prose hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 2.5em 0;
+}
+
+.lesson-prose img {
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--line);
+}
+
+.lesson-table {
+  overflow-x: auto;
+  border: 1px solid var(--line);
+}
+
+.lesson-prose table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+}
+
+.lesson-prose th,
+.lesson-prose td {
+  padding: 0.7em 1em;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.lesson-prose th {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background-color: var(--surface);
+}
+
+.lesson-prose tr:last-child td {
+  border-bottom: 0;
+}
+
+/* Obsidian callouts: an aside with a mono title, coloured by its look. */
+.lesson-prose .callout {
+  --callout: var(--accent);
+  padding: 1.1em 1.4em;
+  border: 1px solid color-mix(in oklab, var(--callout) 40%, var(--line));
+  background-color: color-mix(in oklab, var(--callout) 6%, var(--surface));
+  color: var(--fg);
+}
+
+.lesson-prose .callout > * + * {
+  margin-top: 0.6em;
+}
+
+.lesson-prose .callout-title {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--callout);
+}
+
+.lesson-prose .callout-tip {
+  --callout: var(--success);
+}
+
+.lesson-prose .callout-warning {
+  --callout: var(--warning);
+}
+
+.lesson-prose .callout-danger {
+  --callout: var(--danger);
+}
+
+.lesson-prose .callout-quote {
+  --callout: var(--muted);
 }

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { parseRoleIds } from "./lib/discord/role-sync.ts";
 import { parseEmailList } from "./lib/email-address.ts";
 
 /**
@@ -231,6 +232,20 @@ export function createEnvSchema(isProductionBuild: boolean) {
       const earlier = SECRET_KEYS.slice(0, index).find((other) => env[other] === env[key]);
       if (earlier) issue(key, `Must be different from ${earlier}`);
     });
+
+    // Discord linking needs both halves of the application's credentials, or neither.
+    if (Boolean(env.DISCORD_CLIENT_ID) !== Boolean(env.DISCORD_CLIENT_SECRET)) {
+      issue(
+        env.DISCORD_CLIENT_ID ? "DISCORD_CLIENT_SECRET" : "DISCORD_CLIENT_ID",
+        "Set both DISCORD_CLIENT_ID and DISCORD_CLIENT_SECRET, or neither",
+      );
+    }
+    if (env.DISCORD_RANK_ROLE_IDS && !parseRoleIds(env.DISCORD_RANK_ROLE_IDS)) {
+      issue(
+        "DISCORD_RANK_ROLE_IDS",
+        'Must be a JSON object of rank keys to Discord role ids, for example {"rookie":"<role id>"}',
+      );
+    }
 
     if (env.SIGNUP_MODE === "allowlist" && env.SIGNUP_ALLOWLIST.length === 0) {
       issue("SIGNUP_ALLOWLIST", "Required when SIGNUP_MODE is allowlist");

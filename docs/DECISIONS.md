@@ -37,6 +37,9 @@ relevant section with a date; do not rewrite history.
   would let anyone block a number just by typing it into the signup form.
 - Usernames can be changed **once per 30 days**. The old name is released
   immediately. Users are always referenced by ID, so this is safe.
+  _Superseded on 2026-09-21 by the username step, which the owner approved: the first
+  change is free, and a name somebody leaves is held for 30 days instead of released at
+  once, so nobody can take it and pass for them. See "The username step, part one"._
 
 ### Pages
 
@@ -784,6 +787,100 @@ owner watching the laptop's dev server and answering as it changed. Not released
   hot reload ("you lost the colour scheme"). Changes that belong together should land
   together, and the owner should be told when a state is ready to judge.
 
+### The username step: the owner's answers (2026-09-21)
+
+- **A username can be changed from the start.** This goes further than the brief, which
+  puts "username change" in the settings of milestone 4. So the change needs somewhere to
+  live and a rule against churn; the plan below carries both.
+- **The display name is asked for on the same screen**, optional and not unique. It needs
+  no new column: `users.display_name` already exists (Better Auth's `name`), empty until
+  onboarding fills it.
+- Still the brief's rules: 3 to 20 characters, `a-z 0-9 _`, stored lowercase, unique
+  without regard to case, a reserved-word blocklist, a rate-limited availability check as
+  the member types, and **the database constraint as the real guard** (two people claiming
+  one name at the same moment must end in "just taken", never an error page).
+- Better Auth's own username plugin is still NOT used: it registers a username sign-in
+  route, which breaks hard rule 1. A small local plugin is used instead, as for sign-up.
+
+### The username step, part one: the rules and the database (2026-09-21)
+
+Built on `dev`. The owner applied the migration `0003_usernames` on 2026-09-21, after a
+verified backup. The endpoints and the pages are part two, below.
+
+- **`src/lib/username.ts`** holds what a name may be, in one place, used by the browser as
+  it is typed, by the server when it is claimed, and by the database constraint. The
+  narrow alphabet (`a-z 0-9 _`) is itself a security control: with no Unicode nobody can
+  register a name that merely LOOKS like someone else's, which is how impersonation
+  usually starts. The reserved list covers the brand, the people who run it and the site's
+  own words, and it ignores underscores, so `a_d_m_i_n` is refused with `admin`. A test
+  refuses any reserved word too short to be a name anyway; it found one (`me`) at once.
+- **`src/lib/display-name.ts`** guards the free-text name. It refuses direction overrides
+  and zero-width characters, which are invisible and can make one member appear to be
+  another, and it tidies spacing so " Jane Doe " and "Jane Doe" cannot sit side by side
+  as two members. Real names in any language are kept.
+- **The migration `0003_usernames` adds three nullable columns to `users`**
+  (`username`, `previous_username`, `username_changed_at`), a unique index and three CHECK
+  constraints. Nothing is dropped or rewritten, and on a table of one member every step is
+  instant. The display name needed no column.
+- **`src/lib/auth/username-claim.ts`** claims and changes names. **The unique index is what
+  decides that two people cannot share a name**, not the check in the browser and not the
+  one on the server: both can be true for two people at the same instant, so the write is
+  attempted and a unique violation is read as "taken". A test drives a clashing write
+  straight past every check to prove the index is what refuses it, and another proves the
+  CHECK refuses a badly shaped name the same way.
+- **A name somebody leaves is held for 30 days**, so nobody can pick it up and be mistaken
+  for them. The hold is worked out from the date, so it ends on time whether or not
+  anything has tidied it; the daily cleanup lets go of the ones that have run out, which
+  is also the only entry there that is not a delete.
+- **The first change is free, then there is a 30-day wait.** Someone who mistypes their
+  name at onboarding can put it right; after that a name cannot churn. The row is locked
+  while the wait is judged, so two requests at once cannot both pass it.
+
+### The username step, part two: the endpoints and the screens (2026-09-21)
+
+Built on `dev`, not yet released. No migration: part one's columns are all it needs.
+
+- **`src/lib/auth/profile-plugin.ts`** is a small local Better Auth plugin with two
+  endpoints, so both sit behind what Better Auth already does for its own: the origin check
+  on any request that carries the session cookie, and the coarse per-IP limiter.
+  - `POST /api/auth/profile/username-available` is the "free / taken" hint while a member
+    types. It promises nothing; only saving decides.
+  - `POST /api/auth/profile/save` saves the username and the display name together. The
+    display name is judged BEFORE the username is touched, so a bad one changes nothing.
+- **Both are for a signed-in member only, and the member is taken from the session, never
+  from the request.** A test sends another member's id in the body and proves it is ignored.
+  Another sends the member's own cookies from another site's origin and proves it is refused.
+- **The hint is counted per member** (60 in 10 minutes), and saving too (20 an hour), so the
+  hint cannot be used to list the names that exist. The count is per member and never per
+  address, as everywhere else. A signed-out visitor cannot ask at all.
+- **`username` is on the session's user as a read-only field** (`input: false`), so no
+  Better Auth endpoint will ever accept it from a client; `/update-user` is disabled as well.
+  The pages read it from the session, which is never cached in a cookie, so it is always
+  what the database says.
+- **`/onboarding`** is the one step between a verified sign-up and the dashboard. The
+  dashboard sends everybody without a username there, and `/onboarding` sends everybody who
+  has one back. **`/settings`** is minimal for now: the same form, with the username locked
+  and the date shown while the 30-day wait is on. The date is a courtesy; the wait is judged
+  again on the server, under a lock, whatever the page said. The profile menu gained a
+  "Settings" entry, and the dashboard says "Signed in as @username" and no longer shows the
+  email address.
+- Two events were added to the log, `username_claimed` and `username_changed`. Neither
+  records the name: the log says that it happened, the `users` row says what it is.
+- **A member who signed up before this step has no username**, so they are sent through
+  `/onboarding` the next time they open the dashboard. That includes the owner's account.
+
+### No source file may contain a character that cannot be seen (2026-09-21)
+
+`src/test/no-hidden-characters.test.ts` refuses a direction override or a zero-width
+character anywhere in `src/` or `scripts/`. A direction override reverses how the rest of
+a line is drawn, so a reviewer can be shown one thing while the computer runs another;
+that is the "Trojan Source" trick, and this repository is public, so what a reader sees
+must be what runs. Escapes such as `\u200b` are fine and are what the rules above use.
+
+It was written because it happened: the display-name tests were first written with real
+invisible characters instead of escapes, and the guard then found a second one in the
+username tests that had gone unnoticed.
+
 ### The Academy tile is the way IN, and slow tests no longer read as failures (2026-09-21)
 
 - **On the home page, "Enter here" on the Academy tile leads to the sign-in and sign-up
@@ -847,8 +944,8 @@ The restore drill (`npm run db:restore:check`) is still to run.
   home page's hero sits behind the top of the page, and the signed-in area's header has
   the same bar under it as the home page's.
 - **"Signed in as ..." stays on the dashboard** and is to show the USERNAME, not the
-  email address. There are no usernames until the next slice, so it shows the email
-  address until then. A label on the profile button instead was tried and reversed at
+  email address. It showed the email address until the username step, and shows
+  `@username` since. A label on the profile button instead was tried and reversed at
   the owner's word within minutes.
 - The profile button and its menu ("Sign out") are as built; the owner approved them.
 
@@ -930,7 +1027,285 @@ confirmed all of them.
   `SECURITY_CONTACT` is unaffected: it is GitHub's private vulnerability reporting page
   and still gates the release.
 
-### Where milestone 2 stands (keep this current; last updated 2026-09-21)
+### The Academy's two tracks, and writing lessons in Obsidian (2026-09-27)
+
+- **The owner's direction for the first education topics:** two tracks, both free to
+  take. A **Quantower** track, on its free version, is the backtesting school: it is
+  where members learn and prove a process in simulation. A **Sierra Chart** track comes
+  after it, for members who have income to pay for the platform; the Academy should not
+  push anyone to spend on a funded account without income behind it. The details come
+  from the owner later. The planning assistant's suggestions, not yet decided: write the
+  platform-neutral material once and split the tracks only at the platform lessons; let
+  finishing the backtesting school be the gate to the Sierra track, and let the rank
+  ladder follow the tracks. **The rank ladder is still owed before milestone 7.**
+- **Found on 2026-09-27: the folder README contradicted the approved "Academy content"
+  decision.** It said progress follows a lesson's file name, so renaming a lesson loses
+  it. The approved rule is a required, stable `id` in every lesson's frontmatter, and
+  progress is saved against that. The README and the example lesson now carry `id`, and
+  the README also says that the folder is public on GitHub, drafts included.
+- **Open question for the owner: lessons as `.md` instead of `.mdx`.** Obsidian does not
+  open `.mdx` files without a community plugin (checked 2026-09-27), and the brief says
+  the owner writes lessons in Obsidian. As `.md`, lessons open in Obsidian with nothing
+  added, and a bare `<` or `{` in a sentence ("price < VWAP") no longer breaks a page.
+  Callouts, which the "Academy content" decision already supports, stay the way to add a
+  quiz or a special box later. Only the example lesson exists, so it is a one-file
+  rename. The recommendation is `.md`; the brief says MDX, so it waits for the owner.
+
+### The Academy's structure, ranks and lessons (owner, 2026-09-28)
+
+These answer the open question above and approve part of the order proposed below.
+
+- **Lessons are `.md`**, and **milestone 7 (the Academy) is built before milestones 5 and
+  6** (phone 2FA, Discord).
+- **Level 1 is Foundations. Level 2 is "The Platform"**, with two sections: Quantower (the
+  Backtesting School) and Sierra Chart, which shows as **coming soon**. The Platform is
+  **open from the start**: it is not locked behind Foundations, and no course has a
+  `rank_required` line.
+- **Ranks come from chapters and lessons completed, never from a platform.** Levels 1, 2
+  and a future Level 3 together are the **Rookie** stage: a member is a Rookie from
+  sign-up, and finishing each level is a step within it. What comes after Rookie is not
+  defined yet. The two earlier drafts (Recruit, Cadet, Analyst, Operator, and the
+  prototype's six ranks) are not used.
+- **A member gets the Rookie role when they link Discord.** That is milestones 6 and 8 as
+  the brief has them: the site links Discord through its own OAuth (scope `identify`), then
+  gives the role for the member's rank with the bot's token; Agent Zero asks the site for
+  the rank when a member rejoins the server.
+- **The owner approved the Academy prototype** (a private design on the owner's claude.ai
+  account) as the look to build: the Academy home with rank, "continue" and activity, the
+  chapter page, the lesson page with an ungraded quick check, the chapter checkpoint with
+  its rank-up moment, and the ranks page. It is to be built into the real site "with proper
+  everything", and its ranks follow the Rookie structure above.
+- **The planning assistant's 42 lesson stubs are imported** into `content/academy/`, after
+  checking every header, id, path and character: three courses, 13 chapters. Every stub
+  carries `draft: true`, so the site shows it as coming soon until the owner deletes the
+  line. The missing `_course.md` and `_module.md` files were added with ids, the example
+  lesson was removed (its id now belongs to the stub), the curriculum map's headings follow
+  the structure above, and its rank-ladder draft was left out.
+
+### The Academy, built (milestone 7, 2026-09-28)
+
+Built on `dev` after the owner's "go", not released. **The migration `0004_academy` is
+written and NOT applied**: the owner runs `npm run db:backup`, then `npm run db:migrate`.
+It only adds three tables, so it can be applied before the code is released; the live site
+never touches them.
+
+- **Pages.** `/academy` serves both audiences, as the brief says: a visitor still sees the
+  black "coming soon" page (true, since every lesson is a draft), a member sees the
+  Academy's home. Below it, for members only: `/academy/<chapter>`,
+  `/academy/<chapter>/<lesson>`, `/academy/<chapter>/checkpoint` and `/academy/ranks`. The
+  look is the approved prototype, in both themes, with no inline styles. The ids `ranks`
+  and `checkpoint` are reserved so no chapter or lesson can hide a page.
+- **The lessons are read at run time** from `content/academy/` (`src/lib/academy/content.ts`),
+  strictly: a broken header or a repeated id stops the Academy with a list of every problem
+  and its file, shown on the laptop only. `npm run academy:check` prints the same list for
+  the owner, and a test reads the real folder, so a broken lesson cannot reach a release.
+  On the live site the folder is read once; on the laptop at every request, so an Obsidian
+  edit shows at the next refresh. `outputFileTracingIncludes` ships the files with the
+  server code (SECURITY.md, ledger).
+- **Markdown is rendered by markdown-it 14.3.2, pinned**, with raw HTML off. Corrected the same day: 14.1.0 was picked first as the long-established line, and the dependency audit in `npm run check` then reported two moderate advisories in it (GHSA-38c4-r59v-3vqw, a regular-expression DoS, and GHSA-6v5v-wf23-fmfq, quadratic time in the smartquotes rule). Neither was reachable here (the lessons are the owner's files, and smartquotes is off), and 14.3.2, in the same major version, fixes both. Obsidian callouts become styled boxes.
+- **Quick checks** are written in a lesson as a callout of type `check`, with the options as
+  `- [ ]` and the right one as `- [x]`. Ungraded, answered in the page, never stored.
+- **Checkpoints** are a chapter's `_checkpoint.md`: each `##` heading a question, `- [x]`
+  the right option, an optional `Reread: <lesson id>`, and an optional `pass:` (default 80%
+  rounded up). Graded on the server; the browser is never sent the right answers; six tries
+  an hour per member, pass or fail; the first pass is stored, a fail is not stored at all.
+  The answer keys are public on GitHub, which the owner accepted for the Rookie stage. One
+  example, from the prototype, is in the "Reading the results" chapter for the owner to
+  edit.
+- **Where the rank is kept: a deliberate change from the brief.** The brief caches the rank
+  on the user row. Instead, each Rookie step (`rookie-level-1` to `-3`) is a row in
+  `rank_history`, stored once, and the rank is read from there. A step must never be taken
+  away, so it has to be stored rather than worked out again; and keeping it off `users`
+  means the auth tables are untouched (Better Auth reads every column of `users` on every
+  request, so a new column there must exist in the database before the code that knows it).
+- **A level is finished only when it is fully written**: nobody earns a step for half a
+  level. While Sierra Chart is coming soon, finishing Level 2 means finishing the Quantower
+  course.
+- **Progress is the member's alone.** The two writes (`/api/auth/academy/complete` and
+  `/api/auth/academy/checkpoint`) are a local Better Auth plugin behind the origin and
+  session checks, like the username endpoints; the member comes from the session, never the
+  request.
+
+### Discord linking and the Rookie role, built (milestone 6, and the start of 8; 2026-09-28)
+
+Built on `dev` on the owner's word ("ensure every function works including discord account
+linkage ... do whatever you need"), not released. **Switched off until the owner sets up
+the site's Discord application** (the steps are in "Where things stand" below). The
+migration `0005_discord` adds one table and waits for `npm run db:migrate` with `0004`.
+
+- **The standard OAuth2 flow, scope `identify` only, with no new crypto.** The `state` is a
+  random token in a signed, httpOnly cookie (Better Auth's own signed-cookie helper, the one
+  the sign-up uses), bound to the member who started it, valid ten minutes, used once. A
+  callback that did not start in this browser for this member links nothing, and Discord is
+  never asked. A mutation check proved the test that guards it: with the member check
+  removed, it fails.
+- **The access token is used once and revoked at once**, never stored (hard rule 5). Only
+  the Discord id, the Discord username and the date are kept.
+- **Discord is never a way to sign in** (hard rule 2): every step needs a signed-in member,
+  nothing creates a session, and no row is written to Better Auth's `accounts`. A test
+  checks that.
+- **Addresses: `/api/auth/discord/link`, `/callback` and `/unlink`**, not the brief's
+  `/api/discord/*`: a Better Auth plugin like the others, so unlinking sits behind the same
+  origin and session checks. The Discord application's redirect is
+  `<site>/api/auth/discord/callback`.
+- **Its own table, `discord_links`, not columns on `users`**, for the same reason as
+  `rank_history`: the auth table stays untouched. A unique index makes one Discord account
+  link to one member only; a second member trying it is told so and nothing changes.
+- **The Rookie role on linking, and every rank role removed on unlinking** (`syncDiscordRoles`,
+  the brief's contract: idempotent, a member not in the server is not an error, a short rate
+  limit is waited out once). It never blocks linking: if Discord is slow or refuses, the
+  link is still made and the page says so. The retry queue and the internal API for Agent
+  Zero are the rest of milestone 8, not built.
+- **The site's OWN Discord application, not Agent Zero's.** Its bot needs only Manage Roles.
+  Giving the website Agent Zero's token would give anyone who broke into the site
+  everything the bot can do.
+- **The owner wants sign-ups open, not the allowlist** (2026-09-28, reversing the private
+  beta decision of 2026-09-20). That is `SIGNUP_MODE=open` in Vercel, then a redeploy: the
+  owner's to change. The owner's own gates for inviting anyone are not met yet: `/terms` and
+  `/privacy` are drafts nobody has approved, and the `PRIVACY_CONTACT` test message has not
+  been confirmed.
+
+### The lessons: first drafts, for the owner to rewrite (2026-09-28)
+
+The owner asked for filler so every function can be tested ("I'll edit the lessons if I
+don't like them"). All 42 lessons now have a first draft (495 to 650 words, one quick
+check each) and the 9 open chapters have a checkpoint (4 questions, pass with 3). Written
+by one background agent from the planning assistant's briefs, checked by the site's own
+reader, then reviewed before import: no firm, broker or product is named, no price is
+stated, nothing is recommended, and every sizing example was recalculated.
+
+- **Facts worth the owner's check:** the CME equity-index hours and quarterly expiries,
+  first-come-first-served fills at one price on ES; for Sierra Chart (still coming soon):
+  signing in at first launch, the Data folder in the install folder, the Trade Window's
+  attached stop and target, trade simulation mode, splitting and merging TPO profiles.
+  Anything uncertain about Quantower's or Sierra's plans, menus or data is written as
+  "check your own version", never as fact.
+- **Choices the owner may want to change:** "about 100 trades" as the course's floor for a
+  first read of a backtest (repeated in checkpoints); "the Backtesting School is designed
+  to be done without paying for software"; one worked example setup (a prior-day low
+  reclaim on MES) through the "Defining a setup" chapter, marked as an illustration; and
+  invented example numbers (a backtest-versus-sim table, a $50,000 evaluation account),
+  all labelled as examples.
+- The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
+  approved.
+
+### The owner's answers of 2026-09-29: lessons stay open, /academy leads in, Rookie is earned
+
+These supersede the matching lines above ("The Academy's structure, ranks and lessons",
+"The Academy, built", "Discord linking and the Rookie role").
+
+- **All 42 lessons stay open** while the owner rewrites them; no draft flag goes back on.
+  The Sierra Chart course stays coming soon.
+- **`/academy` is for members, and every address under it leads a visitor in.** The black
+  "coming soon" page is gone: a visitor who is not signed in goes to sign-in (which offers
+  "Create an account") and comes back to the Academy afterwards. Whether sign-ups are open
+  or invite-only is said by the sign-up page itself, from `SIGNUP_MODE`, so no Academy
+  wording can drift from it. `/academy` left the sitemap and robots.txt keeps crawlers
+  out of it, as for the dashboard.
+- **The Rookie rank is earned by completing Chapter 1** ("chapter 1 ... gives rookie role on
+  completion"): the chapter the site numbers 01, today "How markets work", with its four
+  lessons done and its checkpoint passed. (The owner wrote "lesson 1 2 and 3"; the chapter
+  has four lessons and a checkpoint, and completing the chapter is the rule built. To be
+  confirmed.) Before that a member has no rank, and the page says how to earn it.
+  Finishing Levels 1 to 3 stays a step within Rookie. Stored once in `rank_history` as
+  `rookie`, never taken away.
+- **The Discord role follows the rank:** linking before Chapter 1 gives no role (the page
+  says so), and completing Chapter 1 gives the Rookie role at that moment, for a member
+  who has linked (`createRankSync`, called when the rank is earned; the start of
+  milestone 8's "call it on rank change").
+- **The Discord application is set up after the owner's content review**, not before.
+- **Rank names:** Rookie stays. The owner's note left the renaming line blank.
+
+### Rollback for the next release (written before its migration, 2026-09-29)
+
+The release is two separate changes, and each has its own way back. **Reverting code never
+restores data; only a backup does** (SECURITY.md, "Restore from backup").
+
+- **What changes.** The database gains four tables (`0004_academy`: `lesson_progress`,
+  `checkpoint_passes`, `rank_history`; `0005_discord`: `discord_links`) and nothing else:
+  no column is added to, changed in or removed from an existing table. The code moves from
+  `main` at `723e092` to the merge of `dev`.
+- **Before the migration, in this order:** `npm run db:backup`; `npm run db:restore:check`
+  (the restore drill still owed from 2026-09-21: it proves this backup can be read back);
+  then `npm run db:migrate`, which refuses to run without a backup from the last hour.
+- **If the migration fails,** nothing is applied: every pending migration runs in one
+  transaction (drizzle's migrator), so a failure leaves the database exactly as it was.
+  The live site is untouched either way. Read the error; do not push.
+- **If the site misbehaves after the push (the expected kind of rollback):**
+  1. **Vercel, straight away:** the project's Deployments, the previous production
+     deployment (the one built from `723e092`), "Instant Rollback". The old code is live
+     again in seconds, with no rebuild. Vercel may then stop promoting new deployments
+     from `main` on its own until a deployment is promoted by hand; the dashboard says so.
+  2. **The database stays as it is.** The old code never reads the four new tables, and
+     every table and column it does read is unchanged, so no data needs to move back.
+     The new tables are never dropped (the additive-only rule); usernames, progress and
+     links written meanwhile are kept, ready for the fixed release.
+  3. **Git:** the fix goes onto `dev` and is released as usual. If `main` itself must
+     match the old code, `git revert -m 1 <the merge commit>` is a NEW commit on `main`,
+     pushed on the owner's word. Never a reset or a force-push.
+- **If data itself were damaged (not expected from this release: it only adds tables):**
+  the SECURITY.md restore, which never overwrites: a new, empty database, the migrations,
+  the restore from the pre-migration backup, the app role's password set by hand, then
+  `DATABASE_URL` pointed at it in Vercel and `.env.local`, and a redeploy. Everything
+  written after that backup (sign-ups, usernames, progress) is lost, so it is the last
+  resort, never the first.
+- **Discord** is switched off until the owner configures it, so this release needs no
+  rollback for it. Once it is on, removing `DISCORD_CLIENT_ID` and `DISCORD_CLIENT_SECRET`
+  in Vercel and redeploying switches it off again.
+
+### Where things stand on 2026-09-28 (read this first)
+
+- **Live on `main`:** milestones 1 and 2, the home page, the dashboard shell.
+- **On `dev`, not released:** the username step, the Academy (milestone 7) with all 42
+  lessons in first draft and 9 checkpoints, Discord linking with the Rookie role (milestone 6, switched off until set up).
+  `npm run check` and `npm run verify` pass on the production build.
+- **The release, in this order (the owner's steps):**
+  1. `npm run db:backup`, `npm run db:restore:check`, then `npm run db:migrate`, which applies `0004_academy` and
+     `0005_discord` (three and one new tables; nothing else changes). Before the push: the
+     code that uses them must never run against a database without them.
+  2. The owner says "push": `dev` is merged into `main` as one `--no-ff` commit and pushed.
+  3. On zerocorps.org, signed in with the owner's real account: "Choose your username",
+     the dashboard, "Enter here" into the Academy, a lesson, "Mark complete", a checkpoint.
+- **To switch Discord linking on (the owner, in the Discord developer portal, then Vercel):**
+  1. A new application for the website (not Agent Zero's). Under OAuth2, add the redirects
+     `https://zerocorps.org/api/auth/discord/callback` and
+     `http://localhost:3000/api/auth/discord/callback`.
+  2. Its client id and client secret into Vercel as `DISCORD_CLIENT_ID` and
+     `DISCORD_CLIENT_SECRET` (and `.env.local` for the laptop). Never into chat.
+  3. For the Rookie role: add a bot to that application, invite it to the ZeroCorps server
+     with only "Manage Roles", create a "Rookie" role BELOW the bot's own role, then set
+     `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` (the server's id) and
+     `DISCORD_RANK_ROLE_IDS` as `{"rookie":"<the Rookie role's id>"}`.
+  4. Redeploy. Settings then shows "Link Discord".
+- **Sign-ups open:** the owner's `SIGNUP_MODE=open` in Vercel and a redeploy, after reading
+  `/terms` and `/privacy` (still drafts) and confirming the privacy contact works.
+
+### Where things stand on 2026-09-27
+
+- **Live on `main`:** milestone 1, milestone 2 (auth), the ZeroCorps home page with the
+  product wheel, the dashboard shell and the Academy's black "coming soon" page.
+- **On `dev`, not released:** the username step (`/onboarding`, a minimal `/settings`,
+  the two profile endpoints; 259 tests pass), the lesson folder and its README. The
+  migration `0003_usernames` is already applied to the one database. **Before release:**
+  the owner tests it on the laptop, then `npm run check` and `npm run verify` run with
+  the owner's dev server stopped, then the owner says "push".
+- **Owed by the owner:** the restore drill (`npm run db:restore:check`) for the backup
+  taken after the real sign-up; a look at Vercel's Firewall tab (every automated request
+  is still challenged, so `npm run verify` cannot check the live site); `/terms` and
+  `/privacy` read and approved, and the `PRIVACY_CONTACT` test message, before anyone is
+  invited; deleting `backup-dev-before-squash`; confirming the daily cleanup cron ran; an
+  answer on the development-only dependency alert (SECURITY.md); the rank ladder; and the
+  `.md` question above.
+- **Proposed order, not yet approved:** release the username step; the owner writes
+  lessons meanwhile; the gates before inviting friends; then **milestone 7 (the Academy
+  skeleton) pulled forward** ahead of the rest of 3, 4, 5 and 6, as the dashboard shell
+  was. It is what the business needs next, it costs nothing to run, and it needs no new
+  third party, where milestone 5 adds Twilio and SMS charges. The privacy page already
+  says account deletion is by request until the settings button exists. Profile-picture
+  upload, a new file-upload surface, follows the Academy. **The brain export (milestone 9) follows milestone 7:** with one member and no lesson progress its graph would be
+  empty, and its value is exactly the progress milestone 7 records.
+
+### Where milestone 2 stands (last updated 2026-09-21; see "Where things stand" above)
 
 A new session starts here. Milestone 2 is **built on `dev`, tested by the owner on
 the laptop, and in its release walkthrough**; `main` holds only milestone 1 and the

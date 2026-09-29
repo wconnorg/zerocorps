@@ -28,6 +28,21 @@ export const LIMITS = {
   passwordResetPerIp: { window: HOUR, max: 20 },
   /** One cap across ALL email types. Security notices are counted but never blocked. */
   emailsPerAddressPerDay: { window: DAY, max: 10 },
+  /**
+   * The "free / taken" hint while a member types. Generous for a person choosing a name,
+   * far too slow to harvest the list of names with. Counted per MEMBER, never per IP.
+   */
+  usernameCheckPerUser: { window: 10 * MINUTE, max: 60 },
+  profileSavePerUser: { window: HOUR, max: 20 },
+  /** Far above anyone reading lessons; there to stop a script, not a keen member. */
+  lessonCompletePerUser: { window: HOUR, max: 120 },
+  /**
+   * Counted pass or fail, so running through every combination of answers takes days.
+   * Six tries an hour is plenty for a person who rereads between attempts.
+   */
+  checkpointSubmitPerUser: { window: HOUR, max: 6 },
+  /** Starting a Discord link, and unlinking: a person does this a handful of times, ever. */
+  discordLinkPerUser: { window: HOUR, max: 10 },
 } as const;
 
 export type LimitName = keyof typeof LIMITS;

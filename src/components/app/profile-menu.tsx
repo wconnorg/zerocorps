@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 import { authFetch } from "@/lib/auth/auth-fetch";
@@ -8,7 +9,7 @@ import { Avatar } from "./avatar";
 /**
  * The profile button at the top right of the signed-in area, and its small menu.
  *
- * Until profile and settings exist the menu holds only "Sign out" (owner, 2026-09-21).
+ * The menu holds "Settings" and "Sign out"; milestone 4 adds the rest.
  * It is a plain disclosure menu with no library: the button says whether it is open,
  * the first item takes focus when it opens, and Escape, a click outside or focus moving
  * away closes it again. Escape puts focus back on the button.
@@ -28,7 +29,7 @@ export function ProfileMenu({
   const [open, setOpen] = useState(defaultOpen);
   const root = useRef<HTMLDivElement>(null);
   const button = useRef<HTMLButtonElement>(null);
-  const firstItem = useRef<HTMLButtonElement>(null);
+  const firstItem = useRef<HTMLAnchorElement>(null);
   const menuId = useId();
 
   useEffect(() => {
@@ -79,8 +80,18 @@ export function ProfileMenu({
           aria-label="Account"
           className="absolute top-full right-0 z-50 mt-2 w-48 rounded-xl border border-line bg-surface p-1 shadow-lg"
         >
-          <button
+          {/* A protected page: a signed-out browser should not pre-load it. */}
+          <Link
             ref={firstItem}
+            href="/settings"
+            prefetch={false}
+            role="menuitem"
+            onClick={() => setOpen(false)}
+            className="flex w-full items-center rounded-lg px-3 py-2 text-left text-sm text-fg transition-colors hover:bg-raised"
+          >
+            Settings
+          </Link>
+          <button
             type="button"
             role="menuitem"
             disabled={pending}

@@ -12,13 +12,13 @@ export const metadata: Metadata = {
 /**
  * The dashboard shell: the first slice after the milestone 2 release. The session is
  * checked here, on every request, and the view below only draws what it is given.
- * Milestone 3 will send a member who has no username yet through onboarding first.
+ * A member who has no username yet goes through `/onboarding` first.
  */
 export default async function DashboardPage() {
   const state = await getSessionState();
   if (state.status === "unavailable") return <Unavailable />;
   if (state.status === "signed-out") redirect("/sign-in?next=/dashboard");
+  if (!state.user.username) redirect("/onboarding");
 
-  // The username once usernames exist (the next slice); the email address until then.
-  return <DashboardView signedInAs={state.user.email} />;
+  return <DashboardView signedInAs={`@${state.user.username}`} />;
 }

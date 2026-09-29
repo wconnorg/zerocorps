@@ -4,8 +4,14 @@ import { APIError, createAuthMiddleware, isAPIError } from "better-auth/api";
 import { eq, sql } from "drizzle-orm";
 import type { PgDatabase, PgQueryResultHKT } from "drizzle-orm/pg-core";
 import { authSchema, knownDevices } from "../../db/schema.ts";
+import { academyPlugin } from "../academy/academy-plugin.ts";
+import type { Catalog } from "../academy/content.ts";
+import { readProgress } from "../academy/progress.ts";
+import { rankKeyOf } from "../academy/standing.ts";
+import { createRankSync, type DiscordConfig, discordPlugin } from "../discord/discord-plugin.ts";
 import { looksLikeEmail, normalizeEmail } from "../email-address.ts";
 import { clientIp, coarseIpPrefix, userAgentFamily } from "./client-info.ts";
+import { profilePlugin } from "./profile-plugin.ts";
 import { emailCodeSignUp, type SignUpMailer, type SignUpMode } from "./email-code-signup.ts";
 import { createEventLog } from "./events.ts";
 import { ensureDeviceToken } from "./known-device.ts";
@@ -60,9 +66,21 @@ export type AuthDeps = {
    * serverless function returns, and the email would never be sent.
    */
   runAfterResponse?: (work: Promise<unknown>) => void;
+  /**
+   * The Academy's lessons, read from `content/academy/`. A function, so the laptop sees a
+   * lesson the owner has just edited. Without it the Academy has no lessons to complete.
+   */
+  academyCatalog?: () => Catalog;
+  /**
+   * The site's Discord application, for linking (milestone 6) and the rank role. Null or
+   * absent: "Link Discord" says it is not switched on yet.
+   */
+  discord?: DiscordConfig | null;
 };
 
 const DAY = 60 * 60 * 24;
+
+const NO_LESSONS: Catalog = { courses: [], chapters: new Map(), lessons: new Map() };
 
 /**
  * Endpoints this milestone does not use. They are switched off and re-enabled in the
@@ -99,6 +117,8 @@ const DISABLED_PATHS = [
 
 export function createAuth(deps: AuthDeps) {
   const { db } = deps;
+  /** A member's rank key from the steps stored for them: what Discord's roles follow. */
+  const rankOf = async (userId: string) => rankKeyOf((await readProgress(db, userId)).steps);
   const limiter = createLimiter(db, deps.hmacSecret);
   const emailBudget = createEmailBudget(limiter);
   const events = createEventLog(db, {
@@ -153,6 +173,9 @@ export function createAuth(deps: AuthDeps) {
       additionalFields: {
         termsAcceptedAt: { type: "date", required: false, input: false },
         termsVersion: { type: "string", required: false, input: false },
+        // `input: false`: nothing a client sends can set it. A name is only ever written
+        // by `setUsername`, which holds the rules, the hold and the wait.
+        username: { type: "string", required: false, input: false },
       },
     },
 
@@ -313,6 +336,21 @@ export function createAuth(deps: AuthDeps) {
         limiter,
         emailBudget,
         events,
+      }),
+      profilePlugin({ db, limiter, events }),
+      academyPlugin({
+        db,
+        limiter,
+        catalog: deps.academyCatalog ?? (() => NO_LESSONS),
+        onRankChange: createRankSync({ db, discord: deps.discord ?? null, rankOf }),
+      }),
+      discordPlugin({
+        db,
+        limiter,
+        events,
+        baseUrl: deps.baseUrl,
+        discord: deps.discord ?? null,
+        rankOf,
       }),
     ],
 

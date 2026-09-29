@@ -10,6 +10,13 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
   typedRoutes: true,
+  // The Academy reads its lessons from `content/academy/` while it runs, so the files must
+  // travel with the server code. Without this, the live site would have no lessons.
+  outputFileTracingIncludes: {
+    "/academy": ["./content/academy/**/*.md"],
+    "/academy/**": ["./content/academy/**/*.md"],
+    "/api/auth/**": ["./content/academy/**/*.md"],
+  },
   async headers() {
     return [{ source: "/(.*)", headers: securityHeaders({ isDev }) }];
   },

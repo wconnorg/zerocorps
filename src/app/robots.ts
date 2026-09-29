@@ -14,6 +14,8 @@ export default function robots(): MetadataRoute.Robots {
         "/forgot-password",
         "/reset-password",
         "/onboarding",
+        // The Academy is for members; visitors are sent to sign in.
+        "/academy",
         "/dashboard",
         "/settings",
         "/profile",
