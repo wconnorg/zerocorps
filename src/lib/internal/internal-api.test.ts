@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { createTestDatabase, type TestDatabase } from "../../test/test-database.ts";
 import { createLimiter, LIMITS } from "../auth/limits.ts";
-import { discordProfile, type InternalDeps, stats } from "./internal-api.ts";
+import { discordProfile, type InternalDeps, linkedRanks, stats } from "./internal-api.ts";
 
 /**
  * The internal API Agent Zero calls, on a real Postgres. What matters most is what it
@@ -87,10 +87,43 @@ describe("a Discord user's profile", () => {
   });
 });
 
+describe("every linked member's rank, for the bot's role sync", () => {
+  it("lists each linked member once: Discord id and rank key, nothing else", async () => {
+    const second = "00000000-0000-4000-8000-000000000009";
+    await rows(
+      "INSERT INTO users (id, email, email_verified, username) VALUES ($1::uuid, 'second.linked@example.com', true, 'second')",
+      [second],
+    );
+    await rows(
+      "INSERT INTO discord_links (user_id, discord_id, discord_username) VALUES ($1::uuid, '323456789012345678', 'second')",
+      [second],
+    );
+    // A level step without the rank: still no rank.
+    await rows("INSERT INTO rank_history (user_id, rank) VALUES ($1::uuid, 'rookie-level-2')", [
+      second,
+    ]);
+
+    const response = await linkedRanks(deps, call(SECRET));
+    expect(response.status).toBe(200);
+    const data = await body(response);
+    const sorted = [...data.members].sort((a, b) => a.discordId.localeCompare(b.discordId));
+    expect(sorted).toEqual([
+      { discordId: LINKED, rank: "rookie" },
+      { discordId: "323456789012345678", rank: null },
+    ]);
+    expect(JSON.stringify(data)).not.toMatch(/@|trader_99|second/);
+  });
+
+  it("is refused without the secret", async () => {
+    expect((await linkedRanks(deps, call("wrong"))).status).toBe(401);
+  });
+});
+
 describe("stats", () => {
   it("counts academy members: verified and onboarded only", async () => {
     const response = await stats(deps, call(SECRET));
-    expect(await body(response)).toEqual({ academyMembers: 2 });
+    // The two verified, onboarded members from the start, and the one the ranks test added.
+    expect(await body(response)).toEqual({ academyMembers: 3 });
   });
 });
 

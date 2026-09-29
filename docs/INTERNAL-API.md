@@ -6,14 +6,19 @@ not already public.
 
 ## Who does what
 
-- **The bot** lets people into the server and gives the **verified** role, by a reaction
-  to one of its messages. The website never touches that role.
-- **The website** gives the **rank** roles (today only Rookie, earned by completing
-  Chapter 1 of the Academy and claimed by linking Discord in Settings). It adds or removes
-  only the roles listed in its `DISCORD_RANK_ROLE_IDS`, so the verified role must never be
-  in that list.
-- **When a member (re)joins the server,** the bot asks the website for their rank and gives
-  the matching role, because the website cannot see who joins.
+- **The website's own Discord application ("ZeroCorps Web")** powers only the "Link
+  Discord" button: Discord's authorize screen tells the website which Discord user a
+  member is (scope `identify`). It has no bot and no power in the server.
+- **Agent Zero is the only bot.** It lets people in and gives the **verified** role by a
+  reaction to one of its messages, and it gives the **rank** roles (today only Rookie,
+  earned by completing Chapter 1 and claimed by linking Discord). The website never holds
+  the bot's token.
+- **How the bot knows ranks:** it asks the website. On start and every few minutes it
+  reads every linked member's rank (`GET /api/internal/discord/ranks`) and makes the rank
+  roles match: add the role for each listed rank, and take rank roles from anyone not
+  listed or listed with `rank: null`. When someone joins it can ask about that one member
+  (`GET /api/internal/discord/{discordId}/profile`). The verified role is the bot's own
+  business and never part of this.
 
 ## Calling it
 
@@ -46,6 +51,15 @@ number or anything else is ever returned.
 
 **What the bot does with it:** on a member joining, call this; if `rank` is not null, give
 the Discord role configured for that rank. Rank keys today: `rookie`.
+
+## GET /api/internal/discord/ranks
+
+| Status | Body                                                                                                           | Meaning                                                    |
+| ------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| 200    | `{ "members": [{ "discordId": "123456789012345678", "rank": "rookie" }, { "discordId": "…", "rank": null }] }` | Every linked member, once. Discord ids and rank keys only. |
+
+A member who unlinks disappears from the list, so the bot takes their rank roles away on
+its next sync. Rank keys today: `rookie`.
 
 ## GET /api/internal/stats
 

@@ -1,5 +1,5 @@
 import { and, count, eq, isNotNull } from "drizzle-orm";
-import { discordLinks, users } from "../../db/schema.ts";
+import { discordLinks, rankHistory, users } from "../../db/schema.ts";
 import { readProgress } from "../academy/progress.ts";
 import { rankKeyOf } from "../academy/standing.ts";
 import type { AuthDatabase } from "../auth/create-auth.ts";
@@ -66,6 +66,30 @@ export async function discordProfile(
 
   const rank = rankKeyOf((await readProgress(deps.db, row.userId)).steps);
   return json(200, { linked: true, username: row.username, rank });
+}
+
+/**
+ * Every linked member's Discord id and rank key (null before a rank is earned): what Agent
+ * Zero syncs the rank roles from, every few minutes and whenever it starts. A member who
+ * unlinked is simply absent, so the bot takes the rank roles from anyone not listed.
+ * Discord ids and rank keys only: no usernames, no emails.
+ */
+export async function linkedRanks(deps: InternalDeps, request: Request): Promise<Response> {
+  const refused = await gate(deps, request);
+  if (refused) return refused;
+  // One query for every linked member's steps, grouped here: fast however many there are.
+  const rows = await deps.db
+    .select({ discordId: discordLinks.discordId, step: rankHistory.rank })
+    .from(discordLinks)
+    .leftJoin(rankHistory, eq(rankHistory.userId, discordLinks.userId));
+  const steps = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const set = steps.get(row.discordId) ?? new Set<string>();
+    if (row.step) set.add(row.step);
+    steps.set(row.discordId, set);
+  }
+  const members = [...steps].map(([discordId, set]) => ({ discordId, rank: rankKeyOf(set) }));
+  return json(200, { members });
 }
 
 export async function stats(deps: InternalDeps, request: Request): Promise<Response> {

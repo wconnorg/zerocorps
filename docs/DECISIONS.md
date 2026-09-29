@@ -1189,6 +1189,25 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### Agent Zero is the only bot; the website's Discord app is for linking only (owner, 2026-09-29)
+
+The owner: "i'm just wanting the agent zero bot ... making sure they're separate". This
+supersedes "the site's OWN Discord application ... its bot needs only Manage Roles" above.
+
+- **"ZeroCorps Web"**, the Discord application the owner created, powers only the "Link
+  Discord" button (OAuth2, scope `identify`; redirect
+  `https://zerocorps.org/api/auth/discord/callback`). Only `DISCORD_CLIENT_ID` and
+  `DISCORD_CLIENT_SECRET` are set; **no bot token on the website**, so
+  `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` and `DISCORD_RANK_ROLE_IDS` stay empty and the
+  site's own role sync stays off (its code and tests stay, unused).
+- **Agent Zero gives every role**, the rank roles included, by syncing from the website:
+  `GET /api/internal/discord/ranks` lists every linked member's Discord id and rank key
+  (one query however many there are). A pull every few minutes needs no retry queue: a
+  sync that fails is simply done again. Contract in [INTERNAL-API.md](INTERNAL-API.md).
+- **Why not the bot's application for the button, or its token on the site:** the site
+  holding the bot's token would give anyone who broke into the site everything the bot can
+  do. The link button needs no bot power at all.
+
 ### Milestone 8: the internal API for Agent Zero, built (2026-09-29)
 
 Built on `dev`, not released. The contract, for the bot's own repository, is
@@ -1400,10 +1419,8 @@ restores data; only a backup does** (SECURITY.md, "Restore from backup").
      `http://localhost:3000/api/auth/discord/callback`.
   2. Its client id and client secret into Vercel as `DISCORD_CLIENT_ID` and
      `DISCORD_CLIENT_SECRET` (and `.env.local` for the laptop). Never into chat.
-  3. For the Rookie role: add a bot to that application, invite it to the ZeroCorps server
-     with only "Manage Roles", create a "Rookie" role BELOW the bot's own role, then set
-     `DISCORD_BOT_TOKEN`, `DISCORD_GUILD_ID` (the server's id) and
-     `DISCORD_RANK_ROLE_IDS` as `{"rookie":"<the Rookie role's id>"}`.
+  3. (Superseded 2026-09-29: no bot on the website. Agent Zero gives the roles, synced from
+     `/api/internal/discord/ranks`.)
   4. Redeploy. Settings then shows "Link Discord".
 - **Sign-ups open:** the owner's `SIGNUP_MODE=open` in Vercel and a redeploy, after reading
   `/terms` and `/privacy` (still drafts) and confirming the privacy contact works.
