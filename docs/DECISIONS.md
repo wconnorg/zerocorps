@@ -1217,17 +1217,47 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    delete the `backup-dev-before-squash` branch; before public promotion, a paid database
    plan so it never pauses; redirect `zerocorps.vercel.app` to the domain.
 
-**Built on `dev`, not live yet:** profile pictures (milestone 3's rest; see "Profile
-pictures, built" below). Its migration `0006_avatars` must be applied by the owner
-(`npm run db:backup`, then `npm run db:migrate`) **before** the release that carries it.
+**Built on `dev`, not live yet:** profile pictures (milestone 3's rest) and changing the
+email address (milestone 4's rest); see their "built" sections below. The pictures'
+migration `0006_avatars` must be applied by the owner (`npm run db:backup`, then
+`npm run db:migrate`) **before** the release that carries them.
 
-**Not built (the owner's order):** changing the email address (milestone 4's rest);
-two-factor (milestone 5) is on hold until before the brain export (milestone 9).
+**Not built:** two-factor (milestone 5) is on hold until before the brain export
+(milestone 9).
 
 **How releases work now:** `npm run check` (or at least lint and the tests) on `dev`, a
 scan for secrets, one `--no-ff` merge commit on `main` made with `git commit-tree`
 without leaving `dev`, pushed only on the owner's "push"; the deploy is confirmed through
 GitHub's public deployments API from PowerShell (the `gh` tool is not installed).
+
+### Changing the email address, built (milestone 4's rest, 2026-09-29)
+
+Built on `dev`; **no migration** (the pending change lives in Better Auth's existing
+`verifications` table). The pattern is the one the owner chose for sign-up: an emailed
+6-digit code, not a link.
+
+- **Settings, Email address:** the new address and the member's password, then the code
+  sent to the new address. The address changes only when the code is typed back, in the
+  same account; this device stays signed in, and the old address gets a notice with a
+  "contact ZeroCorps" link (`SECURITY_CONTACT`, else `PRIVACY_CONTACT`, else the privacy
+  page).
+- **Why our own endpoints (`/account/email/start` and `/verify`, in
+  `src/lib/auth/email-change.ts`):** Better Auth's `/change-email` asks for no password
+  and works by emailed links on `/verify-email`, which sign-up switched off (finding 20).
+  Both stay off; a test proves it.
+- **What it refuses:** a wrong password (counted with every other signed-in password
+  check, 10 an hour), more than 5 codes sent an hour per member, more than 5 guesses at one
+  code (then the change is gone, right code or not), a code from another account, an
+  expired change (15 minutes), a second use of a code, and a request from another
+  website. Only a keyed hash of the code is stored.
+- **Nothing is learned about other accounts:** an address that already has an account gets
+  the same answer as a free one. No code is sent to it and none can complete it; its owner
+  gets a short "someone asked to move another account to this address" note. If the
+  address gets an account between the code and its use, the change is refused and rolled
+  back.
+- Security activity shows "Email change asked for (code sent)" and "Email address
+  changed". The Discord link, progress and ranks are untouched (everything uses the
+  member's id, never the address).
 
 ### Profile pictures, built (milestone 3's rest, 2026-09-29)
 

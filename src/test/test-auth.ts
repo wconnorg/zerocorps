@@ -13,7 +13,10 @@ export type SentEmail =
   | { kind: "already-registered"; to: string }
   | { kind: "password-reset"; to: string; url: string }
   | { kind: "password-changed"; to: string }
-  | { kind: "new-device"; to: string; when: Date; device: string; resetUrl: string };
+  | { kind: "new-device"; to: string; when: Date; device: string; resetUrl: string }
+  | { kind: "email-change-code"; to: string; code: string; expiresInMinutes: number }
+  | { kind: "email-change-taken"; to: string }
+  | { kind: "email-changed"; to: string; newEmail: string };
 
 export function createTestAuth(database: TestDatabase, overrides: Partial<AuthDeps> = {}) {
   const outbox: SentEmail[] = [];
@@ -36,6 +39,11 @@ export function createTestAuth(database: TestDatabase, overrides: Partial<AuthDe
       sendPasswordChanged: async (message) =>
         void outbox.push({ kind: "password-changed", ...message }),
       sendNewDevice: async (message) => void outbox.push({ kind: "new-device", ...message }),
+      sendEmailChangeCode: async (message) =>
+        void outbox.push({ kind: "email-change-code", ...message }),
+      sendEmailChangeTaken: async (message) =>
+        void outbox.push({ kind: "email-change-taken", ...message }),
+      sendEmailChanged: async (message) => void outbox.push({ kind: "email-changed", ...message }),
     },
     ...overrides,
   });

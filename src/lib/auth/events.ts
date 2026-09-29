@@ -32,7 +32,10 @@ export type AuthEventType =
   | "password_changed"
   | "session_revoked"
   | "other_sessions_revoked"
-  | "account_deleted";
+  | "account_deleted"
+  | "email_change_started"
+  | "email_change_failed"
+  | "email_changed";
 
 export type AuthEventInput = {
   type: AuthEventType;

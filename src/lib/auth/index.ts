@@ -56,7 +56,10 @@ export const auth = createAuth({
   signUpAllowlist: env.SIGNUP_ALLOWLIST,
   termsVersion: TERMS_VERSION,
   trustedIpHeader: env.TRUSTED_IP_HEADER,
-  mailer: createAuthMailer(sendEmail, { baseUrl: env.NEXT_PUBLIC_APP_URL }),
+  mailer: createAuthMailer(sendEmail, {
+    baseUrl: env.NEXT_PUBLIC_APP_URL,
+    contact: env.SECURITY_CONTACT ?? env.PRIVACY_CONTACT,
+  }),
   // Emails go out AFTER the response. `after()` keeps a serverless function alive until
   // the work is done, and works unchanged on a self-hosted Node server. A bare promise
   // that nobody awaits can be frozen when the function returns, and would never send.

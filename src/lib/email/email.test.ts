@@ -127,7 +127,7 @@ describe("sendEmail on the live site", () => {
   });
 });
 
-describe("the five auth emails", () => {
+describe("the auth emails", () => {
   const sent: EmailMessage[] = [];
   const mailer = createAuthMailer(async (email) => void sent.push(email), {
     baseUrl: "https://zerocorps.org",
@@ -182,6 +182,38 @@ describe("the five auth emails", () => {
     });
     expect(last().text).toContain("2026-09-20 14:05 UTC");
     expect(last().text).toContain("Safari on macOS");
+  });
+
+  it("email change: the code to the new address; a note to a taken one; a notice to the old", async () => {
+    await mailer.sendEmailChangeCode({
+      to: "moving@example.com",
+      code: "305172",
+      expiresInMinutes: 15,
+    });
+    expect(last()).toMatchObject({ kind: "email-change-code", to: "moving@example.com" });
+    expect(last().subject).not.toContain("305172");
+    for (const body of [last().text, last().html]) {
+      expect(body).toContain("305172");
+      expect(body).toMatch(/expires in 15 minutes/);
+      expect(body).toMatch(/Never share this code/);
+    }
+
+    await mailer.sendEmailChangeTaken({ to: "taken@example.com" });
+    expect(last().kind).toBe("email-change-taken");
+    expect(last().text).not.toMatch(/\b\d{6}\b/);
+
+    await mailer.sendEmailChanged({ to: "old@example.com", newEmail: "n***@example.com" });
+    expect(last().kind).toBe("email-changed");
+    expect(last().text).toContain("n***@example.com");
+    expect(last().text).toContain("https://zerocorps.org/privacy");
+
+    const withContact = createAuthMailer(async (email) => void sent.push(email), {
+      baseUrl: "https://zerocorps.org",
+      contact: "mailto:security@example.com",
+    });
+    await withContact.sendEmailChanged({ to: "old@example.com", newEmail: '<b>"x"</b>' });
+    expect(last().text).toContain("mailto:security@example.com");
+    expect(last().html).not.toContain("<b>");
   });
 
   it("escapes everything it puts into HTML, and loads nothing from anywhere", async () => {

@@ -67,8 +67,8 @@ possible.
 | --- | -------------------------------------------------------- | ------------------------------------- |
 | 1   | Skeleton, theme system, home ad page, `/academy` landing | Done, live on Vercel                  |
 | 2   | Auth                                                     | Live since 2026-09-21                 |
-| 3   | Onboarding                                               | Username live; pictures later         |
-| 4   | Dashboard and settings                                   | Self-service live; email change later |
+| 3   | Onboarding                                               | Username live; pictures on `dev`      |
+| 4   | Dashboard and settings                                   | Live; email change on `dev`           |
 | 5   | Phone and 2FA                                            | On hold: before the brain export      |
 | 6   | Discord link and unlink                                  | Live                                  |
 | 7   | Academy: lessons, progress, rank, heatmap                | Live since 2026-09-29                 |
@@ -77,7 +77,8 @@ possible.
 
 **Read "Where things stand at the end of 2026-09-29" in DECISIONS.md first.** It says
 what is live, what the owner does next and what is not built. All migrations up to
-`0005_discord` are applied; sign-ups are open to everyone.
+`0005_discord` are applied; `0006_avatars` (profile pictures) waits for the owner's
+`db:migrate`. Sign-ups are open to everyone.
 
 Deployment, environments, DNS and the release checklist are described in
 DECISIONS.md. A push to `main` deploys to production, so never push `main` without
