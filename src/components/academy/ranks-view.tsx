@@ -1,4 +1,4 @@
-import { type MemberAcademy } from "@/lib/academy/member";
+import { type MemberAcademy, rankClaimed } from "@/lib/academy/member";
 import {
   LEVEL_NAMES,
   levelStepKey,
@@ -29,6 +29,7 @@ const dateOf = (date: Date) =>
 export function RanksView({ academy }: { academy: MemberAcademy }) {
   const done = ROOKIE_LEVELS.filter((level) => academy.steps.has(levelStepKey(level))).length;
   const isRookie = rankKeyOf(academy.steps) === ROOKIE_KEY;
+  const claimed = isRookie && rankClaimed(academy);
   const rookieAt = academy.steps.get(ROOKIE_KEY);
   const firstChapter = [...academy.standing.chapters.values()].find(
     (entry) => entry.chapter.number === ROOKIE_CHAPTER_NUMBER,
@@ -46,7 +47,13 @@ export function RanksView({ academy }: { academy: MemberAcademy }) {
             <h1 className="text-4xl font-light tracking-[0.2em] uppercase sm:text-5xl">Ranks</h1>
             <Rule />
             <p className="max-w-xl text-base/7 text-muted sm:text-lg/8">
-              {isRookie ? (
+              {isRookie && !claimed ? (
+                <>
+                  You have earned <strong className="font-semibold text-fg">{RANK_TITLE}</strong>.
+                  Link Discord in settings, under Connections, to claim it: then it shows here and
+                  in the ZeroCorps server.
+                </>
+              ) : isRookie ? (
                 <>
                   You are a <strong className="font-semibold text-fg">{RANK_TITLE}</strong>. Every
                   level you finish is a step, and nothing earned is ever taken away.

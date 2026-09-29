@@ -8,6 +8,7 @@ import { AppShell } from "@/components/app/app-shell";
 import { Unavailable } from "@/components/site/unavailable";
 import { isOpen } from "@/lib/academy/content";
 import { chapterHref, lessonHref, loadAcademy, requireMember } from "@/lib/academy/load";
+import { rankClaimed } from "@/lib/academy/member";
 import { publicQuestions } from "@/lib/academy/views";
 
 export const metadata: Metadata = { title: "Checkpoint", robots: { index: false } };
@@ -72,6 +73,7 @@ export default async function CheckpointPage({
         </header>
         {entry.lessonsDone ? (
           <CheckpointForm
+            claimed={rankClaimed(academy)}
             chapterId={chapter.id}
             pass={checkpoint.pass}
             chapterHref={chapterHref(chapter)}

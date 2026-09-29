@@ -1189,6 +1189,22 @@ stated, nothing is recommended, and every sizing example was recalculated.
 - The curriculum map's boxes stay unticked: the owner ticks a lesson once rewritten or
   approved.
 
+### A rank is earned in the Academy and claimed by linking Discord (owner, 2026-09-29)
+
+The owner: "ranks should be tied behind discord account linkage", then chose "earn it,
+claim it with Discord" over "no rank without Discord" and "leave it as it is".
+
+- **Earning is unchanged:** completing Chapter 1 earns Rookie, stored once in
+  `rank_history`, never taken away. Progress made before linking counts in full.
+- **Claiming is linking Discord.** Until a member links, the Academy says "Rank earned"
+  and "Link Discord to claim it" (to Settings, Connections) instead of "Current rank"; the
+  ranks page, the lesson's and the checkpoint's "rank earned" moments say the same.
+  Linking shows the rank and gives the role (the role already followed the rank).
+- **While the site's Discord application is not set up,** nobody can claim a rank: the
+  page says "once Discord linking opens" and that the rank is kept for them.
+- The session's "is it claimed" is read with the progress (`discord_links`), so it is
+  never stale.
+
 ### Released on 2026-09-29: usernames, the Academy, Discord linking (off)
 
 - **The owner ran the release steps:** `npm run db:backup` (4 migrations recorded),
@@ -1203,7 +1219,9 @@ stated, nothing is recommended, and every sizing example was recalculated.
   `803d4e8` as a success within a minute (read from GitHub's public API: the `gh` tool is
   not installed in this shell).
 - **Sign-ups for everyone** (the owner: "make sure any user and their grandma can make an
-  account"): `SIGNUP_MODE=open` in Vercel, then a redeploy, the owner's to change. The
+  account"; and later "is sign in / up limited to whitelist only, if so change that"):
+  `SIGNUP_MODE=open` in Vercel, then a redeploy, the owner's to change. Sign-in was never
+  limited: it works in every mode. The
   owner's own gates for inviting people (approved `/terms` and `/privacy`, a confirmed
   privacy contact) are still open; the owner has decided to go ahead.
 - **Next, on the owner's word "as far deep as we can get":** milestone 4's account

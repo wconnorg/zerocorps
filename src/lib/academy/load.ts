@@ -1,7 +1,9 @@
 import type { Route } from "next";
 import { redirect } from "next/navigation";
 import { db } from "@/db/client";
+import { discordEnabled } from "@/lib/auth";
 import { getSessionState } from "@/lib/auth/session";
+import { getDiscordLink } from "@/lib/discord/links";
 import { readCatalog } from "./catalog";
 import type { MemberAcademy } from "./member";
 import { activityByDay, readProgress } from "./progress";
@@ -38,7 +40,10 @@ export async function loadAcademy(member: { id: string; username: string }): Pro
   const content = readCatalog();
   if (content.status === "broken") return { status: "broken", problems: content.problems };
   try {
-    const progress = await readProgress(db, member.id);
+    const [progress, link] = await Promise.all([
+      readProgress(db, member.id),
+      getDiscordLink(db, member.id),
+    ]);
     const current = standing(content.catalog, progress.completed, progress.passed);
     const steps = new Map<string, Date | null>(progress.steps);
     for (const step of current.earnedSteps) if (!steps.has(step)) steps.set(step, null);
@@ -52,6 +57,7 @@ export async function loadAcademy(member: { id: string; username: string }): Pro
         completed: progress.completed,
         passed: progress.passed,
         steps,
+        discord: { linked: link !== null, available: discordEnabled },
       },
     };
   } catch (error) {

@@ -1,6 +1,12 @@
 import Link from "next/link";
 import type { Course } from "@/lib/academy/content";
-import { checkpointHref, chapterHref, lessonHref, type MemberAcademy } from "@/lib/academy/member";
+import {
+  checkpointHref,
+  chapterHref,
+  lessonHref,
+  type MemberAcademy,
+  rankClaimed,
+} from "@/lib/academy/member";
 import {
   type ChapterStanding,
   type LevelStanding,
@@ -188,6 +194,8 @@ function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone:
     (ROOKIE_LEVELS as readonly number[]).includes(level.level),
   );
   const isRookie = rankKeyOf(academy.steps) === ROOKIE_KEY;
+  // Earned in the Academy, claimed by linking Discord (owner, 2026-09-29).
+  const claimed = isRookie && rankClaimed(academy);
   const firstChapter = [...academy.standing.chapters.values()].find(
     (entry) => entry.chapter.number === ROOKIE_CHAPTER_NUMBER,
   );
@@ -201,7 +209,7 @@ function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone:
         className="pointer-events-none absolute -right-28 -bottom-40 size-[26rem] rounded-full bg-accent/10 blur-3xl"
       />
       <div className="relative flex items-center justify-between">
-        <Label>{isRookie ? "Current rank" : "No rank yet"}</Label>
+        <Label>{claimed ? "Current rank" : isRookie ? "Rank earned" : "No rank yet"}</Label>
         <Label>Levels {rookieDone} of 3</Label>
       </div>
       <p
@@ -212,8 +220,25 @@ function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone:
       >
         {RANK_TITLE}
       </p>
-      {isRookie ? (
+      {claimed ? (
         <SegmentMeter total={3} filled={rookieDone} className="relative" />
+      ) : isRookie ? (
+        <p className="relative text-sm/6 text-muted">
+          {academy.discord.available ? (
+            <>
+              <Link
+                href="/settings#connections"
+                prefetch={false}
+                className="text-accent underline-offset-4 hover:underline"
+              >
+                Link Discord
+              </Link>{" "}
+              to claim it. Your rank shows here and in the ZeroCorps server once you do.
+            </>
+          ) : (
+            "Link Discord to claim it, once Discord linking opens. Your rank is kept for you."
+          )}
+        </p>
       ) : firstChapter ? (
         <div className="relative flex flex-col gap-2.5">
           <Bar

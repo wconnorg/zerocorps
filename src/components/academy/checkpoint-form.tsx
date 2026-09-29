@@ -31,6 +31,7 @@ export function CheckpointForm({
   pass,
   rereadLinks,
   chapterHref,
+  claimed,
 }: {
   chapterId: string;
   questions: CheckpointQuestionView[];
@@ -38,6 +39,8 @@ export function CheckpointForm({
   /** Lesson id → where it is and what it is called, for "Reread" after a wrong answer. */
   rereadLinks: Record<string, { href: Route; title: string }>;
   chapterHref: Route;
+  /** Whether a newly earned rank shows as the member's: only once Discord is linked. */
+  claimed: boolean;
 }) {
   const router = useRouter();
   const [answers, setAnswers] = useState<(number | null)[]>(() => questions.map(() => null));
@@ -238,11 +241,17 @@ export function CheckpointForm({
             </Link>
             {result.newSteps.length > 0 ? (
               <Link
-                href="/academy/ranks"
+                href={
+                  result.newSteps.includes("rookie") && !claimed
+                    ? "/settings#connections"
+                    : "/academy/ranks"
+                }
                 prefetch={false}
                 className="inline-flex h-12 items-center border border-line-strong px-6 text-fg hover:bg-raised"
               >
-                See your rank
+                {result.newSteps.includes("rookie") && !claimed
+                  ? "Link Discord to claim it"
+                  : "See your rank"}
               </Link>
             ) : null}
           </div>
