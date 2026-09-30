@@ -1,4 +1,5 @@
 import type { AuthMailer } from "../auth/create-auth.ts";
+import type { TwoFactorChange } from "../auth/two-factor.ts";
 import type { EmailMessage, SendEmail } from "./send-email.ts";
 
 /**
@@ -57,6 +58,30 @@ function compose(
 }
 
 const formatWhen = (when: Date) => `${when.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+
+/** Subject and first sentence of each two-factor notice. */
+const TWO_FACTOR_WORDS: Record<TwoFactorChange, { subject: string; what: string }> = {
+  enabled: {
+    subject: "Two-factor is now on for your ZeroCorps account",
+    what: "Two-factor was just turned on for your ZeroCorps account. Signing in now asks for a code from your authenticator app after your password.",
+  },
+  disabled: {
+    subject: "Two-factor was turned off on your ZeroCorps account",
+    what: "Two-factor was just turned off for your ZeroCorps account. Signing in now needs only your password.",
+  },
+  reset: {
+    subject: "Two-factor was turned off on your ZeroCorps account",
+    what: "ZeroCorps turned two-factor off for your account, as you asked, and signed out every device. Sign in with your password, then turn two-factor on again in Settings.",
+  },
+  "backup-codes": {
+    subject: "New backup codes for your ZeroCorps account",
+    what: "New backup codes were just made for your ZeroCorps account. The old ones no longer work.",
+  },
+  "backup-code-used": {
+    subject: "A backup code was used to sign in to ZeroCorps",
+    what: "Someone just signed in to your ZeroCorps account with one of your backup codes. That code no longer works.",
+  },
+};
 
 export function createAuthMailer(
   sendEmail: SendEmail,
@@ -176,6 +201,16 @@ export function createAuthMailer(
           ),
           paragraph("If that was you, there is nothing more to do."),
           link("If it wasn't you, contact ZeroCorps straight away", contactUrl),
+        ]),
+      ),
+
+    sendTwoFactorChanged: ({ to, change }) =>
+      sendEmail(
+        compose("two-factor-changed", to, TWO_FACTOR_WORDS[change].subject, [
+          paragraph(TWO_FACTOR_WORDS[change].what),
+          paragraph("If that was you, there is nothing more to do."),
+          link("If it wasn't you, reset your password now", resetUrl),
+          link("Then contact ZeroCorps", contactUrl),
         ]),
       ),
   };

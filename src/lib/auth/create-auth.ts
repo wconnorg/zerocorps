@@ -1,4 +1,4 @@
-import { betterAuth } from "better-auth";
+import { betterAuth, type BetterAuthPlugin } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError, createAuthMiddleware, getSessionFromCtx, isAPIError } from "better-auth/api";
 import { eq, sql } from "drizzle-orm";
@@ -23,6 +23,13 @@ import { emailCodeSignUp, type SignUpMailer, type SignUpMode } from "./email-cod
 import { createEventLog } from "./events.ts";
 import { ensureDeviceToken } from "./known-device.ts";
 import { createEmailBudget, createLimiter } from "./limits.ts";
+import {
+  forgetTrustedDevices,
+  pendingTwoFactorUserId,
+  twoFactorPlugin,
+  type TwoFactorChange,
+  type TwoFactorMailer,
+} from "./two-factor.ts";
 
 /**
  * Builds the Better Auth instance from explicit dependencies.
@@ -41,7 +48,8 @@ export type AuthDatabase = PgDatabase<PgQueryResultHKT, any, any>;
 
 /** The emails the auth layer sends. The app passes real senders; tests pass recorders. */
 export type AuthMailer = SignUpMailer &
-  EmailChangeMailer & {
+  EmailChangeMailer &
+  TwoFactorMailer & {
     sendPasswordReset(message: { to: string; url: string }): Promise<void>;
     sendPasswordChanged(message: { to: string }): Promise<void>;
     sendNewDevice(message: {
@@ -123,7 +131,34 @@ const DISABLED_PATHS = [
   "/list-sessions",
   "/revoke-session",
   "/revoke-sessions",
+  // Two-factor is app codes only (milestone 5): nothing is ever texted or emailed as a
+  // code, so the plugin's code-sending pair stays off. The app's secret is shown once, at
+  // set-up, and never again, not even with the password.
+  "/two-factor/send-otp",
+  "/two-factor/verify-otp",
+  "/two-factor/get-totp-uri",
 ];
+
+/** Requests that check the member's password while signed in: each is counted per member. */
+const PASSWORD_CHECKED = new Set([
+  "/change-password",
+  "/delete-user",
+  "/two-factor/enable",
+  "/two-factor/disable",
+  "/two-factor/generate-backup-codes",
+]);
+
+/** The requests that sign someone in: the password, then, with two-factor on, the code. */
+const SIGN_IN_PATHS = new Set([
+  "/sign-in/email",
+  "/two-factor/verify-totp",
+  "/two-factor/verify-backup-code",
+]);
+
+const isTwoFactorRedirect = (returned: unknown) =>
+  typeof returned === "object" &&
+  returned !== null &&
+  (returned as { twoFactorRedirect?: unknown }).twoFactorRedirect === true;
 
 export function createAuth(deps: AuthDeps) {
   const { db } = deps;
@@ -164,6 +199,118 @@ export function createAuth(deps: AuthDeps) {
       await events.record({ type: "email_failed", identifier: address, detail: kind });
     }
   }
+
+  /** Better Auth's request context, as far as sending after the response goes. */
+  type Background = { context: { runInBackgroundOrAwait: (work: Promise<void>) => unknown } };
+
+  /** A two-factor security notice, sent after the response like the other notices. */
+  const notifyTwoFactor = (ctx: Background, to: string, change: TwoFactorChange) =>
+    ctx.context.runInBackgroundOrAwait(
+      deliver(to, "two-factor-changed", () => deps.mailer.sendTwoFactorChanged({ to, change })),
+    );
+
+  /**
+   * A sign-in is complete: after the password alone, or after the password AND the code
+   * when two-factor is on. Records it, and alerts the member if this browser is new.
+   */
+  async function completeSignIn(
+    ctx: Parameters<typeof ensureDeviceToken>[0] & Background,
+    user: { id: string; email: string },
+    headers: Headers | null,
+  ) {
+    await events.record({ type: "signin_succeeded", userId: user.id, headers });
+
+    // One statement decides whether this browser is new, so two sign-ins at once
+    // cannot both send the alert.
+    const device = ensureDeviceToken(ctx);
+    const family = userAgentFamily(headers?.get("user-agent"));
+    const added = await db
+      .insert(knownDevices)
+      .values({ userId: user.id, deviceHash: device.hash, userAgent: family })
+      .onConflictDoUpdate({
+        target: [knownDevices.userId, knownDevices.deviceHash],
+        set: { lastSeenAt: sql`now()` },
+      })
+      .returning({
+        firstSeenAt: knownDevices.firstSeenAt,
+        lastSeenAt: knownDevices.lastSeenAt,
+      });
+    const isNew =
+      added[0] !== undefined && added[0].firstSeenAt.getTime() === added[0].lastSeenAt.getTime();
+    if (!isNew) return;
+
+    await events.record({ type: "new_device", userId: user.id, headers });
+    await ctx.context.runInBackgroundOrAwait(
+      deliver(user.email, "new-device", () =>
+        deps.mailer.sendNewDevice({
+          to: user.email,
+          when: new Date(),
+          device: family ?? "an unknown browser",
+          resetUrl: `${deps.baseUrl}/forgot-password`,
+        }),
+      ),
+    );
+  }
+
+  /**
+   * Runs AFTER the two-factor plugin's own hook, because Better Auth runs `hooks.after`
+   * first and plugin hooks in plugin order. By then a correct password with two-factor on
+   * has had its session taken back, so a password alone is never counted as a sign-in,
+   * never marks a browser as known and never sends the new-browser alert.
+   */
+  const signInCompletion = {
+    id: "zerocorps-sign-in",
+    hooks: {
+      after: [
+        {
+          matcher: (context: { path?: string }) => SIGN_IN_PATHS.has(context.path ?? ""),
+          handler: createAuthMiddleware(async (ctx) => {
+            const headers = ctx.headers ?? ctx.request?.headers ?? null;
+            const returned = ctx.context.returned;
+            const failed = isAPIError(returned);
+            const fresh = ctx.context.newSession;
+
+            if (ctx.path === "/sign-in/email") {
+              if (fresh) return completeSignIn(ctx, fresh.user, headers);
+              const email =
+                typeof ctx.body?.email === "string" ? normalizeEmail(ctx.body.email) : null;
+              if (!failed && isTwoFactorRedirect(returned)) {
+                // The password was right; the code screen comes next. Not a sign-in yet.
+                await events.record({ type: "two_factor_challenged", identifier: email, headers });
+                return;
+              }
+              const detail = failed
+                ? String(returned.body?.code ?? returned.status).toLowerCase()
+                : "failed";
+              await events.record({ type: "signin_failed", identifier: email, headers, detail });
+              return;
+            }
+
+            // The code screen. A member who is already signed in is setting two-factor up
+            // (the first code from the app), which the main hook handles: not a sign-in.
+            if (ctx.context.session) return;
+            if (failed || !fresh) {
+              const detail = failed
+                ? String(returned.body?.code ?? returned.status).toLowerCase()
+                : "failed";
+              await events.record({
+                type: "two_factor_failed",
+                userId: await pendingTwoFactorUserId(ctx),
+                headers,
+                detail,
+              });
+              return;
+            }
+            await completeSignIn(ctx, fresh.user, headers);
+            if (ctx.path === "/two-factor/verify-backup-code") {
+              await events.record({ type: "backup_code_used", userId: fresh.user.id, headers });
+              await notifyTwoFactor(ctx, fresh.user.email, "backup-code-used");
+            }
+          }),
+        },
+      ],
+    },
+  } satisfies BetterAuthPlugin;
 
   return betterAuth({
     appName: "ZeroCorps",
@@ -227,8 +374,10 @@ export function createAuth(deps: AuthDeps) {
       },
       onPasswordReset: async ({ user }) => {
         // Whoever reset the password may not be whoever used those browsers: forget them
-        // all, so the next sign-in from each one raises an alert again.
+        // all, so the next sign-in from each one raises an alert again, and asks for the
+        // two-factor code again where the member had ticked "trust this device".
         await db.delete(knownDevices).where(eq(knownDevices.userId, user.id));
+        await forgetTrustedDevices(db, user.id);
         await events.record({ type: "reset_completed", userId: user.id });
         await deliver(user.email, "password-changed", () =>
           deps.mailer.sendPasswordChanged({ to: user.email }),
@@ -282,14 +431,25 @@ export function createAuth(deps: AuthDeps) {
           }
         }
 
-        // Milestone 4. Changing the password and deleting the account both check the
-        // member's password; both are counted per member, so a stolen session cannot guess
-        // its way to it. Deleting ALWAYS needs the password (Better Auth would otherwise
-        // accept a recent session alone, or an emailed token), and a new password always
-        // signs out every other device.
-        if (ctx.path === "/change-password" || ctx.path === "/delete-user") {
+        // Milestones 4 and 5. Changing the password, deleting the account and every
+        // two-factor change check the member's password; all are counted per member, so a
+        // stolen session cannot guess its way to it. Deleting ALWAYS needs the password
+        // (Better Auth would otherwise accept a recent session alone, or an emailed token),
+        // and a new password always signs out every other device.
+        if (PASSWORD_CHECKED.has(ctx.path)) {
           const session = await getSessionFromCtx(ctx);
           if (session) {
+            // App codes only: the plugin would refuse "otp" too, as nothing can send one.
+            if (
+              ctx.path === "/two-factor/enable" &&
+              ctx.body?.method !== undefined &&
+              ctx.body.method !== "totp"
+            ) {
+              throw new APIError("BAD_REQUEST", {
+                code: "APP_CODES_ONLY",
+                message: "Two-factor uses an authenticator app.",
+              });
+            }
             if (
               ctx.path === "/delete-user" &&
               (typeof ctx.body?.password !== "string" ||
@@ -316,6 +476,40 @@ export function createAuth(deps: AuthDeps) {
                 detail: "password_check",
               });
               throw tooManyRequests(limit.retryAfterSeconds);
+            }
+          }
+        }
+
+        // Backup codes are for signing in. A signed-in session has no use for them, and
+        // must not be able to try them outside the lock that counts guesses at sign-in;
+        // nor may one be used up without signing in (the plugin's `disableSession`).
+        if (
+          ctx.path === "/two-factor/verify-backup-code" &&
+          (ctx.body?.disableSession !== undefined || (await getSessionFromCtx(ctx)))
+        ) {
+          throw new APIError("BAD_REQUEST", {
+            code: "BACKUP_CODES_SIGN_IN_ONLY",
+            message: "Backup codes are only for signing in.",
+          });
+        }
+
+        // An app code works once at sign-in, even within the 90 seconds it is accepted.
+        if (ctx.path === "/two-factor/verify-totp" && !(await getSessionFromCtx(ctx))) {
+          const userId = await pendingTwoFactorUserId(ctx);
+          const code = typeof ctx.body?.code === "string" ? ctx.body.code.replace(/\s+/g, "") : "";
+          if (userId && code) {
+            const once = await limiter.hit("totpCodeOncePerUser", `${userId}\n${code}`);
+            if (!once.allowed) {
+              await events.record({
+                type: "two_factor_failed",
+                userId,
+                headers,
+                detail: "code_reused",
+              });
+              throw new APIError("UNAUTHORIZED", {
+                code: "CODE_ALREADY_USED",
+                message: "That code was already used. Wait for the next one in your app.",
+              });
             }
           }
         }
@@ -365,53 +559,37 @@ export function createAuth(deps: AuthDeps) {
           }
           return;
         }
-        if (ctx.path !== "/sign-in/email") return;
-        const fresh = ctx.context.newSession;
-
-        if (!fresh) {
-          const email = typeof ctx.body?.email === "string" ? normalizeEmail(ctx.body.email) : null;
-          const returned = ctx.context.returned;
-          const detail = isAPIError(returned)
-            ? String(returned.body?.code ?? returned.status).toLowerCase()
-            : "failed";
-          await events.record({ type: "signin_failed", identifier: email, headers, detail });
+        // Milestone 5. Signing in is recorded by `signInCompletion` below; these are the
+        // member's own two-factor changes.
+        if (failed) return;
+        // Setting up: the first code from the app, typed while signed in, switched it on.
+        // (`session` is the one this request came with; at sign-in there is none.)
+        if (ctx.path === "/two-factor/verify-totp") {
+          const before = ctx.context.session;
+          const after = ctx.context.newSession;
+          if (before && after?.user.twoFactorEnabled && !before.user.twoFactorEnabled) {
+            // A fresh start: no browser trusted before this moment skips the code.
+            await forgetTrustedDevices(db, after.user.id);
+            await events.record({ type: "two_factor_enabled", userId: after.user.id, headers });
+            await notifyTwoFactor(ctx, after.user.email, "enabled");
+          }
           return;
         }
-
-        const { user } = fresh;
-        await events.record({ type: "signin_succeeded", userId: user.id, headers });
-
-        // One statement decides whether this browser is new, so two sign-ins at once
-        // cannot both send the alert.
-        const device = ensureDeviceToken(ctx);
-        const family = userAgentFamily(headers?.get("user-agent"));
-        const added = await db
-          .insert(knownDevices)
-          .values({ userId: user.id, deviceHash: device.hash, userAgent: family })
-          .onConflictDoUpdate({
-            target: [knownDevices.userId, knownDevices.deviceHash],
-            set: { lastSeenAt: sql`now()` },
-          })
-          .returning({
-            firstSeenAt: knownDevices.firstSeenAt,
-            lastSeenAt: knownDevices.lastSeenAt,
-          });
-        const isNew =
-          added[0] !== undefined &&
-          added[0].firstSeenAt.getTime() === added[0].lastSeenAt.getTime();
-        if (!isNew) return;
-
-        await events.record({ type: "new_device", userId: user.id, headers });
-        await ctx.context.runInBackgroundOrAwait(
-          deliver(user.email, "new-device", () =>
-            deps.mailer.sendNewDevice({
-              to: user.email,
-              when: new Date(),
-              device: family ?? "an unknown browser",
-              resetUrl: `${deps.baseUrl}/forgot-password`,
-            }),
-          ),
-        );
+        if (
+          ctx.path === "/two-factor/disable" ||
+          ctx.path === "/two-factor/generate-backup-codes"
+        ) {
+          const user = ctx.context.session?.user;
+          if (!user) return;
+          if (ctx.path === "/two-factor/disable") {
+            await forgetTrustedDevices(db, user.id);
+            await events.record({ type: "two_factor_disabled", userId: user.id, headers });
+            await notifyTwoFactor(ctx, user.email, "disabled");
+          } else {
+            await events.record({ type: "backup_codes_regenerated", userId: user.id, headers });
+            await notifyTwoFactor(ctx, user.email, "backup-codes");
+          }
+        }
       }),
     },
 
@@ -452,6 +630,9 @@ export function createAuth(deps: AuthDeps) {
         discord: deps.discord ?? null,
         rankOf,
       }),
+      twoFactorPlugin(),
+      // Must stay AFTER twoFactorPlugin(): see `signInCompletion`. A test proves it.
+      signInCompletion,
     ],
 
     rateLimit: {

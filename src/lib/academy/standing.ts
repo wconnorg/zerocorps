@@ -47,7 +47,9 @@ export const levelStepKey = (level: number) => `rookie-level-${level}`;
 
 /**
  * The member's rank key from the steps stored for them, or null before they have one. It
- * is what Discord's roles follow (`DISCORD_RANK_ROLE_IDS`).
+ * is what Discord's roles follow: Agent Zero reads it from the internal API. A NEW key must
+ * be set up in the bot before the site sends it (docs/INTERNAL-API.md, "What Agent Zero
+ * relies on"); until then the bot changes nothing for members holding it.
  */
 export const rankKeyOf = (steps: { has(key: string): boolean }): string | null =>
   steps.has(ROOKIE_KEY) ? ROOKIE_KEY : null;

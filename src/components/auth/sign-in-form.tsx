@@ -20,7 +20,15 @@ export function SignInForm() {
     event.preventDefault();
     setError(null);
     setPending(true);
-    const result = await authFetch("/sign-in/email", { email: email.trim(), password });
+    const result = await authFetch<{ twoFactorRedirect?: boolean }>("/sign-in/email", {
+      email: email.trim(),
+      password,
+    });
+    if (result.ok && result.data.twoFactorRedirect) {
+      // The password was right, and this account has two-factor on: the code comes next.
+      router.push(`/two-factor?next=${encodeURIComponent(next)}` as Route);
+      return;
+    }
     if (result.ok) {
       // `next` has been reduced to a path on this site by safeNextPath.
       router.replace(next as Route);

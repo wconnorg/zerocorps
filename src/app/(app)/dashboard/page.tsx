@@ -34,5 +34,11 @@ export default async function DashboardPage() {
     }
   }
 
-  return <DashboardView signedInAs={`@${state.user.username}`} linkDiscord={linkDiscord} />;
+  return (
+    <DashboardView
+      signedInAs={`@${state.user.username}`}
+      linkDiscord={linkDiscord}
+      secureAccountFor={state.user.twoFactorEnabled ? null : state.sessionId}
+    />
+  );
 }

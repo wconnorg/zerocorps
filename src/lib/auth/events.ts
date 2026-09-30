@@ -35,7 +35,14 @@ export type AuthEventType =
   | "account_deleted"
   | "email_change_started"
   | "email_change_failed"
-  | "email_changed";
+  | "email_changed"
+  | "two_factor_challenged"
+  | "two_factor_failed"
+  | "two_factor_enabled"
+  | "two_factor_disabled"
+  | "two_factor_reset"
+  | "backup_codes_regenerated"
+  | "backup_code_used";
 
 export type AuthEventInput = {
   type: AuthEventType;

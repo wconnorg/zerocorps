@@ -1,4 +1,5 @@
 import { createAuth, type AuthDeps } from "../lib/auth/create-auth.ts";
+import type { TwoFactorChange } from "../lib/auth/two-factor.ts";
 import type { TestDatabase } from "./test-database.ts";
 
 /**
@@ -16,7 +17,8 @@ export type SentEmail =
   | { kind: "new-device"; to: string; when: Date; device: string; resetUrl: string }
   | { kind: "email-change-code"; to: string; code: string; expiresInMinutes: number }
   | { kind: "email-change-taken"; to: string }
-  | { kind: "email-changed"; to: string; newEmail: string };
+  | { kind: "email-changed"; to: string; newEmail: string }
+  | { kind: "two-factor-changed"; to: string; change: TwoFactorChange };
 
 export function createTestAuth(database: TestDatabase, overrides: Partial<AuthDeps> = {}) {
   const outbox: SentEmail[] = [];
@@ -44,6 +46,8 @@ export function createTestAuth(database: TestDatabase, overrides: Partial<AuthDe
       sendEmailChangeTaken: async (message) =>
         void outbox.push({ kind: "email-change-taken", ...message }),
       sendEmailChanged: async (message) => void outbox.push({ kind: "email-changed", ...message }),
+      sendTwoFactorChanged: async (message) =>
+        void outbox.push({ kind: "two-factor-changed", ...message }),
     },
     ...overrides,
   });

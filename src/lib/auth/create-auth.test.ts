@@ -333,6 +333,7 @@ describe("schema invariants that every future migration must keep", () => {
       "rank_history",
       "rate_limits",
       "sessions",
+      "two_factors",
       "users",
       "verifications",
     ]);

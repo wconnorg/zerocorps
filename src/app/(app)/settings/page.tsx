@@ -8,9 +8,10 @@ import { EmailForm } from "@/components/app/email-form";
 import { DiscordConnection } from "@/components/app/discord-connection";
 import { PasswordForm } from "@/components/app/password-form";
 import { ProfileForm } from "@/components/app/profile-form";
+import { TwoFactorSettings } from "@/components/app/two-factor-settings";
 import { Unavailable } from "@/components/site/unavailable";
 import { db } from "@/db/client";
-import { discordEnabled } from "@/lib/auth";
+import { auth, discordEnabled } from "@/lib/auth";
 import { ACTIVITY_WORDS, listDevices, recentActivity } from "@/lib/auth/account-data";
 import { getSessionState } from "@/lib/auth/session";
 import { nextUsernameChangeAt } from "@/lib/auth/username-claim";
@@ -84,6 +85,18 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
     discordReadable = false;
   }
   const outcome = (await searchParams).discord;
+
+  // How many backup codes are left: decrypted on the server and only counted, never sent.
+  // A courtesy too: if they cannot be read, the section shows without the count.
+  let backupCodesLeft: number | null = null;
+  if (state.user.twoFactorEnabled) {
+    try {
+      const { backupCodes } = await auth.api.viewBackupCodes({ body: { userId: state.user.id } });
+      backupCodesLeft = backupCodes.length;
+    } catch {
+      backupCodesLeft = null;
+    }
+  }
 
   return (
     <div className="relative mx-auto grid w-full max-w-5xl gap-10 px-6 py-12 lg:grid-cols-[13rem_minmax(0,1fr)] lg:py-16">
@@ -189,10 +202,15 @@ export default async function SettingsPage({ searchParams }: PageProps<"/setting
           )}
         </Section>
 
-        <Section id="two-factor" title="Two-factor authentication">
-          <p className="text-sm/6 text-muted">
-            Coming soon: a code from an authenticator app, on top of your password.
-          </p>
+        <Section
+          id="two-factor"
+          title="Two-factor authentication"
+          intro="A code from an authenticator app on your phone, after your password."
+        >
+          <TwoFactorSettings
+            enabled={state.user.twoFactorEnabled}
+            backupCodesLeft={backupCodesLeft}
+          />
         </Section>
 
         <Section id="delete" title="Delete account" danger>
