@@ -113,8 +113,10 @@ export async function removeAvatar(db: AuthDatabase, userId: string): Promise<bo
 /**
  * GET /api/avatar: the signed-in member's OWN picture, and nobody else's (there is no id
  * to ask for, so there is nothing to enumerate). 200 with the image; 304 when the browser
- * already has this version; 404 when there is none, and the page shows the grey default.
- * Private: never kept by a shared cache.
+ * already has this version; 204 (nothing) when there is no picture, or nobody is signed
+ * in, and the page keeps the grey default. Only an `<img>` ever asks, and an error status
+ * there is logged as an error in the browser's console on every page, so "nothing" is an
+ * empty answer, not a refusal. Private: never kept by a shared cache.
  */
 export async function serveAvatar(
   db: AuthDatabase,
@@ -122,8 +124,8 @@ export async function serveAvatar(
   ifNoneMatch: string | null,
 ): Promise<Response> {
   const headers = { "cache-control": "private, no-cache", "x-content-type-options": "nosniff" };
-  if (!member) return new Response(null, { status: 401, headers });
-  if (!member.avatar) return new Response(null, { status: 404, headers });
+  const nothing = () => new Response(null, { status: 204, headers });
+  if (!member || !member.avatar) return nothing();
   const etag = `"${member.avatar}"`;
   if (ifNoneMatch === etag)
     return new Response(null, { status: 304, headers: { ...headers, etag } });
@@ -133,7 +135,7 @@ export async function serveAvatar(
     .from(avatars)
     .where(eq(avatars.userId, member.id))
     .limit(1);
-  if (!row) return new Response(null, { status: 404, headers });
+  if (!row) return nothing();
   return new Response(new Uint8Array(row.image), {
     status: 200,
     headers: {

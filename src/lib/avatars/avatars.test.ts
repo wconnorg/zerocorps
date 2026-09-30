@@ -184,9 +184,9 @@ describe("the picture endpoints", () => {
     expect((await serve(userId, `"${version}"`)).status).toBe(304);
     // Somebody else has no picture, and can only ever be served their own.
     await signUp("avatar.other@example.com");
-    expect((await serve(await idOf("avatar.other@example.com"))).status).toBe(404);
-    // Signed out: nothing.
-    expect((await serveAvatar(database.db, null, null)).status).toBe(401);
+    expect((await serve(await idOf("avatar.other@example.com"))).status).toBe(204);
+    // Signed out: nothing, and not an error either (an <img> asks, on every page).
+    expect((await serveAvatar(database.db, null, null)).status).toBe(204);
   });
 
   it("a new picture replaces the old one and gets a new version", async () => {
@@ -256,7 +256,7 @@ describe("the picture endpoints", () => {
     expect(response.json).toMatchObject({ removed: true });
     expect(await rows("SELECT 1 FROM avatars WHERE user_id = $1::uuid", [userId])).toHaveLength(0);
     expect(await versionOf(userId)).toBeNull();
-    expect((await serve(userId)).status).toBe(404);
+    expect((await serve(userId)).status).toBe(204);
   });
 
   it("goes with the account when the account is deleted", async () => {

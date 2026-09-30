@@ -1197,12 +1197,15 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `0b44103`, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `463d0b0`, same tree as `dev` then):**
 
 - Milestones 1 and 2; **sign-ups open to everyone** (`SIGNUP_MODE=open`).
 - Usernames: `/onboarding`, changes in `/settings` (first free, then 30 days).
 - **Profile pictures** (milestone 3's rest) and **changing the email address**
   (milestone 4's rest), in Settings; see their "built" sections below.
+- **Two-factor (milestone 5), since 2026-09-30:** an authenticator app after the
+  password, backup codes, trusted browsers; app codes only, no phone numbers. Untested by
+  the owner at the time of writing: see "The owner's, next".
 - **The Academy (milestone 7):** 42 lessons in first draft (the owner rewrites them), 9
   chapter checkpoints, quick checks, progress, heatmap. **Rookie** is earned by completing
   Chapter 1 and **claimed by linking Discord**; each finished level is a step.
@@ -1214,6 +1217,11 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
 
 **The owner's, next:**
 
+0. **Test two-factor on the live site, with the account made there** (the laptop's
+   `BETTER_AUTH_SECRET` differs, so an account's two-factor works only on the side where it
+   was switched on): Settings, Two-factor, set up with an authenticator app, save the backup
+   codes; sign out and in again (the code screen, then "trust this browser"); a backup
+   code; new backup codes; turn it off. Each step emails the account.
 1. Try a picture and an email change on the live site.
 2. Run Agent Zero against the live site and test linking with a friend. Where it runs
    for good (the laptop while testing; a host later is a new service: ask). What the bot
@@ -1231,11 +1239,11 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    before public promotion, a paid database plan so it never pauses; redirect
    `zerocorps.vercel.app` to the domain.
 
-**Built on `dev`, not live yet: two-factor (milestone 5)**, app codes only; see
-"Milestone 5: two-factor, built" below. Its migration `0007_two_factor` (one new table,
-one new column) must be applied by the owner (`npm run db:backup`, then
-`npm run db:migrate`) **before** the release that carries it, and the owner tests it on
-the laptop first, with a test account made on the laptop.
+**Built on `dev`, not live yet:** `GET /api/avatar` answers an empty 204 instead of 401
+or 404 when there is no picture or nobody is signed in. The live browser check after the
+two-factor release found the 401: the signed-in frame mounts for a moment while a
+signed-out visitor is sent to sign-in, its `<img>` asks for the picture, and the browser
+logs the refusal as an error; a member without a picture got the same on every page.
 
 **Next milestone, after the owner's two-factor test: the brain export (milestone 9)**,
 for every member, whether or not they linked Discord (owner, 2026-09-29; the brief
@@ -1245,6 +1253,21 @@ already says so).
 scan for secrets, one `--no-ff` merge commit on `main` made with `git commit-tree`
 without leaving `dev`, pushed only on the owner's "push"; the deploy is confirmed through
 GitHub's public deployments API from PowerShell (the `gh` tool is not installed).
+
+### Released on 2026-09-30: two-factor (milestone 5)
+
+- **Before the push, the owner's:** `npm run db:backup`, then `npm run db:migrate`, which
+  applied `0007_two_factor` (8 applied now); `npm run db:counts` then listed `two_factors`,
+  empty. The owner chose to test two-factor on the live site rather than the laptop, which
+  is also the safe choice: the two sides' `BETTER_AUTH_SECRET` differ.
+- On the owner's "push": `dev` (`1b86e6e`) merged into `main` as `463d0b0` (parents
+  `0b44103` and `1b86e6e`), scanned, pushed; GitHub recorded the production deployment as
+  a success. `npm run check` (436 tests and the production build) passed on `dev` first.
+- **Checked from outside afterwards, signed out:** `/two-factor` renders (200), the older
+  routes answer as before, and `npm run verify -- https://zerocorps.org live` passed every
+  layout and theme check, with two-factor's page in its list. It reported one problem, the
+  `/api/avatar` 401 described in "Where things stand", fixed on `dev` for the next release.
+- **Not tried live yet:** the whole two-factor flow, which is the owner's test.
 
 ### Milestone 5: two-factor, built (2026-09-29)
 

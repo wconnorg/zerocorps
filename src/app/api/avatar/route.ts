@@ -4,7 +4,7 @@ import { serveAvatar } from "@/lib/avatars/avatars";
 
 /**
  * GET /api/avatar: the signed-in member's own profile picture (src/lib/avatars/avatars.ts
- * has the rules). A 404 means "none", and the page shows the grey default.
+ * has the rules). An empty 204 means "none", and the page keeps the grey default.
  */
 export const dynamic = "force-dynamic";
 
