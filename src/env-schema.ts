@@ -201,14 +201,8 @@ export function createEnvShape(isProductionBuild: boolean) {
     STORAGE_SECRET_ACCESS_KEY: optionalString,
     STORAGE_PUBLIC_BASE_URL: optionalString,
 
-    // Milestone 5: SMS verification
-    SMS_PROVIDER: z.preprocess(
-      blankToUndefined,
-      z.enum(["console", "twilio-verify"]).default("console"),
-    ),
-    TWILIO_ACCOUNT_SID: optionalString,
-    TWILIO_AUTH_TOKEN: optionalString,
-    TWILIO_VERIFY_SERVICE_SID: optionalString,
+    // Milestone 5 needs no setting: two-factor is app codes only, with nothing texted
+    // (owner, 2026-09-29), and its secrets are encrypted with BETTER_AUTH_SECRET.
 
     // Milestone 6: Discord account linking
     DISCORD_CLIENT_ID: optionalString,

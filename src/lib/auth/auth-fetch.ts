@@ -35,6 +35,16 @@ const MESSAGES: Record<string, string> = {
   EMAIL_NOT_VERIFIED: "This email address has not been verified yet.",
   INVALID_ORIGIN: "This request did not come from zerocorps.org, so it was refused.",
   TOO_MANY_REQUESTS: "Too many attempts. Please wait a while and try again.",
+  // Two-factor (milestone 5), from Better Auth's two-factor plugin. Its INVALID_CODE is
+  // worded by `twoFactorFailure` below: our email-code steps send that code too, with
+  // their own words.
+  INVALID_BACKUP_CODE: "That backup code is not right, or it was already used.",
+  TOO_MANY_ATTEMPTS_REQUEST_NEW_CODE: "Too many wrong codes. Please sign in again.",
+  ACCOUNT_TEMPORARILY_LOCKED:
+    "Too many wrong codes for this account. Wait 15 minutes, then sign in again.",
+  INVALID_TWO_FACTOR_COOKIE: "This sign-in has run out (10 minutes). Please sign in again.",
+  TOTP_ALREADY_ENABLED: "Two-factor is already on.",
+  TWO_FACTOR_NOT_ENABLED: "Two-factor is not on.",
 };
 
 function waitPhrase(seconds: number | undefined): string {
@@ -109,6 +119,12 @@ export async function authFetch<T = Record<string, unknown>>(
     field: typeof payload.field === "string" ? payload.field : undefined,
   };
 }
+
+/** A failure on a two-factor screen, where a wrong app code needs its own advice. */
+export const twoFactorFailure = (result: AuthFailure) =>
+  result.code === "INVALID_CODE"
+    ? "That code is not right. Check that your phone sets its clock automatically, then try the next code."
+    : result.message;
 
 const leavesTheSite = (path: string) =>
   !path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\");

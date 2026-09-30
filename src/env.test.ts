@@ -201,14 +201,10 @@ describe("parseEnv: sign-up mode and lists", () => {
 
 describe("parseEnv: general", () => {
   it("treats blank values as unset", () => {
-    const env = parseEnv({ ...base, RESEND_API_KEY: "", SMS_PROVIDER: "" });
+    const env = parseEnv({ ...base, RESEND_API_KEY: "", SIGNUP_MODE: "" });
     expect(env.RESEND_API_KEY).toBeUndefined();
-    expect(env.SMS_PROVIDER).toBe("console");
+    expect(env.SIGNUP_MODE).toBe("closed");
     expect(env.EMAIL_FROM).toBe("ZeroCorps <no-reply@zerocorps.org>");
-  });
-
-  it("rejects an unknown SMS provider", () => {
-    expect(() => parseEnv({ ...base, SMS_PROVIDER: "carrier-pigeon" })).toThrow(/SMS_PROVIDER/);
   });
 
   it("never includes values in the error message", () => {

@@ -36,13 +36,14 @@ export type EmailSenderOptions = {
   fetch?: typeof fetch;
 };
 
+// Spelled out, not a parameter property: `npm run 2fa:reset` loads this file with Node's
+// own type stripping, which refuses parameter properties.
 export class EmailSendError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-  ) {
+  readonly status: number;
+  constructor(message: string, status: number) {
     super(message);
     this.name = "EmailSendError";
+    this.status = status;
   }
 }
 

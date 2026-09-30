@@ -1,3 +1,4 @@
+import { SecureAccountBanner } from "@/components/app/secure-account-banner";
 import { ProductFace, PRODUCTS } from "@/components/marketing/products";
 
 /**
@@ -16,10 +17,16 @@ import { ProductFace, PRODUCTS } from "@/components/marketing/products";
 export function DashboardView({
   signedInAs,
   linkDiscord = false,
+  secureAccountFor = null,
 }: {
   signedInAs: string;
   /** Show the "link Discord" card: linking is on and this member has not linked. */
   linkDiscord?: boolean;
+  /**
+   * This sign-in's session id when the member has no two-factor yet: the banner inviting
+   * them to set it up, which they can close for this sign-in. Null: no banner.
+   */
+  secureAccountFor?: string | null;
 }) {
   const ordered = [
     ...PRODUCTS.filter((product) => product.id === "academy"),
@@ -40,6 +47,8 @@ export function DashboardView({
         <p className="mt-5 font-mono text-xs tracking-[0.12em] text-subtle">
           Signed in as <span className="text-muted">{signedInAs}</span>
         </p>
+
+        {secureAccountFor ? <SecureAccountBanner sessionId={secureAccountFor} /> : null}
 
         {linkDiscord ? (
           <div className="mt-8 flex flex-col gap-4 border border-line-strong bg-surface p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">

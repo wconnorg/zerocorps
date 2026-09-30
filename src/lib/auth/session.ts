@@ -21,6 +21,8 @@ export type SessionState =
         username: string | null;
         /** The profile picture's version, or null for the grey default (src/lib/avatars/). */
         avatar: string | null;
+        /** An authenticator app is set up and confirmed (milestone 5). */
+        twoFactorEnabled: boolean;
       };
       /** This browser's session id (not its token): settings marks it as "this device". */
       sessionId: string;
@@ -43,6 +45,7 @@ export async function getSessionState(): Promise<SessionState> {
         displayName: session.user.name ?? "",
         username: session.user.username ?? null,
         avatar: session.user.image ?? null,
+        twoFactorEnabled: session.user.twoFactorEnabled === true,
       },
       sessionId: session.session.id,
     };

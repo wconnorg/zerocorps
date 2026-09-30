@@ -216,6 +216,22 @@ describe("the auth emails", () => {
     expect(last().html).not.toContain("<b>");
   });
 
+  it("two-factor notices: one per change, each with the reset link and the contact", async () => {
+    const changes = ["enabled", "disabled", "backup-codes", "backup-code-used", "reset"] as const;
+    const subjects = new Set<string>();
+    for (const change of changes) {
+      await mailer.sendTwoFactorChanged({ to: "tf@example.com", change });
+      expect(last()).toMatchObject({ kind: "two-factor-changed", to: "tf@example.com" });
+      expect(last().text).toContain("https://zerocorps.org/forgot-password");
+      expect(last().text).toContain("https://zerocorps.org/privacy");
+      expect(last().text).not.toMatch(/\b\d{6}\b/);
+      subjects.add(last().subject);
+    }
+    // "disabled" and "reset" share a subject; the body says which.
+    expect(subjects.size).toBe(4);
+    expect(last().text).toMatch(/as you asked, and signed out every device/);
+  });
+
   it("escapes everything it puts into HTML, and loads nothing from anywhere", async () => {
     await mailer.sendNewDevice({
       to: "a@example.com",

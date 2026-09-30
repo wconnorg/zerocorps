@@ -21,6 +21,10 @@ relevant section with a date; do not rewrite history.
 
 ### Accounts, phone and 2FA
 
+_Superseded on 2026-09-29 for everything about phones and texts: two-factor is an
+authenticator app only, with no phone numbers (owner; see "Milestone 5: two-factor,
+built")._
+
 - **SMS code ownership ("Option A").** Better Auth and our own code generate and
   check verification codes. The SMS provider only delivers them. With Twilio
   Verify this uses the per-service "custom verification code" setting, and each
@@ -1227,13 +1231,78 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    before public promotion, a paid database plan so it never pauses; redirect
    `zerocorps.vercel.app` to the domain.
 
-**Not built:** two-factor (milestone 5) is on hold until before the brain export
-(milestone 9).
+**Built on `dev`, not live yet: two-factor (milestone 5)**, app codes only; see
+"Milestone 5: two-factor, built" below. Its migration `0007_two_factor` (one new table,
+one new column) must be applied by the owner (`npm run db:backup`, then
+`npm run db:migrate`) **before** the release that carries it, and the owner tests it on
+the laptop first, with a test account made on the laptop.
+
+**Next milestone, after the owner's two-factor test: the brain export (milestone 9)**,
+for every member, whether or not they linked Discord (owner, 2026-09-29; the brief
+already says so).
 
 **How releases work now:** `npm run check` (or at least lint and the tests) on `dev`, a
 scan for secrets, one `--no-ff` merge commit on `main` made with `git commit-tree`
 without leaving `dev`, pushed only on the owner's "push"; the deploy is confirmed through
 GitHub's public deployments API from PowerShell (the `gh` tool is not installed).
+
+### Milestone 5: two-factor, built (2026-09-29)
+
+**The owner's decisions (2026-09-29), which replace the brief's milestone 5 and "Accounts,
+phone and 2FA" at the top of this file:**
+
+- **No text messages and no phone numbers.** Offered Twilio Verify (the brief's choice, a
+  few cents per text), the owner said: "not paying for shit any way around this". There is
+  no free way to text codes that carriers do not filter or block, so two-factor is **an
+  authenticator app only**, which is also the stronger factor (no SIM swap). A phone number
+  that cannot be confirmed would be personal data with no use, so none is collected, and
+  the `SMS_PROVIDER` and `TWILIO_*` settings are gone. Hard rules 3 and 7 still hold,
+  trivially. Texts can be added later on top, if the owner ever wants to pay for them.
+- **A member who loses the app AND every backup code** is helped by the owner alone:
+  `npm run 2fa:reset -- <username>`, after the identity check in the SECURITY.md runbook
+  "Turn two-factor off for a member". Not by email (whoever holds the mailbox would get
+  past the second factor), and not "no recovery" (the member would lose their progress).
+- (The owner also answered that adding a phone should need the password only to change or
+  remove it; with no phone, that question fell away. Switching the app on needs the
+  password anyway: Better Auth's two-factor plugin requires it.)
+
+**What was built**, all with Better Auth 1.7.5's own two-factor plugin (source read for
+this version: `plugins/two-factor/`):
+
+- **Settings, Two-factor:** the password, then a QR code drawn on our own page (`uqr`
+  0.1.3, MIT, no dependencies; the secret never goes to an image service) plus the key to
+  type by hand, then a first code from the app: only then is two-factor on. Ten backup
+  codes are shown once, with Copy, Download and "I have saved my backup codes". When it is
+  on: how many backup codes are left, "New backup codes" and "Turn off two-factor", each
+  with the password.
+- **Signing in:** the password, then `/two-factor`: the app's code, or a backup code, and
+  "Trust this browser for 30 days". The code screen lives 10 minutes, allows 5 tries, and
+  10 wrong codes in a row lock it for 15 minutes (the plugin's defaults, spelled out).
+- **The dashboard** invites a member without two-factor at each sign-in, with an X that
+  closes the banner for that sign-in only.
+- **Ours, around the plugin** (`create-auth.ts`, `two-factor.ts`):
+  - A correct password alone is **not** a sign-in: the "signed in" event, the remembered
+    browser and the new-browser email wait for the code. Better Auth runs `hooks.after`
+    before plugin hooks, so that code moved into a small plugin registered after the
+    two-factor one; a test proves it, and fails (checked) when the order is swapped.
+  - **An app code works once**, although the plugin accepts each for about 90 seconds:
+    our limiter counts member + code for two minutes.
+  - **Backup codes only at sign-in:** a signed-in session could otherwise try them outside
+    the lock, and use them up.
+  - **Trusted browsers are all forgotten** when two-factor is turned off or on again, and
+    on a password reset. The plugin forgets only the current browser.
+  - The password check of every two-factor change is counted with the others (10 an hour
+    per member). The plugin's text-code endpoints and `get-totp-uri` (which would show the
+    secret again) are switched off; `method: "otp"` is refused.
+  - Security emails for switching on, switching off, new backup codes, a backup code used
+    and the owner's reset, never held back by the daily cap; events for each, shown in the
+    member's security activity.
+- **The secrets are encrypted with `BETTER_AUTH_SECRET`.** Rotating it now needs care (the
+  SECURITY.md table "Rotate a secret"), a backup restore needs the same value, and the
+  laptop's secret differs from the live site's, so an account's two-factor works only on
+  the side where it was switched on (as recorded in "One shared database").
+- **Migration `0007_two_factor`** (additive): the `two_factors` table (one row per member,
+  gone with the account) and `users.two_factor_enabled`.
 
 ### Changing the email address, built (milestone 4's rest, 2026-09-29)
 
@@ -1758,7 +1827,8 @@ because plugin behaviour changes between releases.
    too. The plugin supports adding an authenticator app to an SMS-only account.
 6. **The plugin advertises the SMS method to every 2FA user**, including
    authenticator-only users with no phone. The offered methods are filtered per
-   user at sign-in.
+   user at sign-in. _(Findings 4 to 6 were about text codes, which are not used since
+   2026-09-29: with no `sendOTP`, 1.7.5 offers only `totp`, and a test checks the answer.)_
 7. **Signing up with an existing email returns the same success response as a
    new one** (email-enumeration protection, automatic when verification is
    required). The UI always says "check your email", and the optional phone is

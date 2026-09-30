@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { authFetch, safeNextPath, UNAVAILABLE_MESSAGE } from "./auth-fetch";
+import { authFetch, safeNextPath, twoFactorFailure, UNAVAILABLE_MESSAGE } from "./auth-fetch";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -109,6 +109,20 @@ describe("authFetch", () => {
       message: "That code is not right.",
       attemptsLeft: 3,
     });
+  });
+
+  it("words a wrong app code on two-factor screens only; everything else passes through", async () => {
+    // Better Auth's two-factor plugin says only "Invalid code".
+    respondWith(401, { code: "INVALID_CODE", message: "Invalid code" });
+    const wrong = await authFetch("/two-factor/verify-totp", {});
+    expect(wrong.ok).toBe(false);
+    if (wrong.ok) return;
+    expect(twoFactorFailure(wrong)).toMatch(/^That code is not right\. Check that your phone/);
+
+    respondWith(401, { code: "INVALID_BACKUP_CODE", message: "Invalid backup code" });
+    const backup = await authFetch("/two-factor/verify-backup-code", {});
+    if (backup.ok) throw new Error("expected a failure");
+    expect(twoFactorFailure(backup)).toBe("That backup code is not right, or it was already used.");
   });
 
   it("turns a limit into a sentence with a wait, from the body or from the header", async () => {

@@ -59,6 +59,12 @@ export const LIMITS = {
   emailChangeCodePerChange: { window: 15 * MINUTE, max: 5 },
   /** Signing out one of the member's other devices. */
   sessionRevokePerUser: { window: HOUR, max: 30 },
+  /**
+   * An authenticator code works ONCE at sign-in (keyed by member and code). A code is
+   * accepted for up to 90 seconds, so one seen over a shoulder or in a screenshot could
+   * otherwise be typed again; the window outlasts that.
+   */
+  totpCodeOncePerUser: { window: 2 * MINUTE, max: 1 },
   /** Agent Zero's calls to the internal API: a bot catching up after a restart, no more. */
   internalApi: { window: MINUTE, max: 120 },
 } as const;
@@ -117,12 +123,14 @@ export type EmailKind =
   | "new-device"
   | "email-change-code"
   | "email-change-taken"
-  | "email-changed";
+  | "email-changed"
+  | "two-factor-changed";
 
 const SECURITY_NOTICES: ReadonlySet<EmailKind> = new Set([
   "password-changed",
   "new-device",
   "email-changed",
+  "two-factor-changed",
 ]);
 
 /**

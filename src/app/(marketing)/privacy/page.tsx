@@ -44,8 +44,8 @@ export default function PrivacyPage() {
             are shown it. Removing it, or deleting your account, deletes it.
           </li>
           <li>
-            A phone number, only if you choose text-message codes as your second sign-in step. It is
-            used only to text you security codes.
+            If you turn on two-factor sign-in: the secret your authenticator app shares with us and
+            your backup codes, both stored encrypted. We never ask for your phone number.
           </li>
           <li>
             Your Discord ID and Discord username, only if you choose to link your Discord account.
@@ -73,6 +73,11 @@ export default function PrivacyPage() {
           <li>
             a cookie that lets us recognise a browser you have signed in from, so we can warn you
             about a new one;
+          </li>
+          <li>
+            with two-factor on: a short-lived cookie while you type your code (10 minutes), and,
+            only if you tick &ldquo;trust this browser&rdquo;, a cookie that skips the code there
+            for 30 days;
           </li>
           <li>your choice of light or dark theme.</li>
         </LegalList>
@@ -102,9 +107,8 @@ export default function PrivacyPage() {
       <LegalSection heading="Who handles it for us">
         <p>
           We use a small number of companies to run the site: a hosting provider, a database
-          provider and an email delivery provider, and later a text-message verification provider if
-          you choose that option. They process data only to provide their service to us. We do not
-          sell or rent your data to anyone.
+          provider and an email delivery provider. They process data only to provide their service
+          to us. We do not sell or rent your data to anyone.
         </p>
       </LegalSection>
 

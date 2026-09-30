@@ -397,6 +397,7 @@ let clickingAProtectedLink = false;
     ["sign-up", "/sign-up"],
     ["sign-up-verify", "/sign-up/verify"],
     ["sign-in", "/sign-in"],
+    ["two-factor", "/two-factor"],
     ["forgot-password", "/forgot-password"],
     ["reset-password", "/reset-password"],
     ["terms", "/terms"],

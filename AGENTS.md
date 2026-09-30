@@ -69,7 +69,7 @@ possible.
 | 2   | Auth                                                     | Live since 2026-09-21                |
 | 3   | Onboarding                                               | Live (username and picture)          |
 | 4   | Dashboard and settings                                   | Live (email change since 2026-09-29) |
-| 5   | Phone and 2FA                                            | On hold: before the brain export     |
+| 5   | Phone and 2FA                                            | On `dev`: app codes only, no phone   |
 | 6   | Discord link and unlink                                  | Live                                 |
 | 7   | Academy: lessons, progress, rank, heatmap                | Live since 2026-09-29                |
 | 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Site side live; bot in its repo      |
@@ -77,7 +77,9 @@ possible.
 
 **Read "Where things stand at the end of 2026-09-29" in DECISIONS.md first.** It says
 what is live, what the owner does next and what is not built. All migrations up to
-`0006_avatars` are applied. Sign-ups are open to everyone.
+`0006_avatars` are applied; `0007_two_factor` waits for the owner's `db:migrate`.
+Sign-ups are open to everyone. Two-factor is an authenticator app only: no text
+messages and no phone numbers (owner, 2026-09-29), so hard rules 3 and 7 hold trivially.
 
 Deployment, environments, DNS and the release checklist are described in
 DECISIONS.md. A push to `main` deploys to production, so never push `main` without
@@ -192,6 +194,8 @@ npm run db:migrate         # the ONLY way to change the schema: host + pending l
 npm run db:cleanup-test-accounts   # deletes the accounts of the addresses in EMAIL_ALLOWLIST,
                                    # but ONLY ones made on the laptop; a live account is kept
 npm run sessions:revoke-all        # signs everyone out (runbook in docs/SECURITY.md)
+npm run 2fa:reset -- <username>    # turns two-factor off for ONE member who lost their app
+                                   # and backup codes, after the identity check in the runbook
 ```
 
 `npm run check` and `next dev` validate `.env.local` on start. If it is incomplete,

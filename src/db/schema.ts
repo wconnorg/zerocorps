@@ -84,6 +84,11 @@ export const users = pgTable(
     avatarUrl: text("avatar_url"),
     termsAcceptedAt: instant("terms_accepted_at"),
     termsVersion: text("terms_version"),
+    /**
+     * Better Auth's two-factor flag (milestone 5): true once an authenticator app is set up
+     * AND confirmed with a first code. Sign-in then asks for a code after the password.
+     */
+    twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -451,6 +456,35 @@ export const avatars = pgTable(
 );
 
 /**
+ * Two-factor (milestone 5), Better Auth's `twoFactor` model: one row per member who has
+ * started setting up an authenticator app. The app's secret and the backup codes are
+ * encrypted by Better Auth with BETTER_AUTH_SECRET; neither is ever stored readable.
+ * `verified` stays false until the member types a first code from the app, and the two
+ * counters are Better Auth's lock after 10 wrong codes in a row. Gone with the account.
+ */
+export const twoFactors = pgTable(
+  "two_factors",
+  {
+    id: id(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    verified: boolean("verified").notNull().default(true),
+    failedVerificationCount: integer("failed_verification_count").notNull().default(0),
+    lockedUntil: instant("locked_until"),
+    createdAt: createdAt(),
+  },
+  (table) => [
+    // One per member: two set-ups at once cannot leave two secrets behind.
+    uniqueIndex("two_factors_user_id_unique").on(table.userId),
+    check("two_factors_failed_count", sql`${table.failedVerificationCount} >= 0`),
+    appAccess(),
+  ],
+);
+
+/**
  * The schema object handed to Better Auth's Drizzle adapter, keyed by Better Auth's
  * own model names. Explicit on purpose: no pluralising magic to get wrong.
  *
@@ -466,4 +500,5 @@ export const authSchema = {
   rateLimit: rateLimits,
   pendingSignup: pendingSignups,
   knownDevice: knownDevices,
+  twoFactor: twoFactors,
 };
