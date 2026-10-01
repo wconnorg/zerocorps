@@ -64,6 +64,13 @@
       "when": 1790811145633,
       "tag": "0008_brain_export",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790895642527,
+      "tag": "0009_brain_email",
+      "breakpoints": true
     }
   ]
 }

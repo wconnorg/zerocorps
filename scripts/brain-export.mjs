@@ -1,6 +1,7 @@
 // npm run brain:export
 //
 // Rebuilds the brain (milestone 9): the owner's Obsidian vault of every ZeroCorps member,
+// (members only; add --academy for a note per lesson, chapter and course too),
 // from the database, read as brain_reader, the role that can read the brain's three views
 // and nothing else. Run it whenever you want a fresh view; Obsidian picks the changes up.
 //
@@ -78,14 +79,20 @@ try {
 }
 
 try {
-  const brain = buildBrain({ data, catalog, now: new Date() });
+  const brain = buildBrain({
+    data,
+    catalog,
+    now: new Date(),
+    academy: process.argv.includes("--academy"),
+  });
   const { created } = prepareVault(vault.path);
   const result = syncBrainFolder(vault.path, brain.files);
   const graph = writeGraphSettings(vault.path, brain.colorGroups);
 
   console.log(`The brain is up to date in ${vault.path}${created ? " (a new vault)" : ""}.`);
   console.log(
-    `  ${brain.counts.members} member(s), ${brain.counts.lessonNotes} lesson(s), ${brain.counts.completions} lesson(s) completed in all.`,
+    `  ${brain.counts.members} member(s), ${brain.counts.completions} lesson(s) completed in all` +
+      `${brain.counts.lessonNotes > 0 ? `, ${brain.counts.lessonNotes} lesson note(s)` : ""}.`,
   );
   console.log(
     `  Notes: ${result.created} new, ${result.updated} changed, ${result.unchanged} unchanged, ${result.removed} removed.`,

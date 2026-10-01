@@ -93,9 +93,9 @@ export default function PrivacyPage() {
           </li>
           <li>
             <strong className="text-fg">For our own community analytics.</strong> We look at
-            usernames, display names, ranks and lesson progress, and the Discord username of members
-            who linked Discord, to understand how members are getting on. This stays on our own
-            computer, never includes email addresses, and is never published or sold.
+            usernames, display names, email addresses, ranks and lesson progress, and the Discord
+            username of members who linked Discord, to understand how members are getting on. This
+            stays on our own computer and is never published or sold.
           </li>
           <li>
             <strong className="text-fg">To get in touch on Discord.</strong> We may contact members

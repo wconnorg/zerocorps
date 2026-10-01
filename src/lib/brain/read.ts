@@ -20,6 +20,8 @@ export type BrainMember = {
   /** YYYY-MM-DD, UTC. */
   joinedOn: string;
   discordUsername: string | null;
+  /** Since 0009_brain_email (owner, 2026-10-01). Shown in the note's body only. */
+  email: string;
 };
 
 export type BrainCompletion = { userId: string; lessonId: string; completedOn: string };
@@ -104,7 +106,7 @@ export async function readBrain(query: Query): Promise<BrainData> {
        (SELECT coalesce(json_agg(json_build_object(
                   'memberNumber', m.member_number, 'userId', m.user_id::text,
                   'username', m.username, 'displayName', m.display_name,
-                  'joinedOn', m.joined_on::text, 'discordUsername', m.discord_username)
+                  'joinedOn', m.joined_on::text, 'discordUsername', m.discord_username, 'email', m.email)
                 ORDER BY m.member_number), '[]'::json)
           FROM brain.members m) AS members,
        (SELECT coalesce(json_agg(json_build_object(
@@ -132,6 +134,7 @@ export async function readBrain(query: Query): Promise<BrainData> {
       displayName: text(member.displayName),
       joinedOn: String(member.joinedOn),
       discordUsername: text(member.discordUsername),
+      email: String(member.email),
     })),
     completions: list(row?.completions).map((completion) => ({
       userId: String(completion.userId),

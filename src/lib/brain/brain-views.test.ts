@@ -120,6 +120,7 @@ describe("brain_reader", () => {
       "display_name",
       "joined_on",
       "discord_username",
+      "email",
     ]);
     expect(byView("lessons_completed")).toEqual(["user_id", "lesson_id", "completed_on"]);
     expect(byView("rank_steps")).toEqual(["user_id", "step", "achieved_on"]);
@@ -176,6 +177,7 @@ describe("readBrain, as brain_reader", () => {
         displayName: 'Zoë <b>"Q"</b>',
         joinedOn: "2026-09-21",
         discordUsername: "first.discord",
+        email: "first@example.com",
       },
       {
         memberNumber: 2,
@@ -184,6 +186,7 @@ describe("readBrain, as brain_reader", () => {
         displayName: null,
         joinedOn: "2026-09-22",
         discordUsername: null,
+        email: "second@example.com",
       },
       {
         memberNumber: 3,
@@ -192,6 +195,7 @@ describe("readBrain, as brain_reader", () => {
         displayName: null,
         joinedOn: "2026-09-25",
         discordUsername: null,
+        email: "third@example.com",
       },
     ]);
     expect(brain.completions).toHaveLength(3);
@@ -203,10 +207,8 @@ describe("readBrain, as brain_reader", () => {
       ]),
     );
     expect(brain.steps).toEqual([{ userId: FIRST, step: "rookie", achievedOn: "2026-09-29" }]);
-    // Nothing about signing in came along.
-    expect(JSON.stringify(brain)).not.toMatch(
-      /example\.com|token-one|salt:hash|203\.0\.113|Chrome/,
-    );
+    // The address came (owner, 2026-10-01); nothing about signing in did.
+    expect(JSON.stringify(brain)).not.toMatch(/token-one|salt:hash|203\.0\.113|Chrome/);
   });
 
   it("moves later accounts up when an earlier one is deleted", async () => {

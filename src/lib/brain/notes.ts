@@ -102,8 +102,19 @@ const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const plural = (count: number, one: string, many = `${one}s`) =>
   `${count} ${count === 1 ? one : many}`;
 
-export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date }): BuiltBrain {
+export function buildBrain(input: {
+  data: BrainData;
+  catalog: Catalog;
+  now: Date;
+  /**
+   * Also write a note per lesson, chapter and course, and link members to their lessons.
+   * Off by default (owner, 2026-10-01): the brain shows members, and a lesson is a line of
+   * text in a member's note.
+   */
+  academy?: boolean;
+}): BuiltBrain {
   const { data, catalog, now } = input;
+  const academy = input.academy ?? false;
   const today = isoDay(now);
   const windowStart = shiftDay(today, -(PACE_DAYS - 1));
   const files = new Map<string, string>();
@@ -111,6 +122,9 @@ export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date
     const key = `${path}.md`;
     if (files.has(key)) throw new Error("Two notes would share one file name.");
     files.set(key, note(lines));
+  };
+  const putAcademy = (path: string, lines: string[]) => {
+    if (academy) put(path, lines);
   };
 
   // ── Who did what ────────────────────────────────────────────────────────────
@@ -198,6 +212,7 @@ export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date
       "",
       `Member **#${member.memberNumber}** · joined ${member.joinedOn} · ${wikilink(rankPath(member.rank), rankTitle(member.rank))}`,
       "",
+      `- Email: ${codeSpan(member.email)}`,
       `- Display name: ${member.displayName === null ? "none" : codeSpan(member.displayName)}`,
       `- Discord: ${member.discordUsername === null ? "not linked" : codeSpan(member.discordUsername)}`,
       `- Lessons completed: **${member.completions.length}**, ${member.pace} of them in the last ${PACE_DAYS} days`,
@@ -210,7 +225,7 @@ export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date
         ? ["None yet."]
         : member.completions.map(
             (entry) =>
-              `- ${entry.completedOn} · ${wikilink(lessonPath(entry.lessonId), lessonTitle(entry.lessonId))}`,
+              `- ${entry.completedOn} · ${academy ? wikilink(lessonPath(entry.lessonId), lessonTitle(entry.lessonId)) : lessonTitle(entry.lessonId)}`,
           )),
     ]);
   }
@@ -221,7 +236,7 @@ export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date
     const where = chapter
       ? `Lesson ${lesson?.number ?? "?"} of ${wikilink(chapterPath(chapter.id), chapterTitle(chapter))}.`
       : "This lesson is no longer in the Academy's files; its completions are kept.";
-    put(lessonPath(id), [
+    putAcademy(lessonPath(id), [
       ...frontmatter(
         [
           ["type", " lesson"],
@@ -247,7 +262,7 @@ export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date
   let lessonNotes = 0;
   for (const course of catalog.courses) {
     const lessonCount = course.chapters.reduce((sum, chapter) => sum + chapter.lessons.length, 0);
-    put(coursePath(course.id), [
+    putAcademy(coursePath(course.id), [
       ...frontmatter(
         [
           ["type", " course"],
@@ -274,7 +289,7 @@ export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date
           )),
     ]);
     for (const chapter of course.chapters) {
-      put(chapterPath(chapter.id), [
+      putAcademy(chapterPath(chapter.id), [
         ...frontmatter(
           [
             ["type", " chapter"],
@@ -409,7 +424,7 @@ export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date
       ? ["No courses in the Academy's files."]
       : catalog.courses.map((course) => {
           const lessons = course.chapters.reduce((sum, chapter) => sum + chapter.lessons.length, 0);
-          return `- ${wikilink(coursePath(course.id), courseTitle(course))}: ${plural(course.chapters.length, "chapter")}, ${plural(lessons, "lesson")}${course.comingSoon ? " (coming soon)" : ""}`;
+          return `- ${academy ? wikilink(coursePath(course.id), courseTitle(course)) : courseTitle(course)}: ${plural(course.chapters.length, "chapter")}, ${plural(lessons, "lesson")}${course.comingSoon ? " (coming soon)" : ""}`;
         })),
     "",
     "## Members",
@@ -443,6 +458,10 @@ export function buildBrain(input: { data: BrainData; catalog: Catalog; now: Date
   return {
     files,
     colorGroups,
-    counts: { members: members.length, lessonNotes, completions: data.completions.length },
+    counts: {
+      members: members.length,
+      lessonNotes: academy ? lessonNotes : 0,
+      completions: data.completions.length,
+    },
   };
 }

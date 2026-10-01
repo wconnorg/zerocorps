@@ -1245,13 +1245,14 @@ two-factor release found the 401: the signed-in frame mounts for a moment while 
 signed-out visitor is sent to sign-in, its `<img>` asks for the picture, and the browser
 logs the refusal as an error; a member without a picture got the same on every page.
 
-**Built on `dev`: the brain export (milestone 9)**, the owner's Obsidian vault of every
-member, whether or not they linked Discord; see "Milestone 9: the brain export, built"
-below. It runs on the laptop only, so it needs no release, but its migration
-`0008_brain_export` must be applied first (`npm run db:backup`, then `npm run db:migrate`),
-then `npm run brain:setup` once, then `npm run brain:export` whenever a fresh view is
-wanted. The release of `dev` carries only the site's side: the refusal of
-`BRAIN_DATABASE_URL` in production, and the avatar fix above.
+**The brain export (milestone 9) works on the owner's laptop since 2026-10-01:**
+`0008_brain_export` applied, `npm run brain:setup` done, the first `npm run brain:export`
+wrote the vault in `C:\Users\<owner>\ZeroCorps Brain` (3 members). See "Milestone 9: the
+brain export, built" and "The brain, changed by the owner on 2026-10-01" below. The site's
+side went live the same day (`main` = `3fc3adc`): the refusal of `BRAIN_DATABASE_URL` in
+production, and the avatar fix above. **Waiting for the owner:** migration
+`0009_brain_email` (`npm run db:backup`, then `npm run db:migrate`), which the current
+export needs; then `npm run brain:export`, or `npm run brain:watch` to keep it fresh.
 
 **The Discord channel "Academy Users: N"** (owner, 2026-09-30, asked how it updates):
 Agent Zero renames it from the internal API's list of linked members, at start and at most
@@ -1328,6 +1329,40 @@ would otherwise load a remote image whenever the owner opened the note. Graph co
 
 **Last activity** is the latest lesson completed or rank step earned: Academy activity,
 never sign-ins (auth data stays out of the brain).
+
+**On Supabase (found on the first real run, 2026-10-01):** the export's role check first
+looked at every schema and refused, because the host keeps two relations of its own that
+any role can read. It now judges the app's own schemas (`public` and `drizzle`, column
+grants included) and names whatever it finds.
+
+### The brain, changed by the owner on 2026-10-01
+
+Where this differs from the brief and from the section above, this is newer and wins.
+
+- **Email addresses are in the brain** ("add emails and change the privacy"). This
+  replaces the brief's "NEVER email" for the brain. Migration `0009_brain_email` adds
+  `email` as the last column of `brain.members` (`CREATE OR REPLACE VIEW`, which may only
+  append). The address is written in the body of the member's note, inside a code span,
+  never in the frontmatter. The privacy page now lists email addresses among what the
+  internal analytics look at. Still never a phone, an IP, a device, a password, a code or a
+  session.
+- **No IP address.** The owner also asked for the last sign-in's IP. The site does not
+  have one: by the owner's earlier decision it stores a keyed hash and a coarse prefix,
+  for 90 days. Collecting full addresses would be a change to the site, not to the brain;
+  it was explained and not taken up.
+- **Members only** ("the brain should only display members"). By default the export
+  writes the members, the ranks, the hub and the leaderboard; a completed lesson is a line
+  of text in the member's note. `npm run brain:export -- --academy` adds the note per
+  lesson, chapter and course, and the links to them, as first built. The next default run
+  removes those notes again (they carry the export's marker).
+- **"Update constantly":** `npm run brain:watch` runs the export now and then every 5
+  minutes (`-- 15` for another interval) until Ctrl+C, as a child process each time, so a
+  failed round does not end the watch. Each round rewrites only the notes that changed.
+- **Next, asked for the same day, not built:** a second vault for writing the Academy's
+  lessons ("a second brain for zerocorps academy education"), and a redesign of the landing
+  page (the owner likes the dashboard, the product framework and the colours; the landing
+  page is "clunky": sleek, little text, an Arasaka-like corporate menace). A visual
+  prototype comes before any site code for the redesign.
 
 ### Released on 2026-09-30: two-factor (milestone 5)
 
