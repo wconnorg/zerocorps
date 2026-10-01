@@ -130,8 +130,13 @@ export function TwoFactorSettings({
     const link = document.createElement("a");
     link.href = url;
     link.download = "zerocorps-backup-codes.txt";
+    // In the page while it is clicked, and the address kept for a minute: Safari starts the
+    // download after the click, and found nothing to save when it was taken back at once.
+    link.hidden = true;
+    document.body.append(link);
     link.click();
-    URL.revokeObjectURL(url);
+    link.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   if (step.name === "password") {

@@ -28,7 +28,13 @@ export function EmailForm({ current }: { current: string }) {
     setBusy(true);
     const result = await authFetch("/account/email/start", { newEmail, password });
     setBusy(false);
-    if (!result.ok) return setError(result.message);
+    if (!result.ok) {
+      // authFetch words this code for the sign-in page ("email address and password don't
+      // match"), which here would read as the NEW address being wrong.
+      return setError(
+        result.code === "INVALID_PASSWORD" ? "That is not your password." : result.message,
+      );
+    }
     setPassword("");
     setCode("");
     setStep("code");
