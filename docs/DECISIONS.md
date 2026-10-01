@@ -1197,12 +1197,15 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `0b44103`, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `463d0b0`, same tree as `dev` then):**
 
 - Milestones 1 and 2; **sign-ups open to everyone** (`SIGNUP_MODE=open`).
 - Usernames: `/onboarding`, changes in `/settings` (first free, then 30 days).
 - **Profile pictures** (milestone 3's rest) and **changing the email address**
   (milestone 4's rest), in Settings; see their "built" sections below.
+- **Two-factor (milestone 5), since 2026-09-30:** an authenticator app after the
+  password, backup codes, trusted browsers; app codes only, no phone numbers. Untested by
+  the owner at the time of writing: see "The owner's, next".
 - **The Academy (milestone 7):** 42 lessons in first draft (the owner rewrites them), 9
   chapter checkpoints, quick checks, progress, heatmap. **Rookie** is earned by completing
   Chapter 1 and **claimed by linking Discord**; each finished level is a step.
@@ -1214,6 +1217,11 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
 
 **The owner's, next:**
 
+0. **Test two-factor on the live site, with the account made there** (the laptop's
+   `BETTER_AUTH_SECRET` differs, so an account's two-factor works only on the side where it
+   was switched on): Settings, Two-factor, set up with an authenticator app, save the backup
+   codes; sign out and in again (the code screen, then "trust this browser"); a backup
+   code; new backup codes; turn it off. Each step emails the account.
 1. Try a picture and an email change on the live site.
 2. Run Agent Zero against the live site and test linking with a friend. Where it runs
    for good (the laptop while testing; a host later is a new service: ask). What the bot
@@ -1231,20 +1239,110 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    before public promotion, a paid database plan so it never pauses; redirect
    `zerocorps.vercel.app` to the domain.
 
-**Built on `dev`, not live yet: two-factor (milestone 5)**, app codes only; see
-"Milestone 5: two-factor, built" below. Its migration `0007_two_factor` (one new table,
-one new column) must be applied by the owner (`npm run db:backup`, then
-`npm run db:migrate`) **before** the release that carries it, and the owner tests it on
-the laptop first, with a test account made on the laptop.
+**Built on `dev`, not live yet:** `GET /api/avatar` answers an empty 204 instead of 401
+or 404 when there is no picture or nobody is signed in. The live browser check after the
+two-factor release found the 401: the signed-in frame mounts for a moment while a
+signed-out visitor is sent to sign-in, its `<img>` asks for the picture, and the browser
+logs the refusal as an error; a member without a picture got the same on every page.
 
-**Next milestone, after the owner's two-factor test: the brain export (milestone 9)**,
-for every member, whether or not they linked Discord (owner, 2026-09-29; the brief
-already says so).
+**Built on `dev`: the brain export (milestone 9)**, the owner's Obsidian vault of every
+member, whether or not they linked Discord; see "Milestone 9: the brain export, built"
+below. It runs on the laptop only, so it needs no release, but its migration
+`0008_brain_export` must be applied first (`npm run db:backup`, then `npm run db:migrate`),
+then `npm run brain:setup` once, then `npm run brain:export` whenever a fresh view is
+wanted. The release of `dev` carries only the site's side: the refusal of
+`BRAIN_DATABASE_URL` in production, and the avatar fix above.
+
+**The Discord channel "Academy Users: N"** (owner, 2026-09-30, asked how it updates):
+Agent Zero renames it from the internal API's list of linked members, at start and at most
+every 5 minutes, so it is always the database's number, restarts included. It counts
+linked Discord accounts, and stays so (the owner's choice); the site's own account count
+(3 on 2026-09-30, 1 of them linked) is in the brain.
 
 **How releases work now:** `npm run check` (or at least lint and the tests) on `dev`, a
 scan for secrets, one `--no-ff` merge commit on `main` made with `git commit-tree`
 without leaving `dev`, pushed only on the owner's "push"; the deploy is confirmed through
 GitHub's public deployments API from PowerShell (the `gh` tool is not installed).
+
+### Milestone 9: the brain export, built (2026-09-30)
+
+**The owner's decisions (2026-09-30):** the brief's brain first ("The brief's brain
+first"; a memory for Agent Zero is not part of it); a **new vault folder of its own**,
+outside the repository (Enter at `npm run brain:setup` takes `C:\Users\<you>\ZeroCorps
+Brain`); **exactly the brief's fields**, so no checkpoint results; a **member number**
+shown only in the brain ("nowhere maybe the obsidian"); and the Discord channel keeps
+counting linked accounts.
+
+**The allowlist is in the database** (`drizzle/0008_brain_export.sql`, hand-written):
+
+- Three views in their own `brain` schema: `members` (member number, user id, username,
+  display name, the day the account was made, the Discord username if linked),
+  `lessons_completed` (user id, lesson id, the day) and `rank_steps` (user id, step, the
+  day). Days only, in UTC: not the time of day anyone studies. Never an email, a phone, an
+  IP, a device, a password, a code, a session or anything else about signing in.
+- `brain_reader` can read those views and nothing else: no table of the app, no write
+  (and read-only by default, with a 30-second statement limit), no CREATE. It is made
+  without a password and unable to log in. Supabase's API roles get nothing on the schema,
+  and the Data API does not expose it. A test lists the views' columns and fails on any
+  new one; another reads every table of the app as `brain_reader` and expects a refusal.
+- The views read the tables as their owner (the migrations' role, which owns them and so
+  is not held back by their row-level security); `brain_reader` needs no right on a table.
+- **The member number** is the account's place in the order accounts were made. An
+  account deleted later moves the ones after it up by one, which suits the brain (and
+  the owner's planned clean-up of test accounts). If members are ever shown their
+  number, it is frozen first: one additive migration storing it, so it never changes.
+
+**The commands** (laptop only):
+
+- `npm run brain:setup` (terminal, typed `set up the brain`): the vault folder, a random
+  password for `brain_reader` sent as a **SCRAM-SHA-256 secret computed on the laptop**
+  (as psql's `\password` does; checked against RFC 7677's worked example and against
+  Postgres, which stores it unchanged), so the password never reaches the database or its
+  logs and statistics; `BRAIN_DATABASE_URL` and `BRAIN_VAULT_PATH` written into
+  `.env.local` (`src/lib/env-lines.ts`); then the new connection proven. This replaces
+  "`brain_reader` follows the same procedure" as the app role (the SQL editor).
+- `npm run brain:export`: refuses unless its connection is `brain_reader` and that role
+  can read no table of the app; reads the three views in **one statement** (one snapshot,
+  one round trip); builds the notes in memory (`src/lib/brain/notes.ts`, pure); writes
+  only notes that changed and deletes only its own notes that are no longer wanted (a
+  deleted account's), so the result is a rebuild from scratch without Obsidian re-reading
+  everything. It asks nothing, so a scheduled task can run it.
+
+**The vault** (`src/lib/brain/vault.ts`): never inside the repository or around it, never
+the home folder, never a folder OneDrive or another sync service uploads (the brief: local,
+or end-to-end encrypted sync only); the export takes over only a folder it made (a
+`.zerocorps-brain` marker) or an empty one, works only in its `ZeroCorps` folder, never
+follows a link out of it, and never deletes or overwrites a note it did not write.
+
+**The notes:** one per member (frontmatter: the allowlisted fields except the two typed names, `discord_linked`, `lessons_completed`,
+`pace_30d`, `last_active_on`, tags `zc/member` and `zc/rank/<key>`; body: the rank, the
+levels finished and every lesson completed, oldest first, each a link), one per lesson,
+chapter, course and rank, the hub "ZeroCorps Brain" (the community at a glance and a
+table of every member) and "Leaderboard" (lessons in the last 30 days, ties sharing a
+place). Links go by full path, so no note's name can capture another's link. A display
+name or Discord name is only ever inside an inline code span in the body, never in the
+frontmatter (Obsidian reads a quoted `[[...]]` property as a real link; found by the review):
+display names are free text, and Obsidian renders HTML, so `<img src=...>` typed as a name
+would otherwise load a remote image whenever the owner opened the note. Graph colours
+(`.obsidian/graph.json`) are keyed on the rank tags first, merged with the owner's own.
+
+**Last activity** is the latest lesson completed or rank step earned: Academy activity,
+never sign-ins (auth data stays out of the brain).
+
+### Released on 2026-09-30: two-factor (milestone 5)
+
+- **Before the push, the owner's:** `npm run db:backup`, then `npm run db:migrate`, which
+  applied `0007_two_factor` (8 applied now); `npm run db:counts` then listed `two_factors`,
+  empty. The owner chose to test two-factor on the live site rather than the laptop, which
+  is also the safe choice: the two sides' `BETTER_AUTH_SECRET` differ.
+- On the owner's "push": `dev` (`1b86e6e`) merged into `main` as `463d0b0` (parents
+  `0b44103` and `1b86e6e`), scanned, pushed; GitHub recorded the production deployment as
+  a success. `npm run check` (436 tests and the production build) passed on `dev` first.
+- **Checked from outside afterwards, signed out:** `/two-factor` renders (200), the older
+  routes answer as before, and `npm run verify -- https://zerocorps.org live` passed every
+  layout and theme check, with two-factor's page in its list. It reported one problem, the
+  `/api/avatar` 401 described in "Where things stand", fixed on `dev` for the next release.
+- **Not tried live yet:** the whole two-factor flow, which is the owner's test.
 
 ### Milestone 5: two-factor, built (2026-09-29)
 

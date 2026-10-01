@@ -5,9 +5,10 @@ import { AVATAR_CHANGED, DefaultPicture } from "./avatar";
 
 /**
  * The picture in the header. The header belongs to a layout, which knows nothing about the
- * session, so it simply asks for `/api/avatar`: the member's own picture, or a 404 and the
- * grey default stays. The picture is shown only once it has loaded, so a missing one never
- * flashes a broken image. The settings page announces a change, and a new request follows.
+ * session, so it simply asks for `/api/avatar`: the member's own picture, or an empty 204
+ * (no picture, or nobody signed in) and the grey default stays. The picture is shown only
+ * once it has loaded, so a missing one never flashes a broken image. The settings page
+ * announces a change, and a new request follows.
  */
 export function AccountAvatar() {
   const [round, setRound] = useState(0);

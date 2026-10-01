@@ -50,6 +50,12 @@ describe("diagnoseDatabaseUrl", () => {
       diagnoseDatabaseUrl(app("Letters0nly", "postgres.exampleref", 6543), "migrations")
         .problems[0],
     ).toMatch(/SESSION pooler, port 5432/);
+    expect(
+      diagnoseDatabaseUrl(app("Letters0nly", "brain_reader.exampleref", 6543), "brain"),
+    ).toMatchObject({ ok: true, role: "brain_reader" });
+    expect(
+      diagnoseDatabaseUrl(app("Letters0nly", "brain_reader.exampleref", 5432), "brain").problems[0],
+    ).toMatch(/brain export needs the TRANSACTION pooler, port 6543/);
   });
 
   it("checks the username form, the host and the database name", () => {

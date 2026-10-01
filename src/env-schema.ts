@@ -213,6 +213,10 @@ export function createEnvShape(isProductionBuild: boolean) {
     DISCORD_GUILD_ID: optionalString,
     DISCORD_RANK_ROLE_IDS: optionalString,
     INTERNAL_API_SECRET: optionalString,
+
+    // Milestone 9: the brain export. Laptop only: the site never reads either.
+    BRAIN_DATABASE_URL: optionalString,
+    BRAIN_VAULT_PATH: optionalString,
   };
 }
 
@@ -265,6 +269,13 @@ export function createEnvSchema(isProductionBuild: boolean) {
       }
       if (env.EMAIL_ALLOWLIST.length > 0) {
         issue("EMAIL_ALLOWLIST", "Must be empty in production: it limits who receives email");
+      }
+      // The brain's read-only connection is the laptop's alone; the site never needs it.
+      if (env.BRAIN_DATABASE_URL) {
+        issue(
+          "BRAIN_DATABASE_URL",
+          "Must be empty in production: it is the laptop's brain connection",
+        );
       }
       if (!env.RESEND_API_KEY) issue("RESEND_API_KEY", "Required in production");
       if (!env.SECURITY_CONTACT) issue("SECURITY_CONTACT", "Required in production");

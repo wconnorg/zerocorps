@@ -108,6 +108,17 @@ describe("parseEnv: APP_ENV", () => {
       /EMAIL_ALLOWLIST: Must be empty in production/,
     );
   });
+
+  it("refuses the laptop's brain connection in production", () => {
+    expect(() =>
+      parseEnv({
+        ...production,
+        BRAIN_DATABASE_URL:
+          "postgresql://brain_reader.exampleref:fixture@db.example.com:6543/postgres",
+      }),
+    ).toThrow(/BRAIN_DATABASE_URL: Must be empty in production/);
+    expect(parseEnv({ ...production, BRAIN_DATABASE_URL: "" }).BRAIN_DATABASE_URL).toBeUndefined();
+  });
 });
 
 describe("parseEnv: database and secrets", () => {
