@@ -226,6 +226,28 @@ describe("readBrain, as brain_reader", () => {
     });
     expect(await rows(`SELECT count(*)::int AS n FROM users`)).toEqual([{ n: 3 }]);
   });
+
+  it("says a migration is waiting when the views are older than the command", async () => {
+    await database.client.transaction(async (transaction) => {
+      // The view as 0008 made it, before 0009 added the email.
+      await transaction.exec(`
+        DROP VIEW brain.members;
+        CREATE VIEW brain.members AS
+          SELECT 1 AS member_number, u.id AS user_id, u.username, u.display_name,
+                 u.created_at::date AS joined_on, NULL::text AS discord_username
+            FROM public.users u;
+        GRANT SELECT ON brain.members TO brain_reader;
+        SET LOCAL ROLE brain_reader;
+      `);
+      await expect(readBrain(queryOf(transaction))).rejects.toThrow(
+        /a migration is waiting.*npm run db:migrate/,
+      );
+      await transaction.rollback();
+    });
+    await expect(asBrain(() => readBrain(queryOf(database.client)))).resolves.toMatchObject({
+      members: expect.any(Array),
+    });
+  });
 });
 
 describe("assertBrainRole", () => {

@@ -1197,7 +1197,7 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `463d0b0`, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `6e94f89` since 2026-10-01, same tree as `dev` then):**
 
 - Milestones 1 and 2; **sign-ups open to everyone** (`SIGNUP_MODE=open`).
 - Usernames: `/onboarding`, changes in `/settings` (first free, then 30 days).
@@ -1263,7 +1263,10 @@ linked Discord accounts, and stays so (the owner's choice); the site's own accou
 **How releases work now:** `npm run check` (or at least lint and the tests) on `dev`, a
 scan for secrets, one `--no-ff` merge commit on `main` made with `git commit-tree`
 without leaving `dev`, pushed only on the owner's "push"; the deploy is confirmed through
-GitHub's public deployments API from PowerShell (the `gh` tool is not installed).
+GitHub's public deployments API from PowerShell (the `gh` tool is not installed). **A
+push is not a deployment:** on 2026-10-01 Vercel never built one push to `main`; if no
+deployment is listed within a few minutes, an empty retrigger commit fixes it (see
+"Released on 2026-10-01"). Poll that API gently: 60 anonymous requests an hour.
 
 ### Milestone 9: the brain export, built (2026-09-30)
 
@@ -1363,6 +1366,33 @@ Where this differs from the brief and from the section above, this is newer and 
   page (the owner likes the dashboard, the product framework and the colours; the landing
   page is "clunky": sleek, little text, an Arasaka-like corporate menace). A visual
   prototype comes before any site code for the redesign.
+
+### Released on 2026-10-01: the brain's site side, then the privacy page for emails
+
+- **First, on the owner's "push":** `dev` (`6ac4a20`) merged into `main` as `3fc3adc`,
+  scanned, pushed; GitHub recorded the production deployment as a success, and
+  `/api/avatar` answered 204 signed out (it was 401). The full `npm run check` had not
+  finished in one go on the laptop that day (it stalled twice, each time on timeouts in
+  files unrelated to the change, which then passed alone); typecheck, lint, the production
+  build and every changed test file passed.
+- **Second, on the owner's "push to live deployment":** `dev` (`6ab825b`) merged as
+  `cfb1f22`: the privacy page names email addresses among what the internal analytics look
+  at, which had to be live before an export put addresses into the vault.
+- **Vercel did not build `cfb1f22`.** Twenty minutes after the push GitHub listed no
+  deployment and no commit status for it, the live page still held the old sentence, and
+  both Vercel's and GitHub's status pages were green. Nothing in `vercel.json` skips a
+  build and the author was the same as for every earlier release, so it reads as a push
+  event Vercel never received. **The fix was a new push:** an empty commit on `dev`
+  (`Retrigger the deployment`), merged as `6e94f89` with the very same tree; its deployment
+  was created and succeeded within a minute, and the live page showed the new sentence.
+  **So after every push to `main`: confirm the deployment exists, not only that the push
+  succeeded; if none appears within a few minutes, push an empty retrigger commit.**
+- **Checked on the live database that day (read-only commands):** `npm run db:check` (both
+  connections verified against the pinned CA, Postgres 17), `npm run db:check-role` (every
+  line passes; 15 tables), `npm run db:counts` (3 accounts, 1 Discord link, 4 lessons
+  completed, no two-factor yet), `npm run academy:check` (42 lessons, 9 checkpoints).
+- **The owner's, still:** `0009_brain_email` (`npm run db:backup`, `npm run db:migrate`);
+  until then `npm run brain:export` answers that a migration is waiting.
 
 ### Released on 2026-09-30: two-factor (milestone 5)
 
