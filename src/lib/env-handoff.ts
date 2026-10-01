@@ -24,7 +24,13 @@ export const HANDOFF_KEYS = [...FRESH_SECRETS, "DATABASE_URL"] as const;
 export type HandoffKey = (typeof HANDOFF_KEYS)[number];
 
 /** Laptop-only keys. The command names them so the owner knows they were left out on purpose. */
-export const NEVER_ON_THE_HOST = ["DATABASE_URL_MIGRATIONS", "BACKUP_DIR", "EMAIL_ALLOWLIST"];
+export const NEVER_ON_THE_HOST = [
+  "DATABASE_URL_MIGRATIONS",
+  "BACKUP_DIR",
+  "EMAIL_ALLOWLIST",
+  "BRAIN_DATABASE_URL",
+  "BRAIN_VAULT_PATH",
+];
 
 const APP_ROLE = "zerocorps_app";
 const MIN_SECRET_LENGTH = 32;

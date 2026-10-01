@@ -8,7 +8,8 @@
  * This module has no imports on purpose: the scripts in `scripts/` load it directly.
  */
 
-export type DatabaseUrlKind = "app" | "migrations";
+/** `brain` is the export's read-only connection (milestone 9): the pooler too, port 6543. */
+export type DatabaseUrlKind = "app" | "migrations" | "brain";
 
 export type DatabaseUrlDiagnosis = {
   /** True when the URL parses and nothing below needs fixing. */
@@ -21,7 +22,11 @@ export type DatabaseUrlDiagnosis = {
   role: string | null;
 };
 
-const EXPECTED_PORT: Record<DatabaseUrlKind, string> = { app: "6543", migrations: "5432" };
+const EXPECTED_PORT: Record<DatabaseUrlKind, string> = {
+  app: "6543",
+  migrations: "5432",
+  brain: "6543",
+};
 
 export const PASSWORD_ADVICE =
   "Simplest fix: reset the database password to letters and numbers only (24 or more), then paste it " +
@@ -104,9 +109,9 @@ export function diagnoseDatabaseUrl(raw: string, kind: DatabaseUrlKind): Databas
     const wanted = EXPECTED_PORT[kind];
     if (url.port !== wanted) {
       problems.push(
-        kind === "app"
-          ? `The port is not ${wanted}. The app needs the TRANSACTION pooler, port ${wanted}.`
-          : `The port is not ${wanted}. Migrations and backups need the SESSION pooler, port ${wanted}.`,
+        kind === "migrations"
+          ? `The port is not ${wanted}. Migrations and backups need the SESSION pooler, port ${wanted}.`
+          : `The port is not ${wanted}. ${kind === "app" ? "The app" : "The brain export"} needs the TRANSACTION pooler, port ${wanted}.`,
       );
     }
     if (url.pathname !== "/postgres")

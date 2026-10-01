@@ -25,7 +25,12 @@ export const isCertificateError = (error) => TLS_CERTIFICATE_ERRORS.has(error?.c
  * or cannot be parsed. `kind` is "app" (DATABASE_URL) or "migrations".
  */
 export function readDatabaseUrl(kind) {
-  const key = kind === "app" ? "DATABASE_URL" : "DATABASE_URL_MIGRATIONS";
+  const key =
+    kind === "app"
+      ? "DATABASE_URL"
+      : kind === "brain"
+        ? "BRAIN_DATABASE_URL"
+        : "DATABASE_URL_MIGRATIONS";
   const url = readEnvFile().get(key);
   const diagnosis = diagnoseDatabaseUrl(url, kind);
   if (!diagnosis.parses) {

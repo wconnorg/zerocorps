@@ -16,12 +16,15 @@ function row(key, status, detail = []) {
   rows.push({ key, status, detail });
 }
 
-function databaseUrl(key, kind, required) {
+function databaseUrl(key, kind, required, { role, note } = {}) {
   if (!env.has(key))
-    return row(key, required ? "MISSING" : "optional", ["The key is not in the file."]);
+    return row(key, required ? "MISSING" : "optional", ["The key is not in the file.", note]);
   if (env.get(key) === "")
-    return row(key, required ? "BLANK" : "optional", required ? [] : ["Blank."]);
+    return row(key, required ? "BLANK" : "optional", required ? [] : ["Blank.", note]);
   const result = diagnoseDatabaseUrl(env.get(key), kind);
+  if (result.ok && role && result.role !== role) {
+    return row(key, "MALFORMED", [`Must connect as ${role}.`, note]);
+  }
   if (result.ok) return row(key, "ok", [`Well-formed. Role: ${result.role}.`]);
   row(key, "MALFORMED", result.problems);
 }
@@ -98,6 +101,17 @@ for (const key of ["SECURITY_CONTACT", "PRIVACY_CONTACT"]) {
 plain("DISCORD_INVITE_URL", {
   check: (value) => (value.startsWith("https://") ? null : "Must start with https://"),
   note: "Optional.",
+});
+databaseUrl("BRAIN_DATABASE_URL", "brain", false, {
+  role: "brain_reader",
+  note: "Laptop only. Written by: npm run brain:setup",
+});
+plain("BRAIN_VAULT_PATH", {
+  check: (value) =>
+    /^[A-Za-z]:[\\/]|^\//.test(value)
+      ? null
+      : "Must be a full path, starting with a drive letter such as C:\\",
+  note: "Laptop only. Written by: npm run brain:setup",
 });
 if (env.has("SIGNUPS_OPEN"))
   row("SIGNUPS_OPEN", "REMOVE", ["Replaced by SIGNUP_MODE. Delete this line."]);
