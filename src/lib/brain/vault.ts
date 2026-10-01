@@ -9,7 +9,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "node:fs";
-import { basename, dirname, isAbsolute, join, parse, relative, resolve } from "node:path";
+import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
 import { BRAIN_FOLDER, GENERATED_BY, type ColorGroup } from "./notes.ts";
 
 /**
@@ -105,7 +105,9 @@ export function checkVaultPath(
   const normal = (entry: string) => (context.caseInsensitive ? entry.toLowerCase() : entry);
   const inside = (child: string, parent: string) => {
     const between = relative(normal(parent), normal(child));
-    return between === "" || (!between.startsWith("..") && !isAbsolute(between));
+    // Outside means ".." itself or a path that climbs with "../": a folder NAMED "..x" is inside.
+    const climbs = between === ".." || between.startsWith(`..${sep}`) || between.startsWith("../");
+    return between === "" || (!climbs && !isAbsolute(between));
   };
   const repo = realPath(context.repoRoot);
   if (inside(path, repo)) {
@@ -267,9 +269,10 @@ export function syncBrainFolder(vault: string, files: ReadonlyMap<string, string
       result.conflicts.push(path);
       continue;
     }
-    if (existsSync(full)) {
-      // A link in the note's place counts as taken: lstat does not follow it.
-      if (!lstatSync(full).isFile()) {
+    // lstat, not exists: a link in the note's place counts as taken even when it points nowhere.
+    const entry = lstatSync(full, { throwIfNoEntry: false });
+    if (entry) {
+      if (!entry.isFile()) {
         result.conflicts.push(path);
         continue;
       }
@@ -287,7 +290,8 @@ export function syncBrainFolder(vault: string, files: ReadonlyMap<string, string
       continue;
     }
     mkdirSync(dirname(full), { recursive: true });
-    retried(() => writeFileSync(full, content, "utf8"));
+    // "wx": refuse anything that appeared in the note's place meanwhile.
+    retried(() => writeFileSync(full, content, { encoding: "utf8", flag: "wx" }));
     result.created++;
   }
 
@@ -353,15 +357,16 @@ export function writeGraphSettings(
     return { problem: "The vault's .obsidian entry is not a folder, so the colours were not set." };
   }
   mkdirSync(folder, { recursive: true });
-  if (existsSync(file) && !lstatSync(file).isFile()) {
+  const current = lstatSync(file, { throwIfNoEntry: false });
+  if (current && !current.isFile()) {
     return {
       problem: "Obsidian's graph settings are not a plain file, so the colours were not set.",
     };
   }
-  const merged = mergeGraphSettings(existsSync(file) ? readFileSync(file, "utf8") : null, groups);
+  const merged = mergeGraphSettings(current ? readFileSync(file, "utf8") : null, groups);
   if (merged.problem) return { problem: merged.problem };
   if (merged.text === null) return "unchanged";
   const text = merged.text;
-  retried(() => writeFileSync(file, text, "utf8"));
+  retried(() => writeFileSync(file, text, { encoding: "utf8", flag: current ? "w" : "wx" }));
   return "written";
 }

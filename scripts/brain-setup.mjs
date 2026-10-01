@@ -91,7 +91,7 @@ try {
   const secret = scramSecret(password);
   if (!/^SCRAM-SHA-256\$[A-Za-z0-9+/=:$]+$/.test(secret))
     stop("The secret came out malformed. Nothing was changed.");
-  await owner.unsafe(`ALTER ROLE ${BRAIN_ROLE} WITH LOGIN CONNECTION LIMIT 3 PASSWORD '${secret}'`);
+  await owner.unsafe(`ALTER ROLE ${BRAIN_ROLE} WITH LOGIN PASSWORD '${secret}'`);
 } catch (error) {
   stop(`Nothing was changed: ${explainConnectionError(error, migrationsUrl)}`);
 } finally {

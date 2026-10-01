@@ -1314,13 +1314,14 @@ or end-to-end encrypted sync only); the export takes over only a folder it made 
 `.zerocorps-brain` marker) or an empty one, works only in its `ZeroCorps` folder, never
 follows a link out of it, and never deletes or overwrites a note it did not write.
 
-**The notes:** one per member (frontmatter: the allowlisted fields, `lessons_completed`,
+**The notes:** one per member (frontmatter: the allowlisted fields except the two typed names, `discord_linked`, `lessons_completed`,
 `pace_30d`, `last_active_on`, tags `zc/member` and `zc/rank/<key>`; body: the rank, the
 levels finished and every lesson completed, oldest first, each a link), one per lesson,
 chapter, course and rank, the hub "ZeroCorps Brain" (the community at a glance and a
 table of every member) and "Leaderboard" (lessons in the last 30 days, ties sharing a
 place). Links go by full path, so no note's name can capture another's link. A display
-name or Discord name is only ever a quoted YAML string or inside an inline code span:
+name or Discord name is only ever inside an inline code span in the body, never in the
+frontmatter (Obsidian reads a quoted `[[...]]` property as a real link; found by the review):
 display names are free text, and Obsidian renders HTML, so `<img src=...>` typed as a name
 would otherwise load a remote image whenever the owner opened the note. Graph colours
 (`.obsidian/graph.json`) are keyed on the rank tags first, merged with the owner's own.

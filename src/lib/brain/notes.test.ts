@@ -142,13 +142,12 @@ describe("buildBrain", () => {
         "member_number: 1",
         `user_id: "${member(1).userId}"`,
         'username: "first_one"',
-        "display_name:",
         'rank: "rookie"',
         "joined_on: 2026-09-21",
         "last_active_on: 2026-09-12",
         "lessons_completed: 2",
         "pace_30d: 2",
-        "discord_username:",
+        "discord_linked: false",
         "tags:",
         "  - zc/member",
         "  - zc/rank/rookie",
@@ -172,9 +171,10 @@ describe("buildBrain", () => {
 
   it("never lets a display name or a Discord name become HTML, a link, a tag or a property", () => {
     const note = file("ZeroCorps/Members/con-.md");
-    // In the frontmatter: one JSON string on one line.
-    const line = note.split("\n").find((entry) => entry.startsWith("display_name:")) ?? "";
-    expect(JSON.parse(line.slice("display_name: ".length))).toBe(HOSTILE_NAME);
+    // Never in the frontmatter: Obsidian reads a quoted [[...]] property as a real link.
+    const front = note.split("\n---\n")[0] ?? "";
+    expect(front).not.toMatch(/display_name|discord_username|Leaderboard|trader\.one|evil/);
+    expect(front).toContain("discord_linked: true");
     // In the body: only inside a code span.
     expect(body(note)).toContain(
       '- Display name: `` <img src="https://evil.example/t.png"> [[Leaderboard]] #owned `x` ``',

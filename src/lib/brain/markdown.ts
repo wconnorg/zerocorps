@@ -4,8 +4,8 @@
  * Some of what goes into the brain was typed by members: a display name is free text of
  * up to 40 characters, so it can hold `<img src=...>`, `[[links]]`, `#tags` or backticks.
  * Obsidian renders HTML in Reading view and turns `[[...]]` and `#...` into graph edges,
- * so such text is only ever written in two ways: as a YAML string in the frontmatter, and
- * inside an inline code span in the body. Everything else in the notes is either ours or a
+ * and reads a quoted `[[...]]` in a property as a real link, so such text is only ever
+ * written inside an inline code span in the body, never in the frontmatter. Everything else in the notes is either ours or a
  * name from a fixed, safe alphabet (usernames, lesson and rank ids).
  *
  * This module imports nothing, so `npm run brain:export` can load it.

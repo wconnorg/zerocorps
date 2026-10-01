@@ -244,7 +244,7 @@ describe("assertBrainRole", () => {
     await database.client.exec("GRANT SELECT ON public.users TO brain_reader");
     try {
       await expect(asBrain(() => assertBrainRole(queryOf(database.client)))).rejects.toThrow(
-        /can read 1 table\(s\) of the app directly/,
+        /can read 1 table\(s\) outside the brain's views/,
       );
     } finally {
       await database.client.exec("REVOKE SELECT ON public.users FROM brain_reader");

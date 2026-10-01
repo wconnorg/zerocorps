@@ -281,3 +281,28 @@ describe("the graph's colour groups", () => {
     });
   });
 });
+
+describe("review fixes", () => {
+  it("refuses a folder inside the repository whose name starts with two dots", () => {
+    const result = checkVaultPath(join(scratch, "repo", "..brain"), context);
+    expect(result).toMatchObject({
+      ok: false,
+      problem: expect.stringMatching(/inside the repository/),
+    });
+  });
+
+  it("never writes through a link that points nowhere yet", () => {
+    const vault = join(scratch, "vault");
+    prepareVault(vault);
+    mkdirSync(join(vault, "ZeroCorps", "Members"), { recursive: true });
+    const target = join(scratch, "outside-new.md");
+    try {
+      symlinkSync(target, join(vault, "ZeroCorps", "Members", "a.md"), "file");
+    } catch {
+      return; // Windows without the right to make file links: nothing to prove here.
+    }
+    const result = syncBrainFolder(vault, new Map([["ZeroCorps/Members/a.md", note("a")]]));
+    expect(result.conflicts).toEqual(["ZeroCorps/Members/a.md"]);
+    expect(existsSync(target)).toBe(false);
+  });
+});

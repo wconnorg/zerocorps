@@ -66,12 +66,14 @@ export async function assertBrainRole(query: Query): Promise<void> {
   const readable = await query(
     `SELECT c.relname AS name
        FROM pg_catalog.pg_class c JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-      WHERE n.nspname = 'public' AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
-        AND pg_catalog.has_table_privilege(c.oid, 'SELECT')`,
+      WHERE n.nspname NOT IN ('pg_catalog', 'information_schema', 'brain') AND n.nspname NOT LIKE 'pg_%'
+        AND c.relkind IN ('r', 'p', 'v', 'm', 'f')
+        AND (pg_catalog.has_table_privilege(c.oid, 'SELECT')
+          OR pg_catalog.has_any_column_privilege(c.oid, 'SELECT'))`,
   );
   if (readable.length > 0) {
     throw new BrainReadError(
-      `${BRAIN_ROLE} can read ${readable.length} table(s) of the app directly, so it could read more than the brain's allowlist. Nothing was read.`,
+      `${BRAIN_ROLE} can read ${readable.length} table(s) outside the brain's views, so it could read more than the brain's allowlist. Nothing was read.`,
     );
   }
   const [views] = await query(
