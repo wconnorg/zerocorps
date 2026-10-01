@@ -64,6 +64,7 @@ const member = (number: number, overrides: Partial<BrainMember> = {}): BrainMemb
   displayName: null,
   joinedOn: "2026-09-21",
   discordUsername: null,
+  email: `member${number}@example.com`,
   ...overrides,
 });
 
@@ -96,7 +97,7 @@ function data(): BrainData {
   };
 }
 
-const build = () => buildBrain({ data: data(), catalog: catalog(), now: NOW });
+const build = () => buildBrain({ data: data(), catalog: catalog(), now: NOW, academy: true });
 const file = (path: string) => {
   const content = build().files.get(path);
   if (content === undefined) throw new Error(`no note at ${path}`);
@@ -160,7 +161,10 @@ describe("buildBrain", () => {
       "- 2026-09-10 · [[ZeroCorps/Lessons/what-a-market-is|what a market is]]\n" +
         "- 2026-09-12 · [[ZeroCorps/Lessons/aux-|aux]]",
     );
-    expect(note).not.toMatch(/email|@example|password|session|ip_/i);
+    expect(note).toContain("- Email: `member1@example.com`");
+    // The address is in the body only: a property could turn typed text into a link.
+    expect(note.split("\n---\n")[0]).not.toMatch(/@example/);
+    expect(note).not.toMatch(/password|session|ip_/i);
   });
 
   it("counts only the last 30 days, today included, as the pace", () => {
@@ -262,5 +266,25 @@ describe("buildBrain", () => {
       "Nobody completed a lesson in the last 30 days.",
     );
     expect(empty.files.has("ZeroCorps/Ranks/rookie.md")).toBe(true);
+  });
+});
+
+describe("buildBrain, members only (the default)", () => {
+  const brain = buildBrain({ data: data(), catalog: catalog(), now: NOW });
+
+  it("writes members, ranks, the hub and the leaderboard, and no Academy notes", () => {
+    expect([...brain.files.keys()].filter((path) => /Lessons|Chapters|Courses/.test(path))).toEqual(
+      [],
+    );
+    expect(brain.files.has("ZeroCorps/Members/first_one.md")).toBe(true);
+    expect(brain.counts.lessonNotes).toBe(0);
+  });
+
+  it("lists a member's lessons as text, so no link points at a note that is not there", () => {
+    const note = brain.files.get("ZeroCorps/Members/first_one.md") ?? "";
+    expect(note).toContain("- 2026-09-10 · what a market is\n- 2026-09-12 · aux");
+    for (const content of brain.files.values()) {
+      expect(content).not.toMatch(/\[\[ZeroCorps\/(Lessons|Chapters|Courses)\//);
+    }
   });
 });

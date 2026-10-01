@@ -73,12 +73,13 @@ possible.
 | 6   | Discord link and unlink                                  | Live                                  |
 | 7   | Academy: lessons, progress, rank, heatmap                | Live since 2026-09-29                 |
 | 8   | `syncDiscordRoles` and the internal API for Agent Zero   | Site side live; bot in its repo       |
-| 9   | Brain export for the owner's Obsidian vault              | On `dev`: laptop only, needs 0008     |
+| 9   | Brain export for the owner's Obsidian vault              | Works on the laptop since 2026-10-01  |
 
 **Read "Where things stand at the end of 2026-09-29" in DECISIONS.md first.** It says
 what is live, what the owner does next and what is not built. All migrations up to
-`0007_two_factor` are applied; `0008_brain_export` (the brain's views and read-only role)
-waits for the owner's `db:migrate`. Sign-ups are open to everyone. Two-factor is an authenticator app only: no text
+`0008_brain_export` are applied; `0009_brain_email` (the member's email in the brain's
+view, the owner's decision of 2026-10-01) waits for the owner's `db:migrate`. Sign-ups are
+open to everyone. Two-factor is an authenticator app only: no text
 messages and no phone numbers (owner, 2026-09-29), so hard rules 3 and 7 hold trivially.
 
 Deployment, environments, DNS and the release checklist are described in
@@ -199,8 +200,10 @@ npm run 2fa:reset -- <username>    # turns two-factor off for ONE member who los
 npm run brain:setup        # once: the brain's vault folder, and a new password for the
                            # read-only brain_reader role (never shown) into .env.local
 
-# Owner's, but asks nothing (a scheduled task may run it):
-npm run brain:export       # rebuilds the Obsidian brain from the database, as brain_reader
+# Owner's, but ask nothing (a scheduled task may run them):
+npm run brain:export       # rebuilds the Obsidian brain from the database, as brain_reader:
+                           # members only; `-- --academy` adds lesson, chapter and course notes
+npm run brain:watch        # the same, now and every 5 minutes until Ctrl+C (`-- 15`: every 15)
 ```
 
 `npm run check` and `next dev` validate `.env.local` on start. If it is incomplete,

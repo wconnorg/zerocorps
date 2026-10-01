@@ -34,7 +34,8 @@
     "sessions:revoke-all": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/sessions-revoke-all.mjs",
     "2fa:reset": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/two-factor-reset.mjs",
     "brain:setup": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/brain-setup.mjs",
-    "brain:export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/brain-export.mjs"
+    "brain:export": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/brain-export.mjs",
+    "brain:watch": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/brain-watch.mjs"
   },
   "dependencies": {
     "@better-auth/core": "1.7.5",

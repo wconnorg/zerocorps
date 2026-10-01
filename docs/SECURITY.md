@@ -26,7 +26,9 @@ with that milestone". _Owner_ means it is an action only the owner can take.
   Proton and the Discord developer account. Any one of them is a way into the whole
   site.
 - **The owner's laptop:** `.env.local`, database backups and, from milestone 9, the
-  brain vault.
+  brain vault. **Since 2026-10-01 the vault holds every member's email address** (the
+  owner's decision), as plain text in a folder: full-disk encryption on the laptop is what
+  protects it, and it must never be copied to a sync service or shared.
 
 ### Who attacks it, and what answers them
 
