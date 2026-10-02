@@ -1367,6 +1367,42 @@ Where this differs from the brief and from the section above, this is newer and 
   page is "clunky": sleek, little text, an Arasaka-like corporate menace). A visual
   prototype comes before any site code for the redesign.
 
+### Decided on 2026-10-01: an owner-only status page, and the landing page's redesign
+
+Neither is built. Both were asked for the day the brain started working.
+
+- **A status page at `/admin`, on the site** (the owner's choice over a note in the brain,
+  and over skipping it). It is the "owner-only dev panel" recorded on 2026-09-20, kept
+  small: one read-only page answering "is anything broken or stale?". Counts only; member
+  details stay in the brain.
+  - _Site and database:_ the database reachable, the daily clean-up's last run, the last
+    backup's age.
+  - _Members and Academy:_ accounts, new this week, with two-factor, with Discord linked;
+    lessons completed in the last 7 and 30 days.
+  - _Agent Zero:_ when it last called the internal API, and how often today. The site
+    records this itself, so the bot does not change; richer status from the bot would need
+    the bot's own chat.
+  - _Security and email:_ failed sign-ins, lockouts, rate-limit hits and email failures in
+    the last 24 hours (the "health view" recorded for milestone 4).
+  - **Owner only:** the owner's account is named by its user id in an environment
+    variable, never an address in this repository; checked on the server on every request;
+    and the page refuses unless that account has two-factor on.
+  - **No actions at first.** Buttons that change something (the invite list, a member's
+    two-factor) are each a new way in, and are decided one at a time later; today those
+    are laptop commands.
+  - It needs one additive migration: a small table of "last seen" times (the bot, the
+    daily clean-up, a backup).
+- **The landing page is redesigned, after a mock-up.** The owner: the dashboard and the
+  three-product framework are liked, and the colours; the landing page is "clunky", with
+  too much on it; the aim is sleek and sparse, with the cold menace of a fictional
+  megacorporation (an original design, not a copy of anyone's). Three directions were
+  drawn as a private design canvas for the owner to choose from, each one screen with the
+  products shown once: **A · Monolith** (the name, the quotation, one button, the products
+  as one line), **B · Directive** (a grid of hairlines, the divisions as a list with their
+  status) and **C · Tower** (the name stacked, the products as three tall slabs). No site
+  code changes until the owner picks; then the phone layout and the light theme come with
+  the build. **The order the owner chose:** the mock-up first, then the status page.
+
 ### Released on 2026-10-01: the brain's site side, then the privacy page for emails
 
 - **First, on the owner's "push":** `dev` (`6ac4a20`) merged into `main` as `3fc3adc`,
