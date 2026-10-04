@@ -1201,8 +1201,10 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `31b9bcf` since 2026-10-04, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `5f73b14` since 2026-10-04, same tree as `dev` then):**
 
+- **Next.js 16.3.8** (since 2026-10-04), a security release; see SECURITY.md, "Closed on
+  2026-10-04: the Next.js advisories".
 - **The landing page, rebuilt as "B · Directive"** (since 2026-10-04): one screen, the
   three divisions listed once; see its section below.
 - Milestones 1 and 2; **sign-ups open to everyone** (`SIGNUP_MODE=open`).
@@ -1238,7 +1240,11 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    Bot off. **Not** its OAuth2 Client Secret: that is the website's
    `DISCORD_CLIENT_SECRET`, and resetting it stops "Link Discord" until Vercel has the new
    one and a redeploy. The website never uses that bot token, so the reset cannot break it.
-3. Delete the test and main accounts in Settings and sign up again, as planned.
+3. Delete the test and main accounts in Settings and sign up again, as planned (the
+   owner asked on 2026-10-04: the two accounts that are the owner's own; the third
+   account stays). Deleting takes the Discord link, progress, picture, two-factor and the
+   account's security log with it; Agent Zero takes the rank role back at its next sync;
+   the username is free at once (the 30-day hold covers only names changed away from).
 4. Still open from milestone 2: read and approve `/terms` and `/privacy` (now that anyone
    can sign up; the privacy page now describes pictures), confirm the `PRIVACY_CONTACT`
    mailbox, run `npm run db:restore:check`, delete the `backup-dev-before-squash` branch;
@@ -1256,9 +1262,9 @@ logs the refusal as an error; a member without a picture got the same on every p
 wrote the vault in `C:\Users\<owner>\ZeroCorps Brain` (3 members). See "Milestone 9: the
 brain export, built" and "The brain, changed by the owner on 2026-10-01" below. The site's
 side went live the same day (`main` = `3fc3adc`): the refusal of `BRAIN_DATABASE_URL` in
-production, and the avatar fix above. **Waiting for the owner:** migration
-`0009_brain_email` (`npm run db:backup`, then `npm run db:migrate`), which the current
-export needs; then `npm run brain:export`, or `npm run brain:watch` to keep it fresh.
+production, and the avatar fix above. **`0009_brain_email` is applied:** the owner's
+backup of 2026-10-04 read all ten migrations from the database's own list. So
+`npm run brain:export` writes the addresses, and `npm run brain:watch` keeps it fresh.
 
 **The Discord channel "Academy Users: N"** (owner, 2026-09-30, asked how it updates):
 Agent Zero renames it from the internal API's list of linked members, at start and at most
@@ -1446,6 +1452,23 @@ dashboard", the three tones, the Academy as the way in.
   check (`npm run verify`) has a "landing page" section in place of the wheel's: the
   divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
   both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
+
+### Released on 2026-10-04, second: Next.js 16.3.8
+
+- **The owner's words:** "do the little nextjs release upgrade", then "push". The
+  first attempt to push on the first message alone was stopped by Claude Code's own
+  safety check, rightly: the push rule wants the owner's "push" for every release.
+- `next` and `eslint-config-next` 16.3.5 → 16.3.8, pinned exactly; twelve packages
+  changed, all Next's own, all from the npm registry. Why 16.3.8 and not 16.3.6: it is a
+  security release fixing six advisories more (SECURITY.md has them).
+- **Checks before the push:** typecheck, lint, all 501 tests and the production build on
+  16.3.8; the browser check against that build on the laptop (95 checks). `dev`
+  (`94f2ec6`) merged into `main` as `5f73b14` (parents `31b9bcf` and `94f2ec6`), scanned,
+  pushed; GitHub recorded the production deployment as a success within a minute; the
+  browser check against the live site passed (97 checks, 0 failures).
+- **The same day, from the owner's backup:** all ten migrations are applied, so
+  `0009_brain_email` is already in the database and the brain's addresses need only an
+  export.
 
 ### Released on 2026-10-04: the landing page, rebuilt as "B · Directive"
 
