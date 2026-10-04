@@ -750,6 +750,10 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
 
 ### The home page's look, decided by the owner while watching it live (2026-09-21)
 
+**Replaced in part on 2026-10-02:** the wheel, the row of products under it and the
+footer's red logo are gone; see "The landing page, rebuilt as "B · Directive"". The tones,
+the quotation and the header's centred wordmark described here stay.
+
 The owner's direction: a stark corporate look in the manner of Arasaka (black, red,
 sharp edges, restrained motion). Built on `dev` after the milestone 2 release, with the
 owner watching the laptop's dev server and answering as it changed. Not released yet.
@@ -1369,7 +1373,9 @@ Where this differs from the brief and from the section above, this is newer and 
 
 ### Decided on 2026-10-01: an owner-only status page, and the landing page's redesign
 
-Neither is built. Both were asked for the day the brain started working.
+Both were asked for the day the brain started working. **The status page is not built.
+The landing page was built on 2026-10-02**: the owner chose B, and the next section
+records what was built.
 
 - **A status page at `/admin`, on the site** (the owner's choice over a note in the brain,
   and over skipping it). It is the "owner-only dev panel" recorded on 2026-09-20, kept
@@ -1402,6 +1408,42 @@ Neither is built. Both were asked for the day the brain started working.
   status) and **C · Tower** (the name stacked, the products as three tall slabs). No site
   code changes until the owner picks; then the phone layout and the light theme come with
   the build. **The order the owner chose:** the mock-up first, then the status page.
+
+### The landing page, rebuilt as "B · Directive" (owner, 2026-10-02)
+
+The owner chose **B · Directive** from the three drawn directions ("lets go with b
+directive"). It replaces the turning wheel and the products row of 2026-09-21. What was
+decided then about the words stays: the name as the heading, the quotation, "Enter the
+dashboard", the three tones, the Academy as the way in.
+
+- **One screen, drawn as a frame of hairlines.** On the left the name (the page's one
+  `h1`), "Forced evolution." with "J.B.", and the one button, "Enter the dashboard". On the
+  right the label DIVISIONS and the three products **once**, as a numbered list with a
+  status: ZeroCorps Academy first, its whole row a link with a red ENTER; ZeroBot and
+  ZeroCharts with their one line and COMING SOON in their own tone, not links. On a
+  desktop nothing scrolls. On a phone the panels stack, and each status drops under its
+  name, in line with it.
+- **The wheel is gone**, with its buttons, its timer, its CSS and its tests
+  (`product-wheel.tsx`). `src/components/marketing/products.tsx` keeps the list of
+  products, which the home page and the dashboard both draw from so they cannot drift
+  apart, and the face of the dashboard's tiles.
+- **Every link in the page's body still leads to `/dashboard`, and none is pre-loaded**
+  (2026-09-21). The Academy row's link is named "Enter ZeroCorps Academy"; its heading
+  reads "ZeroCorps Academy" as one name.
+- **The header runs the full width**, so its hairline meets the frame's. **The wordmark
+  stays in the middle**, as decided on 2026-09-21 and as on the dashboard; the drawing had
+  it at the left, and the owner was told, to choose. **The footer is one slim strip:** the
+  disclaimer, the year, Terms and Privacy. Its red logo is gone.
+- **Motion:** none, except that the arrow on a way in leans forward under the pointer or
+  the keyboard's focus, and not at all for a visitor who asked for reduced motion.
+- **The name is one word and cannot wrap**, so its size follows the room it has: the
+  window's width on a phone, half of it beside the divisions. The browser check measures
+  it at 320 pixels wide, the narrowest phone, where it would stick out first.
+- **No new copy.** The only new words are the labels DIVISIONS and ENTER.
+- **Checks:** `src/app/(marketing)/home.test.tsx` renders the page as text. The browser
+  check (`npm run verify`) has a "landing page" section in place of the wheel's: the
+  divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
+  both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
 
 ### Released on 2026-10-01: the brain's site side, then the privacy page for emails
 

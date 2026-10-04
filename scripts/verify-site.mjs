@@ -178,9 +178,9 @@ let clickingAProtectedLink = false;
   );
 
   // Every way in on the home page lands a signed-out visitor on sign-in, with the way back
-  // to the dashboard remembered, and sign-in offers to create an account. The Academy tile
+  // to the dashboard remembered, and sign-in offers to create an account. The Academy's row
   // is a way IN (owner, 2026-09-21), not a link to the page about the Academy.
-  for (const name of ["Enter the dashboard", /Enter here.*ZeroCorps Academy/]) {
+  for (const name of ["Enter the dashboard", "Enter ZeroCorps Academy"]) {
     await page.goto(`${base}/`, { waitUntil: "networkidle" });
     clickingAProtectedLink = true;
     await page.getByRole("link", { name }).first().click();
@@ -230,66 +230,142 @@ let clickingAProtectedLink = false;
   await context.close();
 }
 
-// ── 3b. The product wheel on the home page ─────────────────────────────────
+// ── 3b. The landing page: one screen, the divisions listed once ─────────────
 {
-  console.log("\n== product wheel ==");
-  const frontOf = (page) =>
-    page.evaluate(() =>
-      document.querySelector('.wheel-tile[data-pos="0"]')?.getAttribute("aria-label"),
-    );
+  console.log("\n== landing page ==");
+  /**
+   * What is drawn, measured in the page itself: the two panels, the footer and the rows.
+   * Anything missing comes back as null, so a page that is not the landing page (a release
+   * that was never built, an error page) reads as FAIL lines and not as a crash.
+   */
+  const measure = (page) =>
+    page.evaluate(() => {
+      const box = (element) => {
+        if (!element) return null;
+        const { top, right, bottom, left, height } = element.getBoundingClientRect();
+        return { top, right, bottom, left, height };
+      };
+      const [name, divisions] = [...document.querySelectorAll("main section")].map(box);
+      return {
+        name: name ?? null,
+        divisions: divisions ?? null,
+        footer: box(document.querySelector("footer")),
+        windowHeight: window.innerHeight,
+        pageHeight: document.documentElement.scrollHeight,
+        links: [...document.querySelectorAll("main a")].map((link) => box(link).height),
+        rows: [...document.querySelectorAll("main li")].map((row) => {
+          const toned = row.querySelector(".tone-text");
+          // The words (the name and its line) and, after them, the status.
+          const words = row.querySelector("h3")?.parentElement;
+          const [wordsBox, statusBox] = [box(words), box(words?.nextElementSibling)];
+          return {
+            name: row.querySelector("h3")?.textContent ?? null,
+            colour: toned ? getComputedStyle(toned).color : null,
+            statusBeside: Boolean(
+              wordsBox &&
+              statusBox &&
+              statusBox.left >= wordsBox.right - 1 &&
+              statusBox.top < wordsBox.bottom,
+            ),
+          };
+        }),
+      };
+    });
+  /** The name is one word that cannot wrap: its width, and the room its heading has. */
+  const nameFits = (page) =>
+    page.evaluate(() => {
+      const heading = document.querySelector("main h1");
+      if (!heading) return { fits: false, name: null, room: null, overflow: null };
+      const text = document.createRange();
+      text.selectNodeContents(heading);
+      const name = Math.round(text.getBoundingClientRect().width);
+      const room = Math.round(heading.getBoundingClientRect().width);
+      const overflow = document.documentElement.scrollWidth - document.documentElement.clientWidth;
+      return { fits: name <= room && overflow <= 0, name, room, overflow };
+    });
 
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
   const page = await context.newPage();
-  watch(page, "wheel");
+  watch(page, "landing");
   await page.goto(`${base}/`, { waitUntil: "networkidle" });
+  const wide = await measure(page);
 
-  const slides = await page.evaluate(() =>
-    [...document.querySelectorAll(".wheel-tile")].map((tile) => tile.getAttribute("aria-label")),
+  const drawn = Boolean(wide.name && wide.divisions && wide.footer);
+  note(drawn, "the landing page has its two panels and the footer");
+  const names = JSON.stringify(wide.rows.map((row) => row.name));
+  note(
+    names === JSON.stringify(["ZeroCorps Academy", "ZeroBot", "ZeroCharts"]),
+    `the three divisions are listed once, the Academy first (${names})`,
+  );
+  const colours = wide.rows.map((row) => row.colour);
+  note(
+    new Set(colours).size === 3 && !colours.includes(null),
+    `each division's name is in its own tone (${colours.join(" / ")})`,
   );
   note(
-    JSON.stringify(slides) ===
-      JSON.stringify(["1 of 3: ZeroBot", "2 of 3: ZeroCharts", "3 of 3: ZeroCorps Academy"]),
-    `the wheel has its three tiles (${JSON.stringify(slides)})`,
+    drawn && wide.pageHeight <= wide.windowHeight,
+    `on a desktop the page is one screen, with nothing to scroll (${wide.pageHeight}px in a ${wide.windowHeight}px window)`,
+  );
+  note(
+    drawn &&
+      wide.divisions.left >= wide.name.right &&
+      Math.abs(wide.divisions.top - wide.name.top) <= 1,
+    "on a desktop the two panels stand side by side",
+  );
+  note(
+    drawn &&
+      Math.abs(wide.name.bottom - wide.footer.top) <= 1 &&
+      Math.abs(wide.footer.bottom - wide.windowHeight) <= 1,
+    "the panels reach down to the footer, and the footer ends at the bottom of the window",
   );
 
-  // Left alone, it turns by itself (the timer is 8 seconds).
-  const first = await frontOf(page);
-  await page.mouse.move(5, 5);
-  let turned = first;
-  for (let i = 0; i < 48 && turned === first; i++) {
-    await page.waitForTimeout(250);
-    turned = await frontOf(page);
-  }
-  note(turned !== first, `the wheel turns by itself (${first} -> ${turned})`);
-
-  // With the pointer resting on it, it holds still; a click at the side brings that tile forward.
-  await page.hover(".wheel");
-  await page.waitForTimeout(2600);
-  const held = await frontOf(page);
-  await page.locator(".wheel-hit-right").click();
-  await page.waitForTimeout(600);
-  const clicked = await frontOf(page);
+  // Side by side the name has half the window: least of it where the two columns begin.
+  // A classic scrollbar takes about 17px there while the two-column rule still applies, so
+  // one is imitated. The name must still fit, and no status may drop under its name while
+  // another stays beside it.
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.evaluate(() => {
+    document.body.style.paddingRight = "17px";
+  });
+  const tightName = await nameFits(page);
   note(
-    clicked !== held,
-    `a click at the side brings that tile to the front (${held} -> ${clicked})`,
+    tightName.fits,
+    `at 1024px wide, with a scrollbar's width taken, the name fits its panel (${tightName.name}px of ${tightName.room}px)`,
+  );
+  const tight = await measure(page);
+  note(
+    tight.rows.length === 3 && tight.rows.every((row) => row.statusBeside),
+    "at 1024px wide every division's status stands beside its name",
   );
   await context.close();
 
-  // A visitor who asked for reduced motion never gets a wheel that turns by itself.
-  const calm = await browser.newContext({
-    viewport: { width: 1440, height: 900 },
-    reducedMotion: "reduce",
+  const phone = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
   });
-  const calmPage = await calm.newPage();
-  watch(calmPage, "wheel-reduced-motion");
-  await calmPage.goto(`${base}/`, { waitUntil: "networkidle" });
-  const before = await frontOf(calmPage);
-  await calmPage.waitForTimeout(9500);
+  const phonePage = await phone.newPage();
+  watch(phonePage, "landing-phone");
+  await phonePage.goto(`${base}/`, { waitUntil: "networkidle" });
+  const narrow = await measure(phonePage);
   note(
-    (await frontOf(calmPage)) === before,
-    "with reduced motion the wheel does not turn by itself",
+    Boolean(narrow.name && narrow.divisions) &&
+      narrow.divisions.top >= narrow.name.bottom &&
+      narrow.divisions.left === narrow.name.left,
+    "on a phone the divisions come under the name",
   );
-  await calm.close();
+  note(
+    narrow.links.length === 2 && narrow.links.every((height) => height >= 44),
+    `on a phone both ways in are big enough for a thumb (${narrow.links.map(Math.round).join("px, ")}px tall)`,
+  );
+
+  // Stacked, the name has the whole window, and the narrowest phone is where it would stick out.
+  await phonePage.setViewportSize({ width: 320, height: 568 });
+  const smallest = await nameFits(phonePage);
+  note(
+    smallest.fits,
+    `at 320px wide the name still fits (${smallest.name}px of ${smallest.room}px) and nothing overflows (${smallest.overflow}px)`,
+  );
+  await phone.close();
 }
 
 // ── 4. Accounts: what a signed-out visitor can and cannot reach ─────────────
