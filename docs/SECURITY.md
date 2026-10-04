@@ -194,6 +194,16 @@ accounts at the release.
   `npm audit fix --force`:** it would swap `drizzle-kit` for a years-old version. The fix is
   a `drizzle-kit` release that drops the old package; check again at each release. The
   owner has not yet said whether to accept this or to dismiss the alert on GitHub.
+- **A critical advisory in Next.js that does not reach this site (seen 2026-10-02).**
+  `npm audit` reports GHSA-vcvr-r3jv-pc5j, remote code execution in `next/og`'s
+  `ImageResponse`, for Next 16.2.0 to 16.3.5; the site runs 16.3.5. By the advisory's own
+  words it needs an application that draws images with `ImageResponse` from values a
+  visitor controls. This site never imports `next/og`: its link-preview images are fixed
+  PNG files (`src/app/opengraph-image.png`, `twitter-image.png`), which a search of the
+  source confirmed that day. So it is not exposed today, and it would be the day anyone
+  added a generated image. The fix is a patch release (16.3.6 or later). **Recommended:
+  upgrade Next as its own small release, with the full check and the browser check, not
+  mixed into another change.** The owner decides; until then, add no `ImageResponse`.
 
 ## 2. Hosting assumptions ledger
 
