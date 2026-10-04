@@ -1240,9 +1240,10 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    Bot off. **Not** its OAuth2 Client Secret: that is the website's
    `DISCORD_CLIENT_SECRET`, and resetting it stops "Link Discord" until Vercel has the new
    one and a redeploy. The website never uses that bot token, so the reset cannot break it.
-3. Delete the test and main accounts in Settings and sign up again, as planned (the
-   owner asked on 2026-10-04: the two accounts that are the owner's own; the third
-   account stays). Deleting takes the Discord link, progress, picture, two-factor and the
+3. **Accounts deleted on 2026-10-04:** the owner deleted their own two accounts in
+   Settings on the live site; the third account stays (now member #1). Afterwards
+   `npm run db:counts` showed 1 user and 0 Discord links, and `brain:watch` dropped both
+   member notes at its next round. **Next: the owner signs up again.** Deleting takes the Discord link, progress, picture, two-factor and the
    account's security log with it; Agent Zero takes the rank role back at its next sync;
    the username is free at once (the 30-day hold covers only names changed away from).
 4. Still open from milestone 2: read and approve `/terms` and `/privacy` (now that anyone
