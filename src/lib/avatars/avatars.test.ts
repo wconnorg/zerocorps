@@ -13,6 +13,7 @@ import {
   MAX_UPLOAD_BYTES,
   processAvatar,
   serveAvatar,
+  sniffUpload,
 } from "./avatars.ts";
 
 /**
@@ -99,6 +100,33 @@ describe("processAvatar", () => {
     );
     expect(await reasonOf(randomBytes(4096))).toBe("not-an-image");
     expect(await reasonOf(Buffer.alloc(0))).toBe("not-an-image");
+  });
+
+  it("hands the image library only what starts like a JPEG, a PNG or a WebP", async () => {
+    expect(sniffUpload(await photo(10, 10, "jpeg"))).toBe("jpeg");
+    expect(sniffUpload(await photo(10, 10, "png"))).toBe("png");
+    expect(sniffUpload(await photo(10, 10, "webp"))).toBe("webp");
+    const tile = { create: { width: 16, height: 16, channels: 3, background: "#204060" } } as const;
+    // Formats whose parsers sit in the same library, and whose header code an attacker
+    // would aim at: refused before the library reads a byte of them.
+    const tiff = await sharp(tile).tiff().toBuffer();
+    const avif = await sharp(tile).avif().toBuffer();
+    const heifShape = Buffer.concat([Buffer.from([0, 0, 0, 0x18]), Buffer.from("ftypheic")]);
+    for (const other of [tiff, avif, heifShape]) {
+      expect(sniffUpload(other)).toBeNull();
+      expect(await reasonOf(other)).toBe("unsupported");
+    }
+    expect(sniffUpload(Buffer.from("%PDF-1.7\n"))).toBeNull();
+    expect(await reasonOf(Buffer.from("%PDF-1.7\n"))).toBe("unsupported");
+    // A file that starts like a PNG but is not one is not a picture.
+    expect(
+      await reasonOf(
+        Buffer.concat([
+          await photo(10, 10, "png").then((png) => png.subarray(0, 8)),
+          randomBytes(64),
+        ]),
+      ),
+    ).toBe("not-an-image");
   });
 
   it("refuses a damaged picture", async () => {

@@ -1505,6 +1505,32 @@ dashboard", the three tones, the Academy as the way in.
   divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
   both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
 
+### Built on 2026-10-04: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
+
+The owner asked whether everything was up to date and "state of the art". `npm outdated`,
+then one research agent at a time reading each package's release notes and advisories
+(SECURITY.md has the findings). Taken, as one small release:
+
+- **Better Auth 1.7.5 → 1.7.7** (with `@better-auth/core`; every `@better-auth/*` package
+  resolves to 1.7.7): one low advisory that applied (a race in its own loose rate limits),
+  two serious ones that could not reach this site.
+- **sharp 0.35.4 → 0.35.5**: newer libvips and libheif, with parser fixes.
+- **The upload gate:** a profile picture must start like a JPEG, a PNG or a WebP before the
+  image library reads a byte of it, and the library must then read it as that format; the
+  member is still told "use a JPEG, PNG or WebP" for another kind of picture, and "not a
+  picture" for anything else.
+- **The lessons folder:** its README no longer says images work in lessons (they do not
+  yet: the site has no place to serve a lesson's picture from; a small change when the
+  first lesson needs one), and `.trash/` is ignored, so Obsidian's own trash can never be
+  committed from it.
+- **Not taken:** drizzle 0.45.3 and the top-level React 19.3.0 (nothing for this site);
+  vitest and prettier patches wait for another release; TypeScript 7, ESLint 10 (ESLint 9
+  is past its end of life), markdown-it 15 and @types/node 26 are each their own project.
+- **The owner's next, said the same day:** sign up again on the live site, see the brain
+  log the new account, then rewrite the lessons in Obsidian (`content/academy` as its own
+  vault). The owner wants the lesson pages and the course pages designed properly later
+  ("the ui needs to be perfect and the custom course integration"): a mock-up comes first.
+
 ### Released on 2026-10-04, third: the privacy page names profile pictures
 
 - **On the owner's "push":** `dev` (`53131b8`) merged into `main` as `6f9d818` (parents

@@ -53,8 +53,10 @@ Thumbs.db
 !.vscode/extensions.json
 !.vscode/settings.json
 
-# Obsidian vault state (lessons are written in Obsidian; its workspace files are local)
+# Obsidian vault state (lessons are written in Obsidian; its workspace files are local),
+# and Obsidian's own trash, so a deleted lesson is never published from it
 .obsidian/
+.trash/
 
 # local-only Claude Code settings
 .claude/settings.local.json
