@@ -1269,9 +1269,9 @@ side went live the same day (`main` = `3fc3adc`): the refusal of `BRAIN_DATABASE
 production, and the avatar fix above. **`0009_brain_email` is applied:** the owner's
 backup of 2026-10-04 read all ten migrations from the database's own list. **Since
 2026-10-04 the brain is the members' list with their pictures** (see "The brain, changed
-by the owner on 2026-10-04"): the pictures need `0010_brain_pictures`, which the owner
-applies (`npm run db:backup`, then `npm run db:migrate`) only once the privacy page naming
-pictures is live; until then the export builds the list without pictures and says so.
+by the owner on 2026-10-04"). **`0010_brain_pictures` is applied** (the owner, 2026-10-04,
+after the privacy page naming pictures went live): at its next round the running
+`brain:watch` switched the pictures on by itself.
 
 **The Discord channel "Academy Users: N"** (owner, 2026-09-30, asked how it updates):
 Agent Zero renames it from the internal API's list of linked members, at start and at most
@@ -1517,9 +1517,11 @@ dashboard", the three tones, the Academy as the way in.
   brain's code itself runs only on the laptop; its new default had already rebuilt the
   owner's vault as the members' list, without pictures, at 12:43 that day, which also
   proved the role check's array parameter on the real database.
-- **The owner's, next:** `npm run db:backup`, then `npm run db:migrate`, which should list
-  only `0010_brain_pictures`; the running `brain:watch` then shows pictures at its next
-  round, with no restart.
+- **Then the owner's, the same afternoon:** `npm run db:backup` (verified; 10 migrations,
+  1 account, no pictures yet), then `npm run db:migrate`, which applied
+  `0010_brain_pictures`. The running `brain:watch` rewrote the member's note at its next
+  round with the picture line, which it writes only once the database can give pictures:
+  the migration is in, and nothing needed restarting.
 
 ### Released on 2026-10-04, second: Next.js 16.3.8
 
