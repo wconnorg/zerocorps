@@ -1201,8 +1201,11 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `5f73b14` since 2026-10-04, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `6f9d818` since 2026-10-04, same tree as `dev` then):**
 
+- **The privacy page names profile pictures** among what the owner's analytics look at
+  (since 2026-10-04, third release that day), so the brain may show them; see "The brain,
+  changed by the owner on 2026-10-04".
 - **Next.js 16.3.8** (since 2026-10-04), a security release; see SECURITY.md, "Closed on
   2026-10-04: the Next.js advisories".
 - **The landing page, rebuilt as "B · Directive"** (since 2026-10-04): one screen, the
@@ -1266,9 +1269,9 @@ side went live the same day (`main` = `3fc3adc`): the refusal of `BRAIN_DATABASE
 production, and the avatar fix above. **`0009_brain_email` is applied:** the owner's
 backup of 2026-10-04 read all ten migrations from the database's own list. **Since
 2026-10-04 the brain is the members' list with their pictures** (see "The brain, changed
-by the owner on 2026-10-04"): the pictures need `0010_brain_pictures`, which the owner
-applies (`npm run db:backup`, then `npm run db:migrate`) only once the privacy page naming
-pictures is live; until then the export builds the list without pictures and says so.
+by the owner on 2026-10-04"). **`0010_brain_pictures` is applied** (the owner, 2026-10-04,
+after the privacy page naming pictures went live): at its next round the running
+`brain:watch` switched the pictures on by itself.
 
 **The Discord channel "Academy Users: N"** (owner, 2026-09-30, asked how it updates):
 Agent Zero renames it from the internal API's list of linked members, at start and at most
@@ -1501,6 +1504,50 @@ dashboard", the three tones, the Academy as the way in.
   check (`npm run verify`) has a "landing page" section in place of the wheel's: the
   divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
   both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
+
+### Built on 2026-10-04: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
+
+The owner asked whether everything was up to date and "state of the art". `npm outdated`,
+then one research agent at a time reading each package's release notes and advisories
+(SECURITY.md has the findings). Taken, as one small release:
+
+- **Better Auth 1.7.5 → 1.7.7** (with `@better-auth/core`; every `@better-auth/*` package
+  resolves to 1.7.7): one low advisory that applied (a race in its own loose rate limits),
+  two serious ones that could not reach this site.
+- **sharp 0.35.4 → 0.35.5**: newer libvips and libheif, with parser fixes.
+- **The upload gate:** a profile picture must start like a JPEG, a PNG or a WebP before the
+  image library reads a byte of it, and the library must then read it as that format; the
+  member is still told "use a JPEG, PNG or WebP" for another kind of picture, and "not a
+  picture" for anything else.
+- **The lessons folder:** its README no longer says images work in lessons (they do not
+  yet: the site has no place to serve a lesson's picture from; a small change when the
+  first lesson needs one), and `.trash/` is ignored, so Obsidian's own trash can never be
+  committed from it.
+- **Not taken:** drizzle 0.45.3 and the top-level React 19.3.0 (nothing for this site);
+  vitest and prettier patches wait for another release; TypeScript 7, ESLint 10 (ESLint 9
+  is past its end of life), markdown-it 15 and @types/node 26 are each their own project.
+- **The owner's next, said the same day:** sign up again on the live site, see the brain
+  log the new account, then rewrite the lessons in Obsidian (`content/academy` as its own
+  vault). The owner wants the lesson pages and the course pages designed properly later
+  ("the ui needs to be perfect and the custom course integration"): a mock-up comes first.
+
+### Released on 2026-10-04, third: the privacy page names profile pictures
+
+- **On the owner's "push":** `dev` (`53131b8`) merged into `main` as `6f9d818` (parents
+  `5f73b14` and `53131b8`), scanned, pushed; GitHub recorded the production deployment as
+  a success within a minute. The live `/privacy` then held the new wording (pictures in
+  the analytics; "never shown to other members"; the analytics copy goes at the next
+  refresh) and no longer "only you are shown it", checked by fetching the page; the
+  browser check against the live site passed (97 checks, 0 failures).
+- **Before the push:** `npm run check` on `dev` (521 tests and the production build). The
+  brain's code itself runs only on the laptop; its new default had already rebuilt the
+  owner's vault as the members' list, without pictures, at 12:43 that day, which also
+  proved the role check's array parameter on the real database.
+- **Then the owner's, the same afternoon:** `npm run db:backup` (verified; 10 migrations,
+  1 account, no pictures yet), then `npm run db:migrate`, which applied
+  `0010_brain_pictures`. The running `brain:watch` rewrote the member's note at its next
+  round with the picture line, which it writes only once the database can give pictures:
+  the migration is in, and nothing needed restarting.
 
 ### Released on 2026-10-04, second: Next.js 16.3.8
 

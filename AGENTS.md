@@ -76,11 +76,10 @@ possible.
 | 9   | Brain export for the owner's Obsidian vault              | Works on the laptop since 2026-10-01  |
 
 **Read "Where things stand at the end of 2026-09-29" in DECISIONS.md first.** It says
-what is live, what the owner does next and what is not built. All migrations up to
-`0009_brain_email` (the member's email in the brain's view, the owner's decision of
-2026-10-01) are applied: the owner's backup of 2026-10-04 counted them.
-`0010_brain_pictures` (the members' pictures in the brain, 2026-10-04) waits for the
-owner's `db:migrate`, after the release that names pictures on the privacy page. Sign-ups are
+what is live, what the owner does next and what is not built. All eleven migrations, up
+to `0010_brain_pictures` (the members' pictures in the brain, the owner's decision of
+2026-10-04), are applied: the owner applied `0010` that day, after the release that names
+pictures on the privacy page. Sign-ups are
 open to everyone. Two-factor is an authenticator app only: no text
 messages and no phone numbers (owner, 2026-09-29), so hard rules 3 and 7 hold trivially.
 

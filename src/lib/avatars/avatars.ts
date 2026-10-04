@@ -12,9 +12,11 @@ import type { AuthDatabase } from "../auth/create-auth.ts";
  * position, the camera's details and anything hidden inside the original file are gone,
  * and a file that only pretends to be an image is refused because it does not decode.
  *
- * Refused before any work: anything but JPEG, PNG or WebP (no SVG, which can carry
- * script), and images over 40 megapixels, which is how a small file is made to take a
- * server's memory ("decompression bombs").
+ * Refused before any work: anything that does not START like a JPEG, a PNG or a WebP, so no
+ * other decoder in the image library ever reads a member's upload (no SVG, which can carry
+ * script; no TIFF, HEIF, AVIF, JPEG 2000 or PDF, whose parsers are where the library's
+ * security fixes keep landing), and images over 40 megapixels, which is how a small file is
+ * made to take a server's memory ("decompression bombs").
  */
 
 export const AVATAR_SIZE = 256;
@@ -39,10 +41,57 @@ export class AvatarError extends Error {
   }
 }
 
+const startsWith = (upload: Buffer, prefix: string | number[], offset = 0) => {
+  const bytes = typeof prefix === "string" ? Buffer.from(prefix, "latin1") : Buffer.from(prefix);
+  return (
+    upload.length >= offset + bytes.length &&
+    upload.subarray(offset, offset + bytes.length).equals(bytes)
+  );
+};
+
+/**
+ * The format an upload's first bytes announce, for the three formats accepted; null for
+ * anything else, which is then never handed to the image library at all.
+ */
+export function sniffUpload(upload: Buffer): "jpeg" | "png" | "webp" | null {
+  if (startsWith(upload, [0xff, 0xd8, 0xff])) return "jpeg";
+  if (startsWith(upload, [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])) return "png";
+  if (startsWith(upload, "RIFF") && startsWith(upload, "WEBP", 8)) return "webp";
+  return null;
+}
+
+/**
+ * Other kinds of picture, by their first bytes, only so the member is told to use one of the
+ * three formats rather than that the file is not a picture. Never used to decide what is read.
+ */
+function looksLikeAnotherPicture(upload: Buffer): boolean {
+  const signatures: [string | number[], number][] = [
+    ["GIF87a", 0],
+    ["GIF89a", 0],
+    [[0x49, 0x49, 0x2a, 0x00], 0], // TIFF, little-endian
+    [[0x4d, 0x4d, 0x00, 0x2a], 0], // TIFF, big-endian
+    [[0x00, 0x00, 0x01, 0x00], 0], // ICO
+    ["ftyp", 4], // HEIF, HEIC, AVIF
+    [[0x00, 0x00, 0x00, 0x0c, 0x4a, 0x58, 0x4c, 0x20], 0], // JPEG XL
+    [[0x00, 0x00, 0x00, 0x0c, 0x6a, 0x50, 0x20, 0x20], 0], // JPEG 2000
+    ["%PDF", 0],
+  ];
+  return (
+    signatures.some(([prefix, offset]) => startsWith(upload, prefix, offset)) ||
+    // BMP: "BM", then the size, then four reserved bytes that are always zero.
+    (startsWith(upload, "BM") && startsWith(upload, [0, 0, 0, 0], 6)) ||
+    /<svg[\s>]/i.test(upload.toString("latin1", 0, Math.min(upload.length, 1024)))
+  );
+}
+
 /** Turns an upload into the one thing ever stored: a 256x256 WebP with nothing but pixels. */
 export async function processAvatar(upload: Buffer): Promise<Buffer> {
   if (upload.length === 0) throw new AvatarError("not-an-image");
   if (upload.length > MAX_UPLOAD_BYTES) throw new AvatarError("too-large");
+  const sniffed = sniffUpload(upload);
+  if (sniffed === null) {
+    throw new AvatarError(looksLikeAnotherPicture(upload) ? "unsupported" : "not-an-image");
+  }
   // Loaded here, not at the top: every auth request shares this code, and only a picture
   // upload needs the image library.
   const { default: sharp } = await import("sharp");
@@ -59,6 +108,9 @@ export async function processAvatar(upload: Buffer): Promise<Buffer> {
     throw new AvatarError("not-an-image");
   }
   if (!format || !ALLOWED_FORMATS.has(format)) throw new AvatarError("unsupported");
+  // The library must read it as the format its first bytes announced; anything else is a
+  // file pretending to be a picture.
+  if (format !== sniffed) throw new AvatarError("not-an-image");
 
   // A picture that is mostly noise encodes large: try once more at a lower quality.
   for (const quality of [82, 60]) {

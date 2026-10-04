@@ -77,9 +77,13 @@ coming soon (Sierra Chart, for now).
 ## Writing
 
 - **Start each lesson's headings at `##`.** The lesson's `title` is the page's one `#`.
-- **Obsidian callouts (`> [!note]`) and ordinary image links (`![what it shows](file.png)`)
-  work.** Obsidian's own `[[links]]` and `![[embeds]]` do not: turn off "Use [[Wikilinks]]"
-  in Obsidian's settings (Files and links) so it writes ordinary links instead.
+- **Obsidian callouts (`> [!note]`) work.** Obsidian's own `[[links]]` and `![[embeds]]`
+  do not: turn off "Use [[Wikilinks]]" in Obsidian's settings (Files and links) so it
+  writes ordinary links instead. A link to another lesson is its address on the site,
+  `[the text](/academy/<chapter id>/<lesson id>)`, not a link to its file.
+- **Images do not work in lessons yet.** The site has no place to serve a lesson's picture
+  from, so a `![what it shows](file.png)` shows as a broken image. It is a small change,
+  made when the first lesson needs a picture: ask for it then.
 - **A lesson marked VERIFY** needs a fact checked (for example, what Quantower's free plan
   includes) before it promises anything.
 - **Nothing here is financial advice**, and the site says so on every page. Keep lessons
