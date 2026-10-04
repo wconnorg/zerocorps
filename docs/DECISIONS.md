@@ -1201,8 +1201,10 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `6e94f89` since 2026-10-01, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `31b9bcf` since 2026-10-04, same tree as `dev` then):**
 
+- **The landing page, rebuilt as "B · Directive"** (since 2026-10-04): one screen, the
+  three divisions listed once; see its section below.
 - Milestones 1 and 2; **sign-ups open to everyone** (`SIGNUP_MODE=open`).
 - Usernames: `/onboarding`, changes in `/settings` (first free, then 30 days).
 - **Profile pictures** (milestone 3's rest) and **changing the email address**
@@ -1243,7 +1245,7 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    before public promotion, a paid database plan so it never pauses; redirect
    `zerocorps.vercel.app` to the domain.
 
-**Built on `dev`, not live yet:** `GET /api/avatar` answers an empty 204 instead of 401
+**Live since 2026-10-01:** `GET /api/avatar` answers an empty 204 instead of 401
 or 404 when there is no picture or nobody is signed in. The live browser check after the
 two-factor release found the 401: the signed-in frame mounts for a moment while a
 signed-out visitor is sent to sign-in, its `<img>` asks for the picture, and the browser
@@ -1444,6 +1446,28 @@ dashboard", the three tones, the Academy as the way in.
   check (`npm run verify`) has a "landing page" section in place of the wheel's: the
   divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
   both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
+
+### Released on 2026-10-04: the landing page, rebuilt as "B · Directive"
+
+- **On the owner's word of 2026-10-02** ("make sure all features and functions are state of
+  the art then we push and apply to live deployment"): `dev` (`0508b09`) merged into
+  `main` as `31b9bcf` (parents `6e94f89` and `0508b09`), scanned, pushed. GitHub recorded
+  the production deployment as a success within a minute.
+- **Before the push:** four reviewers read the change one after another (laptop rule),
+  each finding was then checked by a separate sceptic. One real layout bug: just past
+  1024 pixels wide, with a scrollbar taking its width, "COMING SOON" dropped under its name
+  while "ENTER" stayed beside its own. Fixed (side by side, a status never drops), and the
+  browser check now measures that case. Three small ones fixed too: the name's smallest
+  size could push it out of a window under about 296 pixels, the line between the panels
+  is now a border (a gap can draw thicker at 125% scaling), and the check script reports
+  a page that is not the landing page as FAIL lines instead of crashing.
+- **Checks:** typecheck, lint and all 501 tests passed; the production build passed on
+  its own (the session that ran the full check closed during the build). The browser
+  check passed against that production build on the laptop (95 checks), then against
+  the live site (97 checks, 0 failures, the certificate included).
+- **Also carried to `main`:** the brain export's "a migration is waiting" message
+  (`5b05781`), the two audit fixes (`9ed9919`), the record of the `/admin` decision
+  (`672eb30`) and the Next.js advisory note in SECURITY.md (`0508b09`).
 
 ### Released on 2026-10-01: the brain's site side, then the privacy page for emails
 
