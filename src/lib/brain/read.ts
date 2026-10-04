@@ -101,24 +101,15 @@ const text = (value: unknown): string | null =>
  * the database in a single round trip. Dates arrive as YYYY-MM-DD text.
  */
 export async function readBrain(query: Query): Promise<BrainData> {
-  const [row] = await query(
-    `SELECT
-       (SELECT coalesce(json_agg(json_build_object(
-                  'memberNumber', m.member_number, 'userId', m.user_id::text,
-                  'username', m.username, 'displayName', m.display_name,
-                  'joinedOn', m.joined_on::text, 'discordUsername', m.discord_username, 'email', m.email)
-                ORDER BY m.member_number), '[]'::json)
-          FROM brain.members m) AS members,
-       (SELECT coalesce(json_agg(json_build_object(
-                  'userId', l.user_id::text, 'lessonId', l.lesson_id,
-                  'completedOn', l.completed_on::text)
-                ORDER BY l.completed_on, l.lesson_id), '[]'::json)
-          FROM brain.lessons_completed l) AS completions,
-       (SELECT coalesce(json_agg(json_build_object(
-                  'userId', s.user_id::text, 'step', s.step, 'achievedOn', s.achieved_on::text)
-                ORDER BY s.achieved_on, s.step), '[]'::json)
-          FROM brain.rank_steps s) AS steps`,
-  );
+  const [row] = await query(BRAIN_QUERY).catch((error: unknown) => {
+    // 42703, "undefined column": the views are older than this command.
+    if ((error as { code?: string }).code === "42703") {
+      throw new BrainReadError(
+        "The brain's views are older than this command: a migration is waiting. Run `npm run db:backup`, then `npm run db:migrate`, and try again.",
+      );
+    }
+    throw error;
+  });
   // postgres.js and PGlite both hand back json already parsed; a string is parsed here.
   const list = (value: unknown): Record<string, unknown>[] => {
     const parsed = typeof value === "string" ? (JSON.parse(value) as unknown) : value;
@@ -148,3 +139,20 @@ export async function readBrain(query: Query): Promise<BrainData> {
     })),
   };
 }
+
+const BRAIN_QUERY = `SELECT
+       (SELECT coalesce(json_agg(json_build_object(
+                  'memberNumber', m.member_number, 'userId', m.user_id::text,
+                  'username', m.username, 'displayName', m.display_name,
+                  'joinedOn', m.joined_on::text, 'discordUsername', m.discord_username, 'email', m.email)
+                ORDER BY m.member_number), '[]'::json)
+          FROM brain.members m) AS members,
+       (SELECT coalesce(json_agg(json_build_object(
+                  'userId', l.user_id::text, 'lessonId', l.lesson_id,
+                  'completedOn', l.completed_on::text)
+                ORDER BY l.completed_on, l.lesson_id), '[]'::json)
+          FROM brain.lessons_completed l) AS completions,
+       (SELECT coalesce(json_agg(json_build_object(
+                  'userId', s.user_id::text, 'step', s.step, 'achievedOn', s.achieved_on::text)
+                ORDER BY s.achieved_on, s.step), '[]'::json)
+          FROM brain.rank_steps s) AS steps`;

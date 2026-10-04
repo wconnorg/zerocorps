@@ -750,6 +750,10 @@ Where an entry here differs from "Email and DNS" above, this one is newer and wi
 
 ### The home page's look, decided by the owner while watching it live (2026-09-21)
 
+**Replaced in part on 2026-10-02:** the wheel, the row of products under it and the
+footer's red logo are gone; see "The landing page, rebuilt as "B · Directive"". The tones,
+the quotation and the header's centred wordmark described here stay.
+
 The owner's direction: a stark corporate look in the manner of Arasaka (black, red,
 sharp edges, restrained motion). Built on `dev` after the milestone 2 release, with the
 owner watching the laptop's dev server and answering as it changed. Not released yet.
@@ -1197,7 +1201,7 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `463d0b0`, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `6e94f89` since 2026-10-01, same tree as `dev` then):**
 
 - Milestones 1 and 2; **sign-ups open to everyone** (`SIGNUP_MODE=open`).
 - Usernames: `/onboarding`, changes in `/settings` (first free, then 30 days).
@@ -1263,7 +1267,10 @@ linked Discord accounts, and stays so (the owner's choice); the site's own accou
 **How releases work now:** `npm run check` (or at least lint and the tests) on `dev`, a
 scan for secrets, one `--no-ff` merge commit on `main` made with `git commit-tree`
 without leaving `dev`, pushed only on the owner's "push"; the deploy is confirmed through
-GitHub's public deployments API from PowerShell (the `gh` tool is not installed).
+GitHub's public deployments API from PowerShell (the `gh` tool is not installed). **A
+push is not a deployment:** on 2026-10-01 Vercel never built one push to `main`; if no
+deployment is listed within a few minutes, an empty retrigger commit fixes it (see
+"Released on 2026-10-01"). Poll that API gently: 60 anonymous requests an hour.
 
 ### Milestone 9: the brain export, built (2026-09-30)
 
@@ -1363,6 +1370,107 @@ Where this differs from the brief and from the section above, this is newer and 
   page (the owner likes the dashboard, the product framework and the colours; the landing
   page is "clunky": sleek, little text, an Arasaka-like corporate menace). A visual
   prototype comes before any site code for the redesign.
+
+### Decided on 2026-10-01: an owner-only status page, and the landing page's redesign
+
+Both were asked for the day the brain started working. **The status page is not built.
+The landing page was built on 2026-10-02**: the owner chose B, and the next section
+records what was built.
+
+- **A status page at `/admin`, on the site** (the owner's choice over a note in the brain,
+  and over skipping it). It is the "owner-only dev panel" recorded on 2026-09-20, kept
+  small: one read-only page answering "is anything broken or stale?". Counts only; member
+  details stay in the brain.
+  - _Site and database:_ the database reachable, the daily clean-up's last run, the last
+    backup's age.
+  - _Members and Academy:_ accounts, new this week, with two-factor, with Discord linked;
+    lessons completed in the last 7 and 30 days.
+  - _Agent Zero:_ when it last called the internal API, and how often today. The site
+    records this itself, so the bot does not change; richer status from the bot would need
+    the bot's own chat.
+  - _Security and email:_ failed sign-ins, lockouts, rate-limit hits and email failures in
+    the last 24 hours (the "health view" recorded for milestone 4).
+  - **Owner only:** the owner's account is named by its user id in an environment
+    variable, never an address in this repository; checked on the server on every request;
+    and the page refuses unless that account has two-factor on.
+  - **No actions at first.** Buttons that change something (the invite list, a member's
+    two-factor) are each a new way in, and are decided one at a time later; today those
+    are laptop commands.
+  - It needs one additive migration: a small table of "last seen" times (the bot, the
+    daily clean-up, a backup).
+- **The landing page is redesigned, after a mock-up.** The owner: the dashboard and the
+  three-product framework are liked, and the colours; the landing page is "clunky", with
+  too much on it; the aim is sleek and sparse, with the cold menace of a fictional
+  megacorporation (an original design, not a copy of anyone's). Three directions were
+  drawn as a private design canvas for the owner to choose from, each one screen with the
+  products shown once: **A · Monolith** (the name, the quotation, one button, the products
+  as one line), **B · Directive** (a grid of hairlines, the divisions as a list with their
+  status) and **C · Tower** (the name stacked, the products as three tall slabs). No site
+  code changes until the owner picks; then the phone layout and the light theme come with
+  the build. **The order the owner chose:** the mock-up first, then the status page.
+
+### The landing page, rebuilt as "B · Directive" (owner, 2026-10-02)
+
+The owner chose **B · Directive** from the three drawn directions ("lets go with b
+directive"). It replaces the turning wheel and the products row of 2026-09-21. What was
+decided then about the words stays: the name as the heading, the quotation, "Enter the
+dashboard", the three tones, the Academy as the way in.
+
+- **One screen, drawn as a frame of hairlines.** On the left the name (the page's one
+  `h1`), "Forced evolution." with "J.B.", and the one button, "Enter the dashboard". On the
+  right the label DIVISIONS and the three products **once**, as a numbered list with a
+  status: ZeroCorps Academy first, its whole row a link with a red ENTER; ZeroBot and
+  ZeroCharts with their one line and COMING SOON in their own tone, not links. On a
+  desktop nothing scrolls. On a phone the panels stack, and each status drops under its
+  name, in line with it.
+- **The wheel is gone**, with its buttons, its timer, its CSS and its tests
+  (`product-wheel.tsx`). `src/components/marketing/products.tsx` keeps the list of
+  products, which the home page and the dashboard both draw from so they cannot drift
+  apart, and the face of the dashboard's tiles.
+- **Every link in the page's body still leads to `/dashboard`, and none is pre-loaded**
+  (2026-09-21). The Academy row's link is named "Enter ZeroCorps Academy"; its heading
+  reads "ZeroCorps Academy" as one name.
+- **The header runs the full width**, so its hairline meets the frame's. **The wordmark
+  stays in the middle**, as decided on 2026-09-21 and as on the dashboard; the drawing had
+  it at the left, and the owner was told, to choose. **The footer is one slim strip:** the
+  disclaimer, the year, Terms and Privacy. Its red logo is gone.
+- **Motion:** none, except that the arrow on a way in leans forward under the pointer or
+  the keyboard's focus, and not at all for a visitor who asked for reduced motion.
+- **The name is one word and cannot wrap**, so its size follows the room it has: the
+  window's width on a phone, half of it beside the divisions. The browser check measures
+  it at 320 pixels wide, the narrowest phone, where it would stick out first.
+- **No new copy.** The only new words are the labels DIVISIONS and ENTER.
+- **Checks:** `src/app/(marketing)/home.test.tsx` renders the page as text. The browser
+  check (`npm run verify`) has a "landing page" section in place of the wheel's: the
+  divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
+  both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
+
+### Released on 2026-10-01: the brain's site side, then the privacy page for emails
+
+- **First, on the owner's "push":** `dev` (`6ac4a20`) merged into `main` as `3fc3adc`,
+  scanned, pushed; GitHub recorded the production deployment as a success, and
+  `/api/avatar` answered 204 signed out (it was 401). The full `npm run check` had not
+  finished in one go on the laptop that day (it stalled twice, each time on timeouts in
+  files unrelated to the change, which then passed alone); typecheck, lint, the production
+  build and every changed test file passed.
+- **Second, on the owner's "push to live deployment":** `dev` (`6ab825b`) merged as
+  `cfb1f22`: the privacy page names email addresses among what the internal analytics look
+  at, which had to be live before an export put addresses into the vault.
+- **Vercel did not build `cfb1f22`.** Twenty minutes after the push GitHub listed no
+  deployment and no commit status for it, the live page still held the old sentence, and
+  both Vercel's and GitHub's status pages were green. Nothing in `vercel.json` skips a
+  build and the author was the same as for every earlier release, so it reads as a push
+  event Vercel never received. **The fix was a new push:** an empty commit on `dev`
+  (`Retrigger the deployment`), merged as `6e94f89` with the very same tree; its deployment
+  was created and succeeded within a minute, and the live page showed the new sentence.
+  **So after every push to `main`: confirm the deployment exists, not only that the push
+  succeeded; if none appears within a few minutes, push an empty retrigger commit.**
+- **Checked on the live database that day (read-only commands):** `npm run db:check` (both
+  connections verified against the pinned CA, Postgres 17), `npm run db:check-role` (every
+  line passes; 15 tables), `npm run db:counts` (3 accounts, 1 Discord link, 4 lessons
+  completed, no two-factor yet), `npm run academy:check` (42 lessons, 9 checkpoints).
+- **The owner's, still:** `0009_brain_email` (`npm run db:backup`, `npm run db:migrate`);
+  until then `npm run brain:export` answers that a migration is waiting.
 
 ### Released on 2026-09-30: two-factor (milestone 5)
 

@@ -17,7 +17,7 @@ export function Wordmark({
   markClassName = "text-accent",
 }: {
   className?: string;
-  /** The mark's colour. The headers use the text colour (owner, 2026-09-21); the footer keeps the red. */
+  /** The mark's colour. The headers use the text colour (owner, 2026-09-21); the "page not found" page keeps the red. */
   markClassName?: string;
 }) {
   return (
