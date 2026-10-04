@@ -1201,8 +1201,11 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `5f73b14` since 2026-10-04, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `6f9d818` since 2026-10-04, same tree as `dev` then):**
 
+- **The privacy page names profile pictures** among what the owner's analytics look at
+  (since 2026-10-04, third release that day), so the brain may show them; see "The brain,
+  changed by the owner on 2026-10-04".
 - **Next.js 16.3.8** (since 2026-10-04), a security release; see SECURITY.md, "Closed on
   2026-10-04: the Next.js advisories".
 - **The landing page, rebuilt as "B · Directive"** (since 2026-10-04): one screen, the
@@ -1501,6 +1504,22 @@ dashboard", the three tones, the Academy as the way in.
   check (`npm run verify`) has a "landing page" section in place of the wheel's: the
   divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
   both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
+
+### Released on 2026-10-04, third: the privacy page names profile pictures
+
+- **On the owner's "push":** `dev` (`53131b8`) merged into `main` as `6f9d818` (parents
+  `5f73b14` and `53131b8`), scanned, pushed; GitHub recorded the production deployment as
+  a success within a minute. The live `/privacy` then held the new wording (pictures in
+  the analytics; "never shown to other members"; the analytics copy goes at the next
+  refresh) and no longer "only you are shown it", checked by fetching the page; the
+  browser check against the live site passed (97 checks, 0 failures).
+- **Before the push:** `npm run check` on `dev` (521 tests and the production build). The
+  brain's code itself runs only on the laptop; its new default had already rebuilt the
+  owner's vault as the members' list, without pictures, at 12:43 that day, which also
+  proved the role check's array parameter on the real database.
+- **The owner's, next:** `npm run db:backup`, then `npm run db:migrate`, which should list
+  only `0010_brain_pictures`; the running `brain:watch` then shows pictures at its next
+  round, with no restart.
 
 ### Released on 2026-10-04, second: Next.js 16.3.8
 
