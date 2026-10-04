@@ -26,9 +26,10 @@ with that milestone". _Owner_ means it is an action only the owner can take.
   Proton and the Discord developer account. Any one of them is a way into the whole
   site.
 - **The owner's laptop:** `.env.local`, database backups and, from milestone 9, the
-  brain vault. **Since 2026-10-01 the vault holds every member's email address** (the
-  owner's decision), as plain text in a folder: full-disk encryption on the laptop is what
-  protects it, and it must never be copied to a sync service or shared.
+  brain vault. **Since 2026-10-01 the vault holds every member's email address, and since
+  2026-10-04 every member's profile picture** (the owner's decisions), as plain files in a
+  folder: full-disk encryption on the laptop is what protects them, and the vault must
+  never be copied to a sync service or shared.
 
 ### Who attacks it, and what answers them
 
@@ -55,7 +56,7 @@ with that milestone". _Owner_ means it is an action only the owner can take.
 | A hostile picture upload: script in an SVG, a file that only claims to be a picture, a decompression bomb, a photo's hidden location                 | Only JPEG, PNG and WebP are decoded; the size is read from the header and refused over 40 megapixels before any pixel is decoded; uploads over 2 MB are refused unread; everything is re-encoded by sharp to a 256-pixel WebP that keeps pixels only; served only to its owner, from our own origin, as `image/webp` with `nosniff`; 20 changes an hour per member                                                                                                                                                                                                                | M3       |
 | Harassment and doxxing of members                                                                                                                    | Minimal data; no public profiles; the internal API never returns emails or phones; the brain export is restricted to an allowlist inside the database                                                                                                                                                                                                                                                                                                                                                                                                                             | M2 to M9 |
 | A leaked secret                                                                                                                                      | Secrets only in `.env.local` and the host's settings; GitHub secret scanning and push protection; rotation runbook below; the coding assistant's file tools are denied every env file except the example, and the email outbox (`.claude/settings.json`), so an open editor tab cannot put one in a transcript                                                                                                                                                                                                                                                                    | M2       |
-| The brain export reading, or letting out, more than its allowlist                                                                                    | Three views in their own `brain` schema hold the allowlist; `brain_reader` can read those and no table of the app (tests read every table as that role), cannot write (and is read-only by default, with a 30-second statement limit) and cannot log in until `npm run brain:setup`; the export refuses to run if its role could read any table of the app; Supabase's API roles get nothing on the schema, which the Data API does not expose; the site refuses to start with `BRAIN_DATABASE_URL` set                                                                           | M9 (dev) |
+| The brain export reading, or letting out, more than its allowlist                                                                                    | Four views in their own `brain` schema hold the allowlist (the pictures one since 0010); `brain_reader` can read those and no table of the app (tests read every table as that role), cannot write (and is read-only by default, with a 30-second statement limit) and cannot log in until `npm run brain:setup`; the export refuses to run if its role could read any table of the app; Supabase's API roles get nothing on the schema, which the Data API does not expose; the site refuses to start with `BRAIN_DATABASE_URL` set                                              | M9 (dev) |
 | Text a member typed attacking the owner through the brain: HTML that loads a remote image when a note opens, or links and tags that redraw the graph | A display name or a Discord name is only ever written as a quoted YAML string in the frontmatter or inside an inline code span in the body, never as Markdown or HTML; usernames and Academy ids come from fixed alphabets; links go by full path, so a note's name cannot capture one; attack tests in `notes.test.ts` and `markdown.test.ts`                                                                                                                                                                                                                                    | M9 (dev) |
 | The brain vault leaving the laptop                                                                                                                   | The export refuses a vault inside the public repository or around it, the home folder, and any folder OneDrive (or another sync service) uploads; it takes over only a folder it made, and deletes or overwrites only notes it wrote; nothing about members is printed                                                                                                                                                                                                                                                                                                            | M9 (dev) |
 | A role's password kept by the database (logs, query statistics) after `ALTER ROLE ... PASSWORD`                                                      | `npm run brain:setup` never sends the password: it sends a SCRAM-SHA-256 secret computed on the laptop, as psql's `\password` does (checked against RFC 7677 and against Postgres itself)                                                                                                                                                                                                                                                                                                                                                                                         | M9 (dev) |
@@ -323,20 +324,22 @@ the laptop, without the SQL editor and without the password ever reaching the da
 ### Set up the brain (milestone 9, once)
 
 The brain is the owner's Obsidian vault of every member, rebuilt from the database by
-`npm run brain:export`. It reads as `brain_reader`, which can read the three views in the
+`npm run brain:export`. It reads as `brain_reader`, which can read the views in the
 `brain` schema and nothing else.
 
-1. The migration `0008_brain_export` must be applied first: `npm run db:backup`, then
-   `npm run db:migrate`. It creates the views and the role, without a password and unable
-   to log in.
+1. The brain's migrations must be applied first (`0008_brain_export` creates the views
+   and the role, without a password and unable to log in; `0009` and `0010` add the email
+   and the pictures): `npm run db:backup`, then `npm run db:migrate`.
 2. `npm run brain:setup`, in a terminal. It asks for the vault folder (Enter takes
    `C:\Users\<you>\ZeroCorps Brain`; never inside the repository or OneDrive), then for
    the typed confirmation `set up the brain`. It gives `brain_reader` a random password,
    sent as a SCRAM secret so the password itself never reaches the database, writes
    `BRAIN_DATABASE_URL` and `BRAIN_VAULT_PATH` into `.env.local`, and proves the new
    connection: `brain_reader`, the views, no table of the app. Nothing is shown.
-3. `npm run brain:export`. Then in Obsidian: "Open folder as vault", that folder, and the
-   note "ZeroCorps Brain". Run the export again whenever a fresh view is wanted.
+3. `npm run brain:export` (or `npm run brain:watch`, which repeats it every 5 minutes).
+   Then in Obsidian: "Open folder as vault", that folder; the members are in
+   `ZeroCorps/Members`, one note each. `-- --academy` builds the Academy's brain instead,
+   which starts from the note "ZeroCorps Brain".
 
 `BRAIN_DATABASE_URL` and `BRAIN_VAULT_PATH` are the laptop's only: they never go into
 Vercel, and the site refuses to start if `BRAIN_DATABASE_URL` is set there. To switch the

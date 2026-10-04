@@ -1264,8 +1264,11 @@ wrote the vault in `C:\Users\<owner>\ZeroCorps Brain` (3 members). See "Mileston
 brain export, built" and "The brain, changed by the owner on 2026-10-01" below. The site's
 side went live the same day (`main` = `3fc3adc`): the refusal of `BRAIN_DATABASE_URL` in
 production, and the avatar fix above. **`0009_brain_email` is applied:** the owner's
-backup of 2026-10-04 read all ten migrations from the database's own list. So
-`npm run brain:export` writes the addresses, and `npm run brain:watch` keeps it fresh.
+backup of 2026-10-04 read all ten migrations from the database's own list. **Since
+2026-10-04 the brain is the members' list with their pictures** (see "The brain, changed
+by the owner on 2026-10-04"): the pictures need `0010_brain_pictures`, which the owner
+applies (`npm run db:backup`, then `npm run db:migrate`) only once the privacy page naming
+pictures is live; until then the export builds the list without pictures and says so.
 
 **The Discord channel "Academy Users: N"** (owner, 2026-09-30, asked how it updates):
 Agent Zero renames it from the internal API's list of linked members, at start and at most
@@ -1379,6 +1382,51 @@ Where this differs from the brief and from the section above, this is newer and 
   page (the owner likes the dashboard, the product framework and the colours; the landing
   page is "clunky": sleek, little text, an Arasaka-like corporate menace). A visual
   prototype comes before any site code for the redesign.
+
+### The brain, changed by the owner on 2026-10-04: the members' list, with pictures
+
+Where this differs from the sections above, this is newer and wins.
+
+- **The owner's words:** "the zero corps brain should only list zerocorps members", then,
+  asked which notes should go, "list absolutely nothing other than email username date
+  signed up profile picture blah blah". **Every account counts as a member** (the owner's
+  answer, as before: Discord or not).
+- **So by default the brain is one note per member and nothing else:** the username as
+  its heading, the profile picture, the member number, the email, the display name, the
+  day they signed up and their Discord name if linked. Its properties are the member
+  number, the username, `signed_up` and `discord_linked`, and the tag `zc/member` (the
+  graph colours members in the brand's red). No summary note, no leaderboard, no rank
+  notes, no Academy progress, and the lessons and rank steps are not even read from the
+  database. Typed names stay in code spans in the body, as before.
+- **`npm run brain:export -- --academy` keeps the Academy's brain as first built:** the
+  same member notes with their rank and lessons, a note per lesson, chapter, course and
+  rank, the hub "ZeroCorps Brain" and the leaderboard. The default run removes those notes
+  again (they carry the export's marker). `user_id` is no longer a property in either.
+- **Pictures** (`drizzle/0010_brain_pictures.sql`): `brain.members` gains
+  `picture_version`, the short hash of the picture that the site keeps beside the account
+  (`users.avatar_url`, written in the same transaction as the picture), and a fourth view,
+  `brain.member_pictures`, holds the pictures themselves, read by `brain_reader` alone.
+  The pictures are the 256x256 WebP files the site made from the uploads (only pixels; the
+  table allows nothing else). They go into the vault's `ZeroCorps/Pictures`, each named by
+  its own hash, so a picture's file proves it is the export's (only such a file is ever
+  deleted), and a picture already there is never read again; new ones are read 25 at a
+  time, checked (a WebP, the size, the hash) and renamed into place once complete.
+- **Order:** the privacy page names profile pictures among what the internal analytics
+  look at, and its profile paragraph no longer says "only you are shown it" (a picture is
+  shown to the member, and to the owner for the analytics, never to other members; the
+  analytics copy goes at the next refresh after a removal). It goes live first; only then
+  does the owner apply `0010`. Between the two, the export builds the members' list
+  without pictures, keeping it fresh, and says the pictures come with `0010`. Its "a
+  migration is waiting" sentence, for anything older, now says to apply a migration only
+  once the release that needs it is live.
+- **Found by the review before release (one reviewer at a time, then a sceptic):** the
+  real database driver, postgres.js, serializes a parameter the server reports as `jsonb`
+  with `JSON.stringify`, so the list of members whose pictures to read would have arrived
+  as one JSON string and every picture read would have failed; PGlite, in the tests, does
+  not do that. It is bound as text now, and a test pins the statement. Also hardened: a
+  picture is flushed to the disk before it is renamed into place; a link or another run's
+  file in a temporary file's place is a conflict, not a crash; what Windows or macOS drops
+  in the folder (`desktop.ini`, `.DS_Store`) is not counted as the owner's.
 
 ### Decided on 2026-10-01: an owner-only status page, and the landing page's redesign
 

@@ -76,9 +76,11 @@ possible.
 | 9   | Brain export for the owner's Obsidian vault              | Works on the laptop since 2026-10-01  |
 
 **Read "Where things stand at the end of 2026-09-29" in DECISIONS.md first.** It says
-what is live, what the owner does next and what is not built. All ten migrations, up to
+what is live, what the owner does next and what is not built. All migrations up to
 `0009_brain_email` (the member's email in the brain's view, the owner's decision of
-2026-10-01), are applied: the owner's backup of 2026-10-04 counted them. Sign-ups are
+2026-10-01) are applied: the owner's backup of 2026-10-04 counted them.
+`0010_brain_pictures` (the members' pictures in the brain, 2026-10-04) waits for the
+owner's `db:migrate`, after the release that names pictures on the privacy page. Sign-ups are
 open to everyone. Two-factor is an authenticator app only: no text
 messages and no phone numbers (owner, 2026-09-29), so hard rules 3 and 7 hold trivially.
 
@@ -202,7 +204,8 @@ npm run brain:setup        # once: the brain's vault folder, and a new password 
 
 # Owner's, but ask nothing (a scheduled task may run them):
 npm run brain:export       # rebuilds the Obsidian brain from the database, as brain_reader:
-                           # members only; `-- --academy` adds lesson, chapter and course notes
+                           # one note per member (email, username, sign-up day, picture...);
+                           # `-- --academy` builds the Academy's brain (ranks, lessons, a hub)
 npm run brain:watch        # the same, now and every 5 minutes until Ctrl+C (`-- 15`: every 15)
 ```
 

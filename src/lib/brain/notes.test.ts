@@ -65,6 +65,7 @@ const member = (number: number, overrides: Partial<BrainMember> = {}): BrainMemb
   joinedOn: "2026-09-21",
   discordUsername: null,
   email: `member${number}@example.com`,
+  pictureVersion: null,
   ...overrides,
 });
 
@@ -141,20 +142,21 @@ describe("buildBrain", () => {
       [
         "type: member",
         "member_number: 1",
-        `user_id: "${member(1).userId}"`,
         'username: "first_one"',
+        "signed_up: 2026-09-21",
+        "discord_linked: false",
         'rank: "rookie"',
-        "joined_on: 2026-09-21",
         "last_active_on: 2026-09-12",
         "lessons_completed: 2",
         "pace_30d: 2",
-        "discord_linked: false",
         "tags:",
         "  - zc/member",
         "  - zc/rank/rookie",
       ].join("\n"),
     );
-    expect(note).toContain("Member **#1** · joined 2026-09-21 · [[ZeroCorps/Ranks/rookie|Rookie]]");
+    expect(note).toContain("- Member: **#1**\n");
+    expect(note).toContain("- Signed up: 2026-09-21\n");
+    expect(note).toContain("- Rank: [[ZeroCorps/Ranks/rookie|Rookie]]\n");
     expect(note).toContain("- Levels finished: Foundations (2026-09-12)");
     // Oldest first, each a link to the lesson's note by full path.
     expect(note).toContain(
@@ -260,6 +262,7 @@ describe("buildBrain", () => {
       data: { members: [], completions: [], steps: [] },
       catalog: catalog(),
       now: NOW,
+      academy: true,
     });
     expect(empty.files.get("ZeroCorps/ZeroCorps Brain.md")).toContain("No accounts yet.");
     expect(empty.files.get("ZeroCorps/Leaderboard.md")).toContain(
@@ -269,22 +272,98 @@ describe("buildBrain", () => {
   });
 });
 
-describe("buildBrain, members only (the default)", () => {
-  const brain = buildBrain({ data: data(), catalog: catalog(), now: NOW });
+describe("buildBrain, the members' list (the default)", () => {
+  const PICTURE = "AbCdEfGhIjKlMnOpQrSt_-";
+  const withPictures = (): BrainData => {
+    const base = data();
+    return {
+      ...base,
+      members: base.members.map((entry) =>
+        // Two members share one picture: it is one file.
+        entry.memberNumber === 1 || entry.memberNumber === 4
+          ? { ...entry, pictureVersion: PICTURE }
+          : entry,
+      ),
+    };
+  };
+  // No Academy files given: the members' list does not need them.
+  const brain = buildBrain({ data: withPictures(), now: NOW });
 
-  it("writes members, ranks, the hub and the leaderboard, and no Academy notes", () => {
-    expect([...brain.files.keys()].filter((path) => /Lessons|Chapters|Courses/.test(path))).toEqual(
-      [],
-    );
-    expect(brain.files.has("ZeroCorps/Members/first_one.md")).toBe(true);
-    expect(brain.counts.lessonNotes).toBe(0);
+  it("writes one note per member and nothing else", () => {
+    expect([...brain.files.keys()].sort()).toEqual([
+      "ZeroCorps/Members/con-.md",
+      "ZeroCorps/Members/first_one.md",
+      "ZeroCorps/Members/fourth.md",
+      "ZeroCorps/Members/member-3.md",
+    ]);
+    expect(brain.counts).toEqual({ members: 4, pictures: 2, lessonNotes: 0, completions: 7 });
   });
 
-  it("lists a member's lessons as text, so no link points at a note that is not there", () => {
+  it("holds the member's details and nothing about the Academy", () => {
     const note = brain.files.get("ZeroCorps/Members/first_one.md") ?? "";
-    expect(note).toContain("- 2026-09-10 · what a market is\n- 2026-09-12 · aux");
+    expect(note).toBe(
+      [
+        "---",
+        `generated_by: "${GENERATED_BY}"`,
+        "type: member",
+        "member_number: 1",
+        'username: "first_one"',
+        "signed_up: 2026-09-21",
+        "discord_linked: false",
+        "tags:",
+        "  - zc/member",
+        "---",
+        "# first_one",
+        "",
+        `![[ZeroCorps/Pictures/${PICTURE}.webp|160]]`,
+        "",
+        "- Member: **#1**",
+        "- Email: `member1@example.com`",
+        "- Display name: none",
+        "- Signed up: 2026-09-21",
+        "- Discord: not linked",
+        "",
+      ].join("\n"),
+    );
     for (const content of brain.files.values()) {
-      expect(content).not.toMatch(/\[\[ZeroCorps\/(Lessons|Chapters|Courses)\//);
+      // Outside the code spans that hold typed names: no Academy word, and no link but the
+      // picture's embed.
+      const ours = content.replace(/(`+)[\s\S]*?\1/g, "");
+      expect(ours).not.toMatch(/\brank|lesson|\bpace|last_active|Academy|(?<!!)\[\[/i);
     }
+  });
+
+  it("says so when a member has no picture, and asks for each picture once", () => {
+    expect(brain.files.get("ZeroCorps/Members/con-.md")).toContain("\nNo profile picture.\n");
+    expect([...brain.pictures]).toEqual([[PICTURE, member(1).userId]]);
+  });
+
+  it("says nothing about a picture while the database cannot tell yet", () => {
+    const before = buildBrain({ data: data(), now: NOW, pictures: false });
+    const note = before.files.get("ZeroCorps/Members/first_one.md") ?? "";
+    expect(note).toContain("# first_one\n\n- Member: **#1**\n");
+    expect(note).not.toMatch(/picture/i);
+    expect(before.counts.pictures).toBe(0);
+  });
+
+  it("still never lets a display name or a Discord name become HTML, a link or a property", () => {
+    const note = brain.files.get("ZeroCorps/Members/con-.md") ?? "";
+    const front = note.split("\n---\n")[0] ?? "";
+    expect(front).not.toMatch(/display_name|discord_username|Leaderboard|trader\.one|evil/);
+    const outsideCode = body(note).replace(/(`+)[\s\S]*?\1/g, "");
+    expect(outsideCode).not.toMatch(/<img|\[\[Leaderboard|#owned|evil\.example/);
+  });
+
+  it("colours the members in the graph, and refuses a picture name it could not trust", () => {
+    expect(brain.colorGroups).toEqual([
+      { query: "tag:#zc/member", color: { a: 1, rgb: 0xff3b47 } },
+    ]);
+    const bad = data();
+    bad.members[0] = { ...member(2), pictureVersion: "../../escape.webp|x]]" };
+    expect(() => buildBrain({ data: bad, now: NOW })).toThrow(/picture's name/);
+  });
+
+  it("needs the Academy's files for the Academy's brain only", () => {
+    expect(() => buildBrain({ data: data(), now: NOW, academy: true })).toThrow(/Academy's files/);
   });
 });

@@ -11,8 +11,8 @@
 //   4. checks the new connection: brain_reader, the brain's views, nothing more.
 //
 // Nothing is shown: not the password, not the URL. brain_reader can read the brain's
-// three views and nothing else (drizzle/0008_brain_export.sql). Running this again
-// replaces the password, and the old one stops working.
+// views and nothing else (drizzle/0008_brain_export.sql, then 0009 and 0010). Running
+// this again replaces the password, and the old one stops working.
 
 import { writeFileSync } from "node:fs";
 import { homedir } from "node:os";
@@ -66,7 +66,7 @@ if (!diagnoseDatabaseUrl(brainUrl, "brain").ok)
 console.log(`
 This will:
   - give the database role ${BRAIN_ROLE} a new random password, which is never shown
-    (${BRAIN_ROLE} can read the brain's three views and nothing else);
+    (${BRAIN_ROLE} can read the brain's views and nothing else);
   - write BRAIN_DATABASE_URL and BRAIN_VAULT_PATH into .env.local
     (the vault folder: ${vault.path});
   - check the new connection.
