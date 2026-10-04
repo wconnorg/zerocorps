@@ -1201,8 +1201,10 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `6f9d818` since 2026-10-04, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `87e7b2a` since 2026-10-04, same tree as `dev` then):**
 
+- **Better Auth 1.7.7 and sharp 0.35.5, with a gate before the image library** (since
+  2026-10-04, fourth release that day); see its section below.
 - **The privacy page names profile pictures** among what the owner's analytics look at
   (since 2026-10-04, third release that day), so the brain may show them; see "The brain,
   changed by the owner on 2026-10-04".
@@ -1505,11 +1507,18 @@ dashboard", the three tones, the Academy as the way in.
   divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
   both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
 
-### Built on 2026-10-04: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
+### Released on 2026-10-04, fourth: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
 
 The owner asked whether everything was up to date and "state of the art". `npm outdated`,
 then one research agent at a time reading each package's release notes and advisories
 (SECURITY.md has the findings). Taken, as one small release:
+
+- **Released on the owner's "push":** `dev` (`fd717ef`) merged into `main` as `87e7b2a`
+  (parents `6f9d818` and `fd717ef`), scanned, pushed; GitHub recorded the production
+  deployment as a success within a minute, and the browser check against the live site
+  passed (97 checks, 0 failures). Before the push: `npm run check` (522 tests and the
+  production build; the run met its own time limit only after the last stage had printed
+  its result) and the browser check against that build (95 checks).
 
 - **Better Auth 1.7.5 → 1.7.7** (with `@better-auth/core`; every `@better-auth/*` package
   resolves to 1.7.7): one low advisory that applied (a race in its own loose rate limits),
