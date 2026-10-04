@@ -12,15 +12,20 @@ import {
 import { tmpdir } from "node:os";
 import { join, parse } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { avatarVersion } from "../avatars/avatars.ts";
 import type { ColorGroup } from "./notes.ts";
 import {
   BrainVaultError,
   checkVaultPath,
   isGenerated,
+  looksLikeWebp,
   MARKER_FILE,
+  MAX_PICTURE_BYTES,
   mergeGraphSettings,
+  pictureVersionOf,
   prepareVault,
   syncBrainFolder,
+  syncBrainPictures,
   syncedFoldersFrom,
   type VaultContext,
   writeGraphSettings,
@@ -228,6 +233,186 @@ describe("syncBrainFolder", () => {
     ]);
     expect(readdirSync(outside)).toEqual(["precious.md"]);
     expect(readFileSync(join(outside, "precious.md"), "utf8")).toBe(note("not the brain's"));
+  });
+});
+
+describe("syncBrainPictures", () => {
+  const vault = () => join(scratch, "vault");
+  const pictures = () => join(vault(), "ZeroCorps", "Pictures");
+  /** A small file with a WebP's header, different for each seed. */
+  const webp = (seed: string) => {
+    const payload = Buffer.from(`VP8 ${seed}`, "latin1");
+    const header = Buffer.alloc(12);
+    header.write("RIFF", 0, "latin1");
+    header.writeUInt32LE(payload.length + 4, 4);
+    header.write("WEBP", 8, "latin1");
+    return Buffer.concat([header, payload]);
+  };
+  const a = webp("a");
+  const b = webp("b");
+  const va = pictureVersionOf(a);
+  const vb = pictureVersionOf(b);
+  /** The database, as far as the pictures go, and every list of members read from it. */
+  let stored: Map<string, Uint8Array>;
+  let asked: string[][];
+  const read = async (userIds: string[]) => {
+    asked.push(userIds);
+    return new Map(
+      userIds.flatMap((id) => {
+        const bytes = stored.get(id);
+        return bytes ? [[id, bytes] as const] : [];
+      }),
+    );
+  };
+  beforeEach(() => {
+    prepareVault(vault());
+    mkdirSync(join(vault(), "ZeroCorps"));
+    stored = new Map([
+      ["u-a", a],
+      ["u-b", b],
+    ]);
+    asked = [];
+  });
+
+  it("names a picture exactly as the site does, and knows a WebP", () => {
+    expect(pictureVersionOf(a)).toBe(avatarVersion(a));
+    expect(looksLikeWebp(a)).toBe(true);
+    expect(looksLikeWebp(Buffer.from("GIF89a, not a WebP", "latin1"))).toBe(false);
+    expect(looksLikeWebp(Buffer.concat([a, Buffer.alloc(MAX_PICTURE_BYTES)]))).toBe(false);
+  });
+
+  it("writes each picture under its own hash, and reads only the ones it lacks", async () => {
+    const wanted = new Map([
+      [va, "u-a"],
+      [vb, "u-b"],
+    ]);
+    expect(await syncBrainPictures(vault(), wanted, read)).toMatchObject({
+      created: 2,
+      unchanged: 0,
+    });
+    expect(readFileSync(join(pictures(), `${va}.webp`))).toEqual(a);
+    expect(asked).toEqual([["u-a", "u-b"]]);
+    expect(await syncBrainPictures(vault(), wanted, read)).toMatchObject({
+      created: 0,
+      unchanged: 2,
+    });
+    expect(asked).toHaveLength(1);
+  });
+
+  it("deletes its own pictures that are no longer wanted, and the folder once empty", async () => {
+    await syncBrainPictures(
+      vault(),
+      new Map([
+        [va, "u-a"],
+        [vb, "u-b"],
+      ]),
+      read,
+    );
+    expect(await syncBrainPictures(vault(), new Map([[vb, "u-b"]]), read)).toMatchObject({
+      removed: 1,
+      unchanged: 1,
+    });
+    expect(await syncBrainPictures(vault(), new Map(), read)).toMatchObject({ removed: 1 });
+    expect(existsSync(pictures())).toBe(false);
+  });
+
+  it("never deletes or overwrites a file it did not write", async () => {
+    mkdirSync(pictures());
+    writeFileSync(join(pictures(), "holiday.webp"), "mine");
+    // A file under a picture's very name, but not that picture's bytes.
+    writeFileSync(join(pictures(), `${va}.webp`), webp("mine"));
+    expect(await syncBrainPictures(vault(), new Map([[va, "u-a"]]), read)).toMatchObject({
+      conflicts: 1,
+      kept: 1,
+      created: 0,
+    });
+    expect(asked).toEqual([]);
+    expect(await syncBrainPictures(vault(), new Map(), read)).toMatchObject({
+      removed: 0,
+      kept: 2,
+    });
+    expect(readFileSync(join(pictures(), `${va}.webp`))).toEqual(webp("mine"));
+    expect(readFileSync(join(pictures(), "holiday.webp"), "utf8")).toBe("mine");
+  });
+
+  it("skips a picture that changed or went while being read, or is not a WebP", async () => {
+    const gif = Buffer.from("GIF89a, not a WebP", "latin1");
+    stored = new Map([
+      ["u-a", b],
+      ["u-gif", gif],
+    ]);
+    const result = await syncBrainPictures(
+      vault(),
+      new Map([
+        [va, "u-a"],
+        [vb, "u-gone"],
+        [pictureVersionOf(gif), "u-gif"],
+      ]),
+      read,
+    );
+    expect(result).toMatchObject({ created: 0, skipped: 3 });
+    expect(existsSync(pictures())).toBe(false);
+  });
+
+  it("refuses a picture name that is not a version before writing anything", async () => {
+    await expect(
+      syncBrainPictures(vault(), new Map([["../../escape", "u-a"]]), read),
+    ).rejects.toThrow(BrainVaultError);
+    expect(existsSync(pictures())).toBe(false);
+    expect(asked).toEqual([]);
+  });
+
+  it("never follows a link out of its folder", async () => {
+    const outside = join(scratch, "outside");
+    mkdirSync(outside);
+    // Even a file that is exactly one of its own pictures.
+    writeFileSync(join(outside, `${vb}.webp`), b);
+    symlinkSync(outside, pictures(), "junction");
+    expect(await syncBrainPictures(vault(), new Map([[va, "u-a"]]), read)).toMatchObject({
+      conflicts: 1,
+      created: 0,
+      removed: 0,
+    });
+    expect(readdirSync(outside)).toEqual([`${vb}.webp`]);
+    expect(asked).toEqual([]);
+  });
+
+  it("clears away a write that never finished", async () => {
+    mkdirSync(pictures());
+    writeFileSync(join(pictures(), `.${va}.webp.partial`), "half");
+    expect(await syncBrainPictures(vault(), new Map([[va, "u-a"]]), read)).toMatchObject({
+      created: 1,
+    });
+    expect(readdirSync(pictures())).toEqual([`${va}.webp`]);
+  });
+
+  it("leaves a link in a picture's or a temporary file's place alone, and carries on", async () => {
+    const outside = join(scratch, "outside");
+    mkdirSync(outside);
+    mkdirSync(pictures());
+    symlinkSync(outside, join(pictures(), `${va}.webp`), "junction");
+    symlinkSync(outside, join(pictures(), `.${vb}.webp.partial`), "junction");
+    const result = await syncBrainPictures(
+      vault(),
+      new Map([
+        [va, "u-a"],
+        [vb, "u-b"],
+      ]),
+      read,
+    );
+    expect(result).toMatchObject({ conflicts: 2, created: 0, removed: 0 });
+    expect(readdirSync(outside)).toEqual([]);
+  });
+
+  it("does not count what the operating system leaves in the folder as the owner's", async () => {
+    mkdirSync(pictures());
+    writeFileSync(join(pictures(), "desktop.ini"), "[.ShellClassInfo]");
+    writeFileSync(join(pictures(), "Thumbs.db"), "x");
+    expect(await syncBrainPictures(vault(), new Map(), read)).toMatchObject({
+      kept: 0,
+      removed: 0,
+    });
+    expect(readFileSync(join(pictures(), "desktop.ini"), "utf8")).toBe("[.ShellClassInfo]");
   });
 });
 

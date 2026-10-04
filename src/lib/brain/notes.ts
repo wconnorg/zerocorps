@@ -1,16 +1,22 @@
 import type { Catalog, Chapter, Course, Lesson } from "../academy/content.ts";
 import { LEVEL_NAMES, RANK_TITLE, rankKeyOf, ROOKIE_KEY } from "../academy/standing.ts";
 import { codeSpan, fileBase, plainTitle, wikilink, yamlOptional, yamlString } from "./markdown.ts";
-import type { BrainData, BrainMember } from "./read.ts";
+import { PICTURE_VERSION, type BrainData, type BrainMember } from "./read.ts";
 
 /**
- * The brain's notes (milestone 9), built from what `brain_reader` may read and from the
- * Academy's own lesson files. Pure: no database, no files, no clock (the time comes in),
- * so every note can be tested as text.
+ * The brain's notes (milestone 9), built from what `brain_reader` may read. Pure: no
+ * database, no files, no clock (the time comes in), so every note can be tested as text.
  *
- * One note per member, one per lesson, chapter, course and rank, a hub note and a
- * leaderboard. Members link to every lesson they completed, so members with more progress
- * gain more links in the graph; every other link points up the Academy's structure.
+ * **By default the brain is the list of members and nothing else** (owner, 2026-10-04:
+ * "list absolutely nothing other than email username date signed up profile picture"):
+ * one note per member with their number, username, display name, email, the day they
+ * signed up, their profile picture and their Discord name if linked. No summary, no
+ * leaderboard, no rank notes, no Academy progress.
+ *
+ * `academy: true` builds the Academy's brain as first built: each member's note also holds
+ * their rank and every lesson they completed, with a note per lesson, chapter, course and
+ * rank, a hub note and a leaderboard. Members link to every lesson they completed, so
+ * members with more progress gain more links in the graph.
  *
  * This module imports nothing from the app beyond the Academy's own modules, so
  * `npm run brain:export` can load it.
@@ -18,8 +24,12 @@ import type { BrainData, BrainMember } from "./read.ts";
 
 export const BRAIN_FOLDER = "ZeroCorps";
 export const GENERATED_BY = "zerocorps brain:export";
+/** Where the members' pictures are kept, each named by its version: `<version>.webp`. */
+export const PICTURES_FOLDER = `${BRAIN_FOLDER}/Pictures`;
 /** The leaderboard's window, in UTC days, today included. */
 export const PACE_DAYS = 30;
+/** How wide a member's picture is shown in their note, in pixels (it is 256 wide). */
+const PICTURE_WIDTH = 160;
 
 const HUB = `${BRAIN_FOLDER}/ZeroCorps Brain`;
 const LEADERBOARD = `${BRAIN_FOLDER}/Leaderboard`;
@@ -38,9 +48,11 @@ export type ColorGroup = { query: string; color: { a: 1; rgb: number } };
 export type BuiltBrain = {
   /** Vault-relative paths with forward slashes, each ending in .md, to their text. */
   files: Map<string, string>;
-  /** Graph colour groups, keyed on the rank tags first. */
+  /** The pictures the notes show: each version, with one member to read it by. */
+  pictures: Map<string, string>;
+  /** Graph colour groups: the members, or in the Academy's brain the rank tags first. */
   colorGroups: ColorGroup[];
-  counts: { members: number; lessonNotes: number; completions: number };
+  counts: { members: number; pictures: number; lessonNotes: number; completions: number };
 };
 
 type MemberView = BrainMember & {
@@ -102,19 +114,33 @@ const compare = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 const plural = (count: number, one: string, many = `${one}s`) =>
   `${count} ${count === 1 ? one : many}`;
 
+/** A picture's embed, by full path; its name is its version, from a fixed alphabet. */
+function pictureEmbed(version: string): string {
+  if (!PICTURE_VERSION.test(version))
+    throw new Error("A picture's name held unexpected characters.");
+  return `![[${PICTURES_FOLDER}/${version}.webp|${PICTURE_WIDTH}]]`;
+}
+
 export function buildBrain(input: {
   data: BrainData;
-  catalog: Catalog;
   now: Date;
   /**
-   * Also write a note per lesson, chapter and course, and link members to their lessons.
-   * Off by default (owner, 2026-10-01): the brain shows members, and a lesson is a line of
-   * text in a member's note.
+   * Build the Academy's brain: ranks, lessons, a hub and a leaderboard as well as the
+   * members. Off by default (owner, 2026-10-04): the brain lists members and nothing else.
    */
   academy?: boolean;
+  /** The Academy's lessons. Needed, and read, for the Academy's brain only. */
+  catalog?: Catalog;
+  /**
+   * Whether the database can tell the members' pictures yet (migration 0010). When it
+   * cannot, a note says nothing about a picture rather than "No profile picture."
+   */
+  pictures?: boolean;
 }): BuiltBrain {
-  const { data, catalog, now } = input;
+  const { data, now } = input;
   const academy = input.academy ?? false;
+  const picturesKnown = input.pictures ?? true;
+  if (academy && !input.catalog) throw new Error("The Academy's brain needs the Academy's files.");
   const today = isoDay(now);
   const windowStart = shiftDay(today, -(PACE_DAYS - 1));
   const files = new Map<string, string>();
@@ -122,9 +148,6 @@ export function buildBrain(input: {
     const key = `${path}.md`;
     if (files.has(key)) throw new Error("Two notes would share one file name.");
     files.set(key, note(lines));
-  };
-  const putAcademy = (path: string, lines: string[]) => {
-    if (academy) put(path, lines);
   };
 
   // ── Who did what ────────────────────────────────────────────────────────────
@@ -169,52 +192,80 @@ export function buildBrain(input: {
       };
     });
 
+  const pictures = new Map<string, string>();
+  for (const member of members) {
+    if (member.pictureVersion !== null && !pictures.has(member.pictureVersion)) {
+      pictures.set(member.pictureVersion, member.userId);
+    }
+  }
+
   const completedBy = new Map<string, number>();
   for (const member of members) {
     for (const lessonId of new Set(member.completions.map((entry) => entry.lessonId))) {
       completedBy.set(lessonId, (completedBy.get(lessonId) ?? 0) + 1);
     }
   }
+  const catalog = input.catalog;
   const lessonTitle = (id: string) => {
-    const lesson = catalog.lessons.get(id);
+    const lesson = catalog?.lessons.get(id);
     return lesson ? plainTitle(lesson.title) : `${id} (no longer in the Academy)`;
   };
   const rankKeys = [...new Set([ROOKIE_KEY, ...members.flatMap((m) => (m.rank ? [m.rank] : []))])];
   const memberLink = (member: MemberView, inTable = false) =>
     wikilink(memberPath(member.base), member.label, { inTable });
 
-  // ── Members ─────────────────────────────────────────────────────────────────
+  // ── Members: their card, and in the Academy's brain their progress ─────────
   for (const member of members) {
+    const heading = member.username ?? `Member #${member.memberNumber} (no username yet)`;
+    const picture =
+      member.pictureVersion !== null
+        ? [pictureEmbed(member.pictureVersion), ""]
+        : picturesKnown
+          ? ["No profile picture.", ""]
+          : [];
+    const card = [
+      `# ${heading}`,
+      "",
+      ...picture,
+      `- Member: **#${member.memberNumber}**`,
+      `- Email: ${codeSpan(member.email)}`,
+      `- Display name: ${member.displayName === null ? "none" : codeSpan(member.displayName)}`,
+      `- Signed up: ${member.joinedOn}`,
+      `- Discord: ${member.discordUsername === null ? "not linked" : codeSpan(member.discordUsername)}`,
+    ];
+    const fields: [string, string][] = [
+      ["type", " member"],
+      ["member_number", num(member.memberNumber)],
+      ["username", yamlOptional(member.username)],
+      ["signed_up", date(member.joinedOn)],
+      ["discord_linked", bool(member.discordUsername !== null)],
+    ];
+    if (!academy) {
+      put(memberPath(member.base), [...frontmatter(fields, ["zc/member"]), ...card]);
+      continue;
+    }
     const levels = member.steps.flatMap((entry) => {
       const level = LEVEL_STEP.exec(entry.step)?.[1];
       return level === undefined
         ? []
         : [`${LEVEL_NAMES[Number(level)] ?? `Level ${level}`} (${entry.achievedOn})`];
     });
-    const heading = member.username ?? `Member #${member.memberNumber} (no username yet)`;
     put(memberPath(member.base), [
       ...frontmatter(
         [
-          ["type", " member"],
-          ["member_number", num(member.memberNumber)],
-          ["user_id", text(member.userId)],
-          ["username", yamlOptional(member.username)],
+          ...fields,
           ["rank", yamlOptional(member.rank)],
-          ["joined_on", date(member.joinedOn)],
           ["last_active_on", date(member.lastActiveOn)],
           ["lessons_completed", num(member.completions.length)],
           ["pace_30d", num(member.pace)],
-          ["discord_linked", bool(member.discordUsername !== null)],
         ],
         ["zc/member", rankTag(member.rank)],
       ),
-      `# ${heading}`,
+      ...card,
       "",
-      `Member **#${member.memberNumber}** · joined ${member.joinedOn} · ${wikilink(rankPath(member.rank), rankTitle(member.rank))}`,
+      "## The Academy",
       "",
-      `- Email: ${codeSpan(member.email)}`,
-      `- Display name: ${member.displayName === null ? "none" : codeSpan(member.displayName)}`,
-      `- Discord: ${member.discordUsername === null ? "not linked" : codeSpan(member.discordUsername)}`,
+      `- Rank: ${wikilink(rankPath(member.rank), rankTitle(member.rank))}`,
       `- Lessons completed: **${member.completions.length}**, ${member.pace} of them in the last ${PACE_DAYS} days`,
       `- Last Academy activity: ${member.lastActiveOn ?? "none yet"}`,
       `- Levels finished: ${levels.length > 0 ? levels.join(", ") : "none yet"}`,
@@ -225,9 +276,26 @@ export function buildBrain(input: {
         ? ["None yet."]
         : member.completions.map(
             (entry) =>
-              `- ${entry.completedOn} · ${academy ? wikilink(lessonPath(entry.lessonId), lessonTitle(entry.lessonId)) : lessonTitle(entry.lessonId)}`,
+              `- ${entry.completedOn} · ${wikilink(lessonPath(entry.lessonId), lessonTitle(entry.lessonId))}`,
           )),
     ]);
+  }
+
+  const counts = {
+    members: members.length,
+    pictures: members.filter((member) => member.pictureVersion !== null).length,
+    lessonNotes: 0,
+    completions: data.completions.length,
+  };
+  const rgb = (hex: string) => ({ a: 1 as const, rgb: Number.parseInt(hex.slice(1), 16) });
+
+  if (!academy || !catalog) {
+    return {
+      files,
+      pictures,
+      colorGroups: [{ query: "tag:#zc/member", color: rgb("#ff3b47") }],
+      counts,
+    };
   }
 
   // ── The Academy: courses, chapters, lessons ─────────────────────────────────
@@ -236,7 +304,7 @@ export function buildBrain(input: {
     const where = chapter
       ? `Lesson ${lesson?.number ?? "?"} of ${wikilink(chapterPath(chapter.id), chapterTitle(chapter))}.`
       : "This lesson is no longer in the Academy's files; its completions are kept.";
-    putAcademy(lessonPath(id), [
+    put(lessonPath(id), [
       ...frontmatter(
         [
           ["type", " lesson"],
@@ -262,7 +330,7 @@ export function buildBrain(input: {
   let lessonNotes = 0;
   for (const course of catalog.courses) {
     const lessonCount = course.chapters.reduce((sum, chapter) => sum + chapter.lessons.length, 0);
-    putAcademy(coursePath(course.id), [
+    put(coursePath(course.id), [
       ...frontmatter(
         [
           ["type", " course"],
@@ -289,7 +357,7 @@ export function buildBrain(input: {
           )),
     ]);
     for (const chapter of course.chapters) {
-      putAcademy(chapterPath(chapter.id), [
+      put(chapterPath(chapter.id), [
         ...frontmatter(
           [
             ["type", " chapter"],
@@ -409,7 +477,7 @@ export function buildBrain(input: {
     ),
     "# ZeroCorps Brain",
     "",
-    `Rebuilt from the database by \`npm run brain:export\` on ${today} at ${now.toISOString().slice(11, 16)} UTC. Every note in the ${BRAIN_FOLDER} folder is replaced on each run, so keep your own notes outside it.`,
+    `Rebuilt from the database by \`npm run brain:export -- --academy\` on ${today} at ${now.toISOString().slice(11, 16)} UTC. Every note in the ${BRAIN_FOLDER} folder is replaced on each run, so keep your own notes outside it.`,
     "",
     "## At a glance",
     "",
@@ -424,7 +492,7 @@ export function buildBrain(input: {
       ? ["No courses in the Academy's files."]
       : catalog.courses.map((course) => {
           const lessons = course.chapters.reduce((sum, chapter) => sum + chapter.lessons.length, 0);
-          return `- ${academy ? wikilink(coursePath(course.id), courseTitle(course)) : courseTitle(course)}: ${plural(course.chapters.length, "chapter")}, ${plural(lessons, "lesson")}${course.comingSoon ? " (coming soon)" : ""}`;
+          return `- ${wikilink(coursePath(course.id), courseTitle(course))}: ${plural(course.chapters.length, "chapter")}, ${plural(lessons, "lesson")}${course.comingSoon ? " (coming soon)" : ""}`;
         })),
     "",
     "## Members",
@@ -432,7 +500,7 @@ export function buildBrain(input: {
     ...(members.length === 0
       ? ["No accounts yet."]
       : [
-          "| # | Member | Joined | Rank | Lessons | Last 30 days | Last active |",
+          "| # | Member | Signed up | Rank | Lessons | Last 30 days | Last active |",
           "| ---: | --- | --- | --- | ---: | ---: | --- |",
           ...members.map(
             (member) =>
@@ -442,7 +510,6 @@ export function buildBrain(input: {
   ]);
 
   // ── Graph colours, keyed on the rank tags first ─────────────────────────────
-  const rgb = (hex: string) => ({ a: 1 as const, rgb: Number.parseInt(hex.slice(1), 16) });
   const colorGroups: ColorGroup[] = [
     ...rankKeys.map((key) => ({
       query: `tag:#${rankTag(key)}`,
@@ -455,13 +522,5 @@ export function buildBrain(input: {
     { query: "tag:#zc/hub", color: rgb("#f2eded") },
   ];
 
-  return {
-    files,
-    colorGroups,
-    counts: {
-      members: members.length,
-      lessonNotes: academy ? lessonNotes : 0,
-      completions: data.completions.length,
-    },
-  };
+  return { files, pictures, colorGroups, counts: { ...counts, lessonNotes } };
 }

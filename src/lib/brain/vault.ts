@@ -1,16 +1,23 @@
+import { createHash } from "node:crypto";
 import {
+  closeSync,
   existsSync,
+  fsyncSync,
   lstatSync,
   mkdirSync,
+  openSync,
   readdirSync,
   readFileSync,
   realpathSync,
+  renameSync,
   rmdirSync,
   unlinkSync,
   writeFileSync,
+  writeSync,
 } from "node:fs";
 import { basename, dirname, isAbsolute, join, parse, relative, resolve, sep } from "node:path";
-import { BRAIN_FOLDER, GENERATED_BY, type ColorGroup } from "./notes.ts";
+import { BRAIN_FOLDER, GENERATED_BY, PICTURES_FOLDER, type ColorGroup } from "./notes.ts";
+import { PICTURE_VERSION } from "./read.ts";
 
 /**
  * The brain's vault on the owner's laptop (milestone 9): where it may live, and how its
@@ -24,6 +31,9 @@ import { BRAIN_FOLDER, GENERATED_BY, type ColorGroup } from "./notes.ts";
  * - Inside that folder it deletes and overwrites only notes that carry its own marker, so
  *   a note the owner puts there is kept, and never follows a link out of the folder.
  * - A note that has not changed is not written again, so Obsidian re-reads only what did.
+ * - Members' pictures (owner, 2026-10-04) live in `ZeroCorps/Pictures`, each named by a hash
+ *   of its own bytes: a picture's file proves it is the export's, and one already there is
+ *   never read from the database again.
  *
  * This module imports nothing from the app, so `npm run brain:export` can load it.
  */
@@ -300,6 +310,201 @@ export function syncBrainFolder(vault: string, files: ReadonlyMap<string, string
     const full = join(vault, folder);
     if (existsSync(full) && readdirSync(full).length === 0) retried(() => rmdirSync(full));
   }
+  return result;
+}
+
+/** The largest picture the site stores: its table allows no more. */
+export const MAX_PICTURE_BYTES = 128 * 1024;
+/** How many pictures are read from the database at a time: at most about 3 MB in memory. */
+const PICTURES_PER_READ = 25;
+const PICTURE_FILE = /^([A-Za-z0-9_-]{22})\.webp$/;
+/** A picture being written; renamed into place once complete. */
+const PICTURE_PARTIAL = /^\.([A-Za-z0-9_-]{22})\.webp\.partial$/;
+
+/** A picture's version, exactly as the site computes it (`avatarVersion` in avatars.ts). */
+export const pictureVersionOf = (bytes: Uint8Array) =>
+  createHash("sha256").update(bytes).digest("base64url").slice(0, 22);
+
+/**
+ * Creates `path` ("wx": never through anything already there, a link included), writes
+ * every byte and flushes it to the disk before returning, so a power cut after the rename
+ * cannot leave a damaged file under a picture's name.
+ */
+function writeFlushed(path: string, bytes: Uint8Array) {
+  const descriptor = openSync(path, "wx");
+  try {
+    let written = 0;
+    while (written < bytes.length) {
+      written += writeSync(descriptor, bytes, written, bytes.length - written);
+    }
+    fsyncSync(descriptor);
+  } finally {
+    closeSync(descriptor);
+  }
+}
+
+/** What the site stores is a WebP: "RIFF", the size, then "WEBP". Anything else is not written. */
+export function looksLikeWebp(bytes: Uint8Array): boolean {
+  const ascii = (from: number, to: number) =>
+    Buffer.from(bytes.subarray(from, to)).toString("latin1");
+  return (
+    bytes.length >= 12 &&
+    bytes.length <= MAX_PICTURE_BYTES &&
+    ascii(0, 4) === "RIFF" &&
+    ascii(8, 12) === "WEBP"
+  );
+}
+
+export type PictureResult = {
+  created: number;
+  unchanged: number;
+  removed: number;
+  /** Files in the pictures folder that this command did not write: kept as they are. */
+  kept: number;
+  /** Pictures whose place is taken by something this command did not write: left alone. */
+  conflicts: number;
+  /** Pictures that changed or went while being read, or were not a WebP: the next run. */
+  skipped: number;
+};
+
+/**
+ * Makes the vault's pictures folder hold exactly the pictures `wanted` names (each version,
+ * with a member to read it by), the way `syncBrainFolder` does for the notes.
+ *
+ * A picture's file is named by its version, and its version is a hash of its bytes, so a
+ * file proves by itself that the export wrote it: only such a file is ever deleted, and an
+ * unchanged picture is never read from the database again. A new picture is written under
+ * a temporary name, flushed to the disk and renamed into place, so neither a run that stops
+ * halfway nor a power cut leaves a broken file under a picture's name. Never through a
+ * link, never outside the folder; something in the way is a conflict, left for the owner.
+ */
+export async function syncBrainPictures(
+  vault: string,
+  wanted: ReadonlyMap<string, string>,
+  read: (userIds: string[]) => Promise<Map<string, Uint8Array>>,
+): Promise<PictureResult> {
+  for (const version of wanted.keys()) {
+    if (!PICTURE_VERSION.test(version)) {
+      throw new BrainVaultError(
+        "A picture's name was not one the export may write. No picture was written.",
+      );
+    }
+  }
+  const result: PictureResult = {
+    created: 0,
+    unchanged: 0,
+    removed: 0,
+    kept: 0,
+    conflicts: 0,
+    skipped: 0,
+  };
+  const root = join(vault, BRAIN_FOLDER);
+  if (!lstatSync(root, { throwIfNoEntry: false })?.isDirectory()) {
+    throw new BrainVaultError(
+      `The vault's ${BRAIN_FOLDER} entry is not a plain folder. No picture was written.`,
+    );
+  }
+  const folder = join(vault, PICTURES_FOLDER);
+  const entry = lstatSync(folder, { throwIfNoEntry: false });
+  if (!entry) {
+    if (wanted.size === 0) return result;
+    mkdirSync(folder);
+  } else if (!entry.isDirectory()) {
+    // A link (a Windows junction included) or a file in the folder's place.
+    result.conflicts = wanted.size;
+    return result;
+  }
+  const between = relative(realpathSync.native(root), realpathSync.native(folder));
+  if (between === "" || between.startsWith("..") || isAbsolute(between)) {
+    result.conflicts = wanted.size;
+    return result;
+  }
+
+  const present = new Set<string>();
+  const taken = new Set<string>();
+  for (const item of readdirSync(folder, { withFileTypes: true })) {
+    // What the operating system leaves in a folder someone opened: neither ours nor the owner's.
+    if (HARMLESS_ENTRIES.has(item.name)) continue;
+    const full = join(folder, item.name);
+    // A write that never finished, under the name only this command uses.
+    if (PICTURE_PARTIAL.test(item.name) && item.isFile()) {
+      retried(() => unlinkSync(full));
+      continue;
+    }
+    const version = PICTURE_FILE.exec(item.name)?.[1];
+    if (version === undefined) {
+      result.kept++;
+      continue;
+    }
+    // Ours only if it is a plain file whose bytes hash to its own name.
+    if (item.isFile() && pictureVersionOf(readFileSync(full)) === version) {
+      if (wanted.has(version)) {
+        present.add(version);
+        result.unchanged++;
+      } else {
+        retried(() => unlinkSync(full));
+        result.removed++;
+      }
+    } else if (wanted.has(version)) {
+      taken.add(version);
+      result.conflicts++;
+    } else {
+      result.kept++;
+    }
+  }
+
+  const missing = [...wanted].filter(([version]) => !present.has(version) && !taken.has(version));
+  for (let start = 0; start < missing.length; start += PICTURES_PER_READ) {
+    const batch = missing.slice(start, start + PICTURES_PER_READ);
+    const pictures = await read(batch.map(([, userId]) => userId));
+    for (const [version, userId] of batch) {
+      const bytes = pictures.get(userId);
+      // Gone, or changed since the list of members was read, or not a picture.
+      if (!bytes || !looksLikeWebp(bytes) || pictureVersionOf(bytes) !== version) {
+        result.skipped++;
+        continue;
+      }
+      const final = join(folder, `${version}.webp`);
+      const partial = join(folder, `.${version}.webp.partial`);
+      try {
+        writeFlushed(partial, bytes);
+      } catch (error) {
+        const code = (error as { code?: string }).code;
+        // A link, a folder or another run's write is in the temporary file's place: nothing
+        // was written through it. This picture waits for the next run.
+        if (code === "EEXIST" || code === "EISDIR") {
+          result.conflicts++;
+          continue;
+        }
+        throw error;
+      }
+      if (lstatSync(final, { throwIfNoEntry: false })) {
+        retried(() => unlinkSync(partial));
+        result.conflicts++;
+        continue;
+      }
+      try {
+        retried(() => renameSync(partial, final));
+        result.created++;
+      } catch (error) {
+        if ((error as { code?: string }).code !== "ENOENT") {
+          try {
+            unlinkSync(partial);
+          } catch {
+            // Gone already; the next run clears it away otherwise.
+          }
+          throw error;
+        }
+        // Another run took the temporary file: the picture is in place if its bytes hash to
+        // its own name.
+        const done = lstatSync(final, { throwIfNoEntry: false });
+        if (done?.isFile() && pictureVersionOf(readFileSync(final)) === version) result.unchanged++;
+        else result.skipped++;
+      }
+    }
+  }
+
+  if (readdirSync(folder).length === 0) retried(() => rmdirSync(folder));
   return result;
 }
 
