@@ -194,16 +194,23 @@ accounts at the release.
   `npm audit fix --force`:** it would swap `drizzle-kit` for a years-old version. The fix is
   a `drizzle-kit` release that drops the old package; check again at each release. The
   owner has not yet said whether to accept this or to dismiss the alert on GitHub.
-- **A critical advisory in Next.js that does not reach this site (seen 2026-10-02).**
-  `npm audit` reports GHSA-vcvr-r3jv-pc5j, remote code execution in `next/og`'s
-  `ImageResponse`, for Next 16.2.0 to 16.3.5; the site runs 16.3.5. By the advisory's own
-  words it needs an application that draws images with `ImageResponse` from values a
-  visitor controls. This site never imports `next/og`: its link-preview images are fixed
-  PNG files (`src/app/opengraph-image.png`, `twitter-image.png`), which a search of the
-  source confirmed that day. So it is not exposed today, and it would be the day anyone
-  added a generated image. The fix is a patch release (16.3.6 or later). **Recommended:
-  upgrade Next as its own small release, with the full check and the browser check, not
-  mixed into another change.** The owner decides; until then, add no `ImageResponse`.
+- **Closed on 2026-10-04: the Next.js advisories.** On 2026-10-02 `npm audit` reported
+  GHSA-vcvr-r3jv-pc5j, remote code execution in `next/og`'s `ImageResponse`, for Next
+  16.2.0 to 16.3.5. It never reached this site, which does not import `next/og` (its
+  link-preview images are fixed PNG files). On the owner's word, Next went from 16.3.5 to
+  **16.3.8** as a release of its own, with `eslint-config-next` alongside. 16.3.6 fixed
+  that advisory; 16.3.8 is a security release fixing six more, among them a high
+  server-side request forgery in image optimisation and an information disclosure in
+  metadata image routes (this site serves `opengraph-image.png`, `twitter-image.png` and
+  `icon.png` that way). The full check and the browser check passed before the push.
+- **One more development-only alert (seen 2026-10-04).** GHSA-vfj7-8cjw-p6xm: `braces`
+  up to 3.0.3, the newest there is, can exhaust the stack on deeply nested patterns. It is
+  reached only through the linter (`eslint-config-next` → `@next/eslint-plugin-next` →
+  `fast-glob` → `micromatch` → `braces`), which runs on the laptop over this repository's
+  own files with its own patterns; none of it is in what the live site runs, and the
+  lockfile held the same `braces` before the Next upgrade, so the upgrade did not bring it.
+  **Do not take npm's suggested fix:** it would move `eslint-config-next` back to 14. The
+  fix is a `braces` release; check again at each release.
 
 ## 2. Hosting assumptions ledger
 
