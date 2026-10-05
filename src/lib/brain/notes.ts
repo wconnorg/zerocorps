@@ -1,5 +1,5 @@
 import type { Catalog, Chapter, Course, Lesson } from "../academy/content.ts";
-import { LEVEL_NAMES, RANK_TITLE, rankKeyOf, ROOKIE_KEY } from "../academy/standing.ts";
+import { BRONZE_KEY, levelName, levelOfStep, RANK_TITLE, rankKeyOf } from "../academy/standing.ts";
 import { codeSpan, fileBase, plainTitle, wikilink, yamlOptional, yamlString } from "./markdown.ts";
 import { PICTURE_VERSION, type BrainData, type BrainMember } from "./read.ts";
 
@@ -35,7 +35,6 @@ const HUB = `${BRAIN_FOLDER}/ZeroCorps Brain`;
 const LEADERBOARD = `${BRAIN_FOLDER}/Leaderboard`;
 /** The rank note of members without a rank. No rank key can be this: it is not an id. */
 const NO_RANK = "no-rank";
-const LEVEL_STEP = /^rookie-level-(\d+)$/;
 
 const memberPath = (base: string) => `${BRAIN_FOLDER}/Members/${base}`;
 const lessonPath = (id: string) => `${BRAIN_FOLDER}/Lessons/${fileBase(id)}`;
@@ -72,10 +71,10 @@ const shiftDay = (day: string, days: number) =>
   isoDay(new Date(Date.parse(`${day}T00:00:00Z`) + days * 86_400_000));
 const two = (value: number) => String(value).padStart(2, "0");
 
-/** `rookie` is "Rookie"; a key added later reads as words until it gets a proper title. */
+/** `bronze` is "Bronze"; a key added later reads as words until it gets a proper title. */
 export function rankTitle(key: string | null): string {
   if (key === null) return "No rank yet";
-  if (key === ROOKIE_KEY) return RANK_TITLE;
+  if (key === BRONZE_KEY) return RANK_TITLE;
   const words = key.replace(/-/g, " ");
   return words.charAt(0).toUpperCase() + words.slice(1);
 }
@@ -210,7 +209,7 @@ export function buildBrain(input: {
     const lesson = catalog?.lessons.get(id);
     return lesson ? plainTitle(lesson.title) : `${id} (no longer in the Academy)`;
   };
-  const rankKeys = [...new Set([ROOKIE_KEY, ...members.flatMap((m) => (m.rank ? [m.rank] : []))])];
+  const rankKeys = [...new Set([BRONZE_KEY, ...members.flatMap((m) => (m.rank ? [m.rank] : []))])];
   const memberLink = (member: MemberView, inTable = false) =>
     wikilink(memberPath(member.base), member.label, { inTable });
 
@@ -245,10 +244,8 @@ export function buildBrain(input: {
       continue;
     }
     const levels = member.steps.flatMap((entry) => {
-      const level = LEVEL_STEP.exec(entry.step)?.[1];
-      return level === undefined
-        ? []
-        : [`${LEVEL_NAMES[Number(level)] ?? `Level ${level}`} (${entry.achievedOn})`];
+      const level = levelOfStep(entry.step);
+      return level === null ? [] : [`${levelName(level)} (${entry.achievedOn})`];
     });
     put(memberPath(member.base), [
       ...frontmatter(
@@ -409,8 +406,8 @@ export function buildBrain(input: {
       ),
       `# ${rankTitle(key)}`,
       "",
-      key === ROOKIE_KEY
-        ? "Earned by completing Chapter 1 of the Academy: its lessons and its checkpoint. Its Discord role follows once the member links Discord."
+      key === BRONZE_KEY
+        ? "Earned by finishing Level 1, Fundamentals, and Level 2, Order Flow Software: every chapter and its checkpoint. Its Discord role follows once the member links Discord."
         : key === null
           ? "Members who have not earned a rank yet."
           : "A rank the site awards; its description is not written here yet.",
@@ -513,7 +510,7 @@ export function buildBrain(input: {
   const colorGroups: ColorGroup[] = [
     ...rankKeys.map((key) => ({
       query: `tag:#${rankTag(key)}`,
-      color: rgb(key === ROOKIE_KEY ? "#ff3b47" : "#3dd68c"),
+      color: rgb(key === BRONZE_KEY ? "#cd7f32" : "#3dd68c"),
     })),
     { query: `tag:#${rankTag(null)}`, color: rgb("#918385") },
     { query: "tag:#zc/lesson", color: rgb("#4da3ff") },

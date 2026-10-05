@@ -64,7 +64,7 @@ beforeAll(async () => {
     INSERT INTO checkpoint_passes (user_id, chapter_id, score, out_of)
     VALUES ('11111111-1111-4111-8111-111111111111', 'how-markets-work', 3, 4);
     INSERT INTO rank_history (user_id, rank)
-    VALUES ('11111111-1111-4111-8111-111111111111', 'rookie-level-1');
+    VALUES ('11111111-1111-4111-8111-111111111111', 'level-1');
     INSERT INTO discord_links (user_id, discord_id, discord_username)
     VALUES ('11111111-1111-4111-8111-111111111111', '123456789012345678', 'trader');
     -- Binary: a zero byte, 0xff, a backslash, both quotes and a newline must come back exact.

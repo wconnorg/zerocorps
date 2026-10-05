@@ -64,7 +64,7 @@ beforeAll(async () => {
       ('${FIRST}', 'what-a-market-is', '2026-09-27 10:00:00+00'),
       ('${SECOND}', 'orders-and-fills', '2026-09-29 12:00:00+00');
     INSERT INTO rank_history (user_id, rank, achieved_at)
-      VALUES ('${FIRST}', 'rookie', '2026-09-29 04:31:00+00');
+      VALUES ('${FIRST}', 'bronze', '2026-09-29 04:31:00+00');
     -- A picture with its version beside the account, as the site saves them together.
     INSERT INTO avatars (user_id, image, content_type)
       VALUES ('${FIRST}', decode('${PICTURE_HEX}', 'hex'), 'image/webp'),
@@ -235,7 +235,7 @@ describe("readBrain, as brain_reader", () => {
         { userId: SECOND, lessonId: "orders-and-fills", completedOn: "2026-09-29" },
       ]),
     );
-    expect(brain.steps).toEqual([{ userId: FIRST, step: "rookie", achievedOn: "2026-09-29" }]);
+    expect(brain.steps).toEqual([{ userId: FIRST, step: "bronze", achievedOn: "2026-09-29" }]);
     // The address came (owner, 2026-10-01); nothing about signing in did.
     expect(JSON.stringify(brain)).not.toMatch(/token-one|salt:hash|203\.0\.113|Chrome/);
   });

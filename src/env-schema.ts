@@ -248,7 +248,7 @@ export function createEnvSchema(isProductionBuild: boolean) {
     if (env.DISCORD_RANK_ROLE_IDS && !parseRoleIds(env.DISCORD_RANK_ROLE_IDS)) {
       issue(
         "DISCORD_RANK_ROLE_IDS",
-        'Must be a JSON object of rank keys to Discord role ids, for example {"rookie":"<role id>"}',
+        'Must be a JSON object of rank keys to Discord role ids, for example {"bronze":"<role id>"}',
       );
     }
 

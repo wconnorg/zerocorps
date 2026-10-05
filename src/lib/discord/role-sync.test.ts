@@ -5,9 +5,9 @@ import { parseRoleIds, syncDiscordRoles } from "./role-sync.ts";
 
 const MEMBER = "123456789012345678";
 const GUILD = "223456789012345678";
-const ROOKIE = "323456789012345678";
+const BRONZE = "323456789012345678";
 const LATER = "423456789012345678";
-const config = { botToken: "bot-token", guildId: GUILD, roleIds: { rookie: ROOKIE, later: LATER } };
+const config = { botToken: "bot-token", guildId: GUILD, roleIds: { bronze: BRONZE, later: LATER } };
 
 function recorder(status: (method: string, url: string) => number | Response) {
   const calls: { method: string; url: string }[] = [];
@@ -23,13 +23,13 @@ function recorder(status: (method: string, url: string) => number | Response) {
 describe("syncing a member's rank role", () => {
   it("adds the role for their rank first, then removes the other rank roles", async () => {
     const { calls, fetcher } = recorder(() => 204);
-    expect(await syncDiscordRoles(fetcher, config, MEMBER, "rookie")).toEqual({ status: "synced" });
+    expect(await syncDiscordRoles(fetcher, config, MEMBER, "bronze")).toEqual({ status: "synced" });
     expect(calls.map((call) => [call.method, call.url.split("/").pop()])).toEqual([
-      ["PUT", ROOKIE],
+      ["PUT", BRONZE],
       ["DELETE", LATER],
     ]);
     expect(calls[0]!.url).toBe(
-      `https://discord.com/api/v10/guilds/${GUILD}/members/${MEMBER}/roles/${ROOKIE}`,
+      `https://discord.com/api/v10/guilds/${GUILD}/members/${MEMBER}/roles/${BRONZE}`,
     );
   });
 
@@ -41,7 +41,7 @@ describe("syncing a member's rank role", () => {
 
   it("a member who is not in the server is not an error", async () => {
     const { fetcher } = recorder(() => 404);
-    expect(await syncDiscordRoles(fetcher, config, MEMBER, "rookie")).toEqual({
+    expect(await syncDiscordRoles(fetcher, config, MEMBER, "bronze")).toEqual({
       status: "not-in-server",
     });
   });
@@ -53,26 +53,26 @@ describe("syncing a member's rank role", () => {
       first = false;
       return new Response(JSON.stringify({ retry_after: 0.01 }), { status: 429 });
     });
-    expect(await syncDiscordRoles(short.fetcher, config, MEMBER, "rookie")).toEqual({
+    expect(await syncDiscordRoles(short.fetcher, config, MEMBER, "bronze")).toEqual({
       status: "synced",
     });
 
     const long = recorder(() => new Response(JSON.stringify({ retry_after: 60 }), { status: 429 }));
-    expect(await syncDiscordRoles(long.fetcher, config, MEMBER, "rookie")).toEqual({
+    expect(await syncDiscordRoles(long.fetcher, config, MEMBER, "bronze")).toEqual({
       status: "rate-limited",
     });
     expect(long.calls).toHaveLength(1);
   });
 
   it("a refusal (the bot lacks Manage Roles) or a network failure is reported, never thrown", async () => {
-    expect(await syncDiscordRoles(recorder(() => 403).fetcher, config, MEMBER, "rookie")).toEqual({
+    expect(await syncDiscordRoles(recorder(() => 403).fetcher, config, MEMBER, "bronze")).toEqual({
       status: "failed",
       httpStatus: 403,
     });
     const broken: typeof fetch = async () => {
       throw new Error("network down");
     };
-    expect(await syncDiscordRoles(broken, config, MEMBER, "rookie")).toEqual({
+    expect(await syncDiscordRoles(broken, config, MEMBER, "bronze")).toEqual({
       status: "failed",
       httpStatus: null,
     });
@@ -80,7 +80,7 @@ describe("syncing a member's rank role", () => {
 
   it("an id that is not a Discord id is never put into a request", async () => {
     const { calls, fetcher } = recorder(() => 204);
-    expect(await syncDiscordRoles(fetcher, config, "../../users/@me", "rookie")).toEqual({
+    expect(await syncDiscordRoles(fetcher, config, "../../users/@me", "bronze")).toEqual({
       status: "failed",
       httpStatus: null,
     });
@@ -90,7 +90,7 @@ describe("syncing a member's rank role", () => {
 
 describe("DISCORD_RANK_ROLE_IDS", () => {
   it("is a JSON object of rank keys to Discord role ids", () => {
-    expect(parseRoleIds(`{"rookie":"${ROOKIE}"}`)).toEqual({ rookie: ROOKIE });
+    expect(parseRoleIds(`{"bronze":"${BRONZE}"}`)).toEqual({ bronze: BRONZE });
   });
 
   it("anything else switches role sync off rather than guessing", () => {
@@ -100,9 +100,9 @@ describe("DISCORD_RANK_ROLE_IDS", () => {
       "not json",
       "[]",
       "{}",
-      `{"rookie":123}`,
-      `{"rookie":"abc"}`,
-      `{"Bad Key":"${ROOKIE}"}`,
+      `{"bronze":123}`,
+      `{"bronze":"abc"}`,
+      `{"Bad Key":"${BRONZE}"}`,
     ]) {
       expect(parseRoleIds(raw), String(raw)).toBeNull();
     }

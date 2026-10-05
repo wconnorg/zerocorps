@@ -35,7 +35,7 @@ beforeAll(async () => {
     "INSERT INTO discord_links (user_id, discord_id, discord_username) VALUES ($1::uuid, $2, 'trader')",
     [member, LINKED],
   );
-  await rows("INSERT INTO rank_history (user_id, rank) VALUES ($1::uuid, 'rookie')", [member]);
+  await rows("INSERT INTO rank_history (user_id, rank) VALUES ($1::uuid, 'bronze')", [member]);
   // Counted: verified and onboarded. Not counted: no username yet, or not verified.
   await rows(
     "INSERT INTO users (email, email_verified, username) VALUES ('other@example.com', true, 'other_one')",
@@ -70,7 +70,7 @@ describe("a Discord user's profile", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
     const data = await body(response);
-    expect(data).toEqual({ linked: true, username: "trader_99", rank: "rookie" });
+    expect(data).toEqual({ linked: true, username: "trader_99", rank: "bronze" });
     expect(JSON.stringify(data)).not.toMatch(/@|example\.com/);
   });
 
@@ -99,16 +99,14 @@ describe("every linked member's rank, for the bot's role sync", () => {
       [second],
     );
     // A level step without the rank: still no rank.
-    await rows("INSERT INTO rank_history (user_id, rank) VALUES ($1::uuid, 'rookie-level-2')", [
-      second,
-    ]);
+    await rows("INSERT INTO rank_history (user_id, rank) VALUES ($1::uuid, 'level-2')", [second]);
 
     const response = await linkedRanks(deps, call(SECRET));
     expect(response.status).toBe(200);
     const data = await body(response);
     const sorted = [...data.members].sort((a, b) => a.discordId.localeCompare(b.discordId));
     expect(sorted).toEqual([
-      { discordId: LINKED, rank: "rookie" },
+      { discordId: LINKED, rank: "bronze" },
       { discordId: "323456789012345678", rank: null },
     ]);
     expect(JSON.stringify(data)).not.toMatch(/@|trader_99|second/);

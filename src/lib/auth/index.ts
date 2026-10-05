@@ -25,7 +25,7 @@ const sendEmail = createEmailSender({
 });
 
 /**
- * The site's own Discord application. Linking needs its client id and secret; the Rookie
+ * The site's own Discord application. Linking needs its client id and secret; the rank
  * role also needs its bot token, the server's id and the role ids. Anything missing
  * switches that part off, and the settings page says linking is not on yet.
  */

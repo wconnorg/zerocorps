@@ -3,7 +3,7 @@ import { DISCORD_API, type DiscordFetch, SNOWFLAKE } from "./discord-api.ts";
 /**
  * `syncDiscordRoles` from the brief: makes a member hold exactly the role for their rank
  * in the ZeroCorps server, and none of the other rank roles. Called on linking (so a new
- * link brings the Rookie role) and on unlinking (with no rank: every rank role goes).
+ * link brings the rank role) and on unlinking (with no rank: every rank role goes).
  *
  * Idempotent: adding a role a member has, or removing one they lack, changes nothing on
  * Discord's side. It never throws: linking works even while Discord is slow or down, and
@@ -14,7 +14,7 @@ import { DISCORD_API, type DiscordFetch, SNOWFLAKE } from "./discord-api.ts";
 export type RoleConfig = {
   botToken: string;
   guildId: string;
-  /** Rank key → Discord role id, from `DISCORD_RANK_ROLE_IDS`. Today: `{ "rookie": "..." }`. */
+  /** Rank key → Discord role id, from `DISCORD_RANK_ROLE_IDS`. Today: `{ "bronze": "..." }`. */
   roleIds: Readonly<Record<string, string>>;
 };
 

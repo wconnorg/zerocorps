@@ -56,13 +56,30 @@ function member(
 const home = (academy: MemberAcademy) =>
   renderToStaticMarkup(<AcademyHome academy={academy} activity={new Map()} />);
 
+/** Both levels fully written, so Bronze can be earned. */
+const BOTH = buildCatalog({
+  courses: [
+    {
+      id: "foundations",
+      level: 1,
+      chapters: [
+        { id: "markets", lessons: [{ id: "m1" }, { id: "m2" }] },
+        { id: "risk", lessons: [{ id: "r1" }], checkpoint: TWO_QUESTIONS },
+      ],
+    },
+    { id: "quantower", level: 2, chapters: [{ id: "setup", lessons: [{ id: "q1" }] }] },
+  ],
+});
+const EVERYTHING = ["m1", "m2", "r1", "q1"];
+
 describe("the Academy's home", () => {
-  it("has one heading, the Rookie rank, and both levels by their names", () => {
+  it("has one heading, the Bronze rank, and both levels by their names", () => {
     const html = home(member(ACADEMY));
     expect(html.match(/<h1/g)).toHaveLength(1);
-    expect(html).toContain("Rookie");
-    expect(html).toContain("Foundations");
-    expect(html).toContain("The Platform");
+    expect(html).toContain("Bronze");
+    expect(html).toContain("Fundamentals");
+    expect(html).toContain("Order Flow Software");
+    expect(html).not.toMatch(/Rookie/i);
     expect(html).toContain("Education only. Nothing in the Academy is financial advice.");
   });
 
@@ -103,32 +120,35 @@ describe("the Academy's home", () => {
       ],
     });
     const html = home(member(written, ["m1"]));
-    expect(html).toContain("Levels 1 of 3");
-    expect(html).toMatch(/Level 1 · Foundations<\/span><span[^>]*>COMPLETE/);
+    expect(html).toContain("Levels 1 of 2");
+    expect(html).toMatch(/Level 1 · Fundamentals<\/span><span[^>]*>COMPLETE/);
   });
 
-  it("before Chapter 1 is complete: no rank yet, and how to earn Rookie", () => {
-    const html = home(member(ACADEMY, ["m1"]));
-    expect(html).toContain("No rank yet");
-    expect(html).toContain("Finish Chapter 1,");
-    expect(html).toContain('href="/academy/markets"');
-    const rookie = home(member(ACADEMY, ["m1", "m2"]));
-    expect(rookie).toContain("Current rank");
-    expect(rookie).not.toContain("No rank yet");
+  it("before both levels are finished: no rank yet, and how to earn Bronze", () => {
+    const oneLevel = home(member(BOTH, ["m1", "m2", "r1"], ["risk"]));
+    expect(oneLevel).toContain("No rank yet");
+    expect(oneLevel).toContain("Finish both levels below");
+    expect(oneLevel).toContain("Levels 1 of 2");
+    const bronze = home(member(BOTH, EVERYTHING, ["risk"]));
+    expect(bronze).toContain("Current rank");
+    expect(bronze).not.toContain("No rank yet");
+    expect(bronze).toContain("Levels 2 of 2");
   });
 
   it("an earned rank is claimed by linking Discord: until then the page says how", () => {
-    const unlinked = home(member(ACADEMY, ["m1", "m2"], [], { linked: false, available: true }));
+    const unlinked = home(member(BOTH, EVERYTHING, ["risk"], { linked: false, available: true }));
     expect(unlinked).toContain("Rank earned");
     expect(unlinked).not.toContain("Current rank");
     expect(unlinked).toContain('href="/settings#connections"');
     expect(unlinked).toContain("to claim it");
 
-    const notOpenYet = home(member(ACADEMY, ["m1", "m2"], [], { linked: false, available: false }));
+    const notOpenYet = home(
+      member(BOTH, EVERYTHING, ["risk"], { linked: false, available: false }),
+    );
     expect(notOpenYet).toContain("once Discord linking opens");
     expect(notOpenYet).not.toContain('href="/settings#connections"');
 
-    const linked = home(member(ACADEMY, ["m1", "m2"], [], { linked: true, available: true }));
+    const linked = home(member(BOTH, EVERYTHING, ["risk"], { linked: true, available: true }));
     expect(linked).toContain("Current rank");
     expect(linked).not.toContain("to claim it");
   });

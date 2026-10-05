@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { isOpen } from "@/lib/academy/content";
 import { checkpointHref, lessonHref, type MemberAcademy } from "@/lib/academy/member";
+import { RANK_TITLE } from "@/lib/academy/ranks";
 import { cn } from "@/lib/cn";
 import { chapterStatus } from "./academy-home";
 import { Bar, ComingSoonTag, Kicker, Label, StatusIcon } from "./ui";
@@ -152,8 +153,8 @@ export function ChapterView({ academy, chapterId }: { academy: MemberAcademy; ch
                 </Label>
                 <p className="text-sm/6 text-muted">
                   {level.finished
-                    ? "Level complete: a step in your Rookie rank."
-                    : `${level.chaptersComplete} of ${level.courses.filter((c) => !c.comingSoon).reduce((n, c) => n + c.chapters.length, 0)} chapters complete. Finish them all for a step in your Rookie rank.`}
+                    ? `Level complete: a step towards ${RANK_TITLE}.`
+                    : `${level.chaptersComplete} of ${level.courses.filter((c) => !c.comingSoon).reduce((n, c) => n + c.chapters.length, 0)} chapters complete. Finish them all for a step towards ${RANK_TITLE}.`}
                 </p>
               </div>
             ) : null}

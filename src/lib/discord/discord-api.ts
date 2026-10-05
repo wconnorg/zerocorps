@@ -6,7 +6,7 @@
  * access token is used once, to read the member's Discord id and username, then revoked
  * and forgotten. It is never stored.
  *
- * Roles (the Rookie role on linking) use the bot token of the site's OWN Discord
+ * Roles (the rank role on linking) use the bot token of the site's OWN Discord
  * application, which needs nothing but "Manage Roles" in the server (SECURITY.md).
  */
 

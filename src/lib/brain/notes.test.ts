@@ -92,8 +92,8 @@ function data(): BrainData {
       { userId: member(4).userId, lessonId: "aux", completedOn: "2026-09-02" },
     ],
     steps: [
-      { userId: member(1).userId, step: "rookie", achievedOn: "2026-09-12" },
-      { userId: member(1).userId, step: "rookie-level-1", achievedOn: "2026-09-12" },
+      { userId: member(1).userId, step: "bronze", achievedOn: "2026-09-12" },
+      { userId: member(1).userId, step: "level-1", achievedOn: "2026-09-12" },
     ],
   };
 }
@@ -122,8 +122,8 @@ describe("buildBrain", () => {
       "ZeroCorps/Members/first_one.md",
       "ZeroCorps/Members/fourth.md",
       "ZeroCorps/Members/member-3.md",
+      "ZeroCorps/Ranks/bronze.md",
       "ZeroCorps/Ranks/no-rank.md",
-      "ZeroCorps/Ranks/rookie.md",
       "ZeroCorps/ZeroCorps Brain.md",
     ]);
     for (const content of build().files.values()) {
@@ -145,19 +145,19 @@ describe("buildBrain", () => {
         'username: "first_one"',
         "signed_up: 2026-09-21",
         "discord_linked: false",
-        'rank: "rookie"',
+        'rank: "bronze"',
         "last_active_on: 2026-09-12",
         "lessons_completed: 2",
         "pace_30d: 2",
         "tags:",
         "  - zc/member",
-        "  - zc/rank/rookie",
+        "  - zc/rank/bronze",
       ].join("\n"),
     );
     expect(note).toContain("- Member: **#1**\n");
     expect(note).toContain("- Signed up: 2026-09-21\n");
-    expect(note).toContain("- Rank: [[ZeroCorps/Ranks/rookie|Rookie]]\n");
-    expect(note).toContain("- Levels finished: Foundations (2026-09-12)");
+    expect(note).toContain("- Rank: [[ZeroCorps/Ranks/bronze|Bronze]]\n");
+    expect(note).toContain("- Levels finished: Fundamentals (2026-09-12)");
     // Oldest first, each a link to the lesson's note by full path.
     expect(note).toContain(
       "- 2026-09-10 · [[ZeroCorps/Lessons/what-a-market-is|what a market is]]\n" +
@@ -222,23 +222,23 @@ describe("buildBrain", () => {
     // All three tie on 2 lessons; the all-time total, then the member number, order them.
     expect(rows).toEqual([
       "| 1 | [[ZeroCorps/Members/con-\\|con]] | 2 | 3 | No rank yet | 2026-09-29 |",
-      "| 1 | [[ZeroCorps/Members/first_one\\|first_one]] | 2 | 2 | Rookie | 2026-09-12 |",
+      "| 1 | [[ZeroCorps/Members/first_one\\|first_one]] | 2 | 2 | Bronze | 2026-09-12 |",
       "| 1 | [[ZeroCorps/Members/fourth\\|fourth]] | 2 | 2 | No rank yet | 2026-09-30 |",
     ]);
     expect(board).toContain("window_start: 2026-09-01\nwindow_end: 2026-09-30");
     expect(board).toContain("Not on the board: 1 member with no lesson in the last 30 days.");
   });
 
-  it("gives every rank a note and a colour, Rookie first in the brand's red", () => {
-    expect(file("ZeroCorps/Ranks/rookie.md")).toContain("members: 1");
+  it("gives every rank a note and a colour, Bronze first, in bronze", () => {
+    expect(file("ZeroCorps/Ranks/bronze.md")).toContain("members: 1");
     expect(file("ZeroCorps/Ranks/no-rank.md")).toContain("members: 3");
     const { colorGroups } = build();
     expect(colorGroups[0]).toEqual({
-      query: "tag:#zc/rank/rookie",
-      color: { a: 1, rgb: 0xff3b47 },
+      query: "tag:#zc/rank/bronze",
+      color: { a: 1, rgb: 0xcd7f32 },
     });
     expect(colorGroups.map((group) => group.query)).toEqual([
-      "tag:#zc/rank/rookie",
+      "tag:#zc/rank/bronze",
       "tag:#zc/rank/none",
       "tag:#zc/lesson",
       "tag:#zc/chapter",
@@ -268,7 +268,7 @@ describe("buildBrain", () => {
     expect(empty.files.get("ZeroCorps/Leaderboard.md")).toContain(
       "Nobody completed a lesson in the last 30 days.",
     );
-    expect(empty.files.has("ZeroCorps/Ranks/rookie.md")).toBe(true);
+    expect(empty.files.has("ZeroCorps/Ranks/bronze.md")).toBe(true);
   });
 });
 

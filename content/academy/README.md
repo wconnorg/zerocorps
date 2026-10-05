@@ -6,19 +6,19 @@ The site reads this folder; it does not decide what is in it.
 
 ## The shape
 
-The Academy has **levels**. A level holds one or more **courses** (Level 2, The Platform,
+The Academy has **levels**. A level holds one or more **courses** (Level 2, Order Flow Software,
 has one per platform). A course holds **chapters**, and a chapter holds **lessons**.
 
 ```
 content/academy/
-  01-foundations/                       a course (Level 1, Foundations)
+  01-foundations/                       a course (Level 1, Fundamentals)
     _course.md                          what the course is
     01-how-markets-work/                a chapter
       _module.md                        what the chapter is
       01-what-a-market-is.md            a lesson
       02-orders-and-fills.md            a lesson
-  02-backtesting-school/                a course (Level 2, The Platform: Quantower)
-  03-sierra-track/                      a course (Level 2, The Platform: Sierra Chart)
+  02-backtesting-school/                a course (Level 2, Order Flow Software: Quantower)
+  03-sierra-track/                      a course (Level 2, Order Flow Software: Sierra Chart)
   _meta/curriculum-map.md               your checklist of every lesson
   _templates/lesson.md                  the header for a new lesson
 ```
@@ -130,7 +130,7 @@ Reread: drawdown
 - The checkpoint opens once every lesson in the chapter is complete. It is graded on the
   site, and a member is never shown the right answers, only which ones they missed.
 - **The answers can be read on GitHub**, because this folder is public. That is accepted for
-  the Rookie stage.
+  the first levels.
 - `02-backtesting-school/04-reading-the-results/_checkpoint.md` is an example to copy.
 
 ## Checking your work

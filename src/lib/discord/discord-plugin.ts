@@ -16,7 +16,7 @@ import { getDiscordLink, removeDiscordLink, saveDiscordLink } from "./links.ts";
 import { type RoleConfig, syncDiscordRoles } from "./role-sync.ts";
 
 /**
- * Linking a Discord account to a ZeroCorps account (milestone 6), and the Rookie role that
+ * Linking a Discord account to a ZeroCorps account (milestone 6), and the rank role that
  * comes with it (the start of milestone 8).
  *
  * Discord is NEVER a way to sign in (hard rule 2): every step needs a member who is
@@ -47,7 +47,7 @@ export type DiscordPluginOptions = {
   discord: DiscordConfig | null;
   /**
    * The member's rank key, or null before they have one. The role in Discord follows it:
-   * Rookie is earned by completing Chapter 1 (DECISIONS.md, 2026-09-29).
+   * Bronze is earned by finishing Levels 1 and 2 (DECISIONS.md, 2026-10-05).
    */
   rankOf: (userId: string) => Promise<string | null>;
 };
@@ -57,7 +57,7 @@ const STATE_SECONDS = 10 * 60;
 
 /**
  * Makes a linked member's Discord roles match their rank now: called when a rank is
- * earned, so the Rookie role arrives the moment Chapter 1 is complete. Does nothing for a
+ * earned, so the Bronze role arrives the moment both levels are finished. Does nothing for a
  * member without a link, or while roles are not set up. Never throws.
  */
 export function createRankSync(options: {

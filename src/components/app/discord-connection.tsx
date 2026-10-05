@@ -19,11 +19,11 @@ export const DISCORD_OUTCOMES: Record<
 > = {
   linked: {
     tone: "success",
-    text: "Discord linked. Your Rookie role is on its way in the ZeroCorps server.",
+    text: "Discord linked. Your Bronze role is on its way in the ZeroCorps server.",
   },
   "linked-no-rank": {
     tone: "success",
-    text: "Discord linked. Finish Chapter 1 in the Academy to become a Rookie, and the role follows in the ZeroCorps server.",
+    text: "Discord linked. Finish Fundamentals and Order Flow Software in the Academy to earn Bronze, and the role follows in the ZeroCorps server.",
   },
   "linked-join": {
     tone: "info",
