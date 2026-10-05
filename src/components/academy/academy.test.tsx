@@ -218,14 +218,22 @@ describe("the activity heatmap", () => {
 });
 
 describe("the Academy's tabs", () => {
-  it("lead to Learn, Progress and Ranks, and mark the page you are on", () => {
+  it("lead to Learn and Progress, and mark the page you are on", () => {
     const html = renderToStaticMarkup(<AcademyTabs current="progress" />);
     expect(html).toContain('aria-label="Academy"');
     expect(html).toContain('href="/academy"');
     expect(html).toContain('href="/academy/progress"');
-    expect(html).toContain('href="/academy/ranks"');
+    // Ranks left the tabs (owner, 2026-10-05); its page is reached from Progress.
+    expect(html).not.toContain('href="/academy/ranks"');
     expect(html.match(/aria-current="page"/g)).toHaveLength(1);
     const current = html.match(/<a [^>]*aria-current="page"[^>]*>/)?.[0] ?? "";
+    expect(current).toContain('href="/academy/progress"');
+  });
+
+  it("on a page inside a section, such as Ranks, mark the section rather than the page", () => {
+    const html = renderToStaticMarkup(<AcademyTabs current="progress" onPage={false} />);
+    expect(html).not.toContain('aria-current="page"');
+    const current = html.match(/<a [^>]*aria-current="true"[^>]*>/)?.[0] ?? "";
     expect(current).toContain('href="/academy/progress"');
   });
 });
