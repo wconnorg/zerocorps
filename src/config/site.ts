@@ -15,8 +15,8 @@ export const site = {
   // DISCORD_INVITE_URL, when set on a server, takes its place there.
   discordInvite: "https://discord.gg/6cpMcFEPEt",
   // The owner's YouTube channel and X account (asked for on 2026-10-05), beside Discord in
-  // every header. Empty until the owner gives the addresses: an icon shows only once its
-  // address is filled in.
+  // every header. Empty until the owner gives the addresses: until then each icon shows as
+  // "coming soon" and is not a link; filling one in makes it a link.
   youtube: "",
   x: "",
 } as const;

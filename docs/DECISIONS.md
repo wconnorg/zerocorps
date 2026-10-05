@@ -1645,9 +1645,11 @@ dashboard", the three tones, the Academy as the way in.
   completed, checkpoints passed, active days in the last 30) and the activity heatmap, now a
   year wide because the page has the room. The Academy's home no longer loads the activity.
 - **The header:** YouTube and X sit beside Discord in the same muted colours, from
-  `site.youtube` and `site.x` in `src/config/site.ts`. Both are empty until the owner gives
-  the addresses, and an icon shows only once its address is there. Below 640 pixels only
-  Discord shows, so the wordmark stays centred and nothing sticks out at 320 pixels.
+  `site.youtube` and `site.x` in `src/config/site.ts`. The owner has no addresses yet ("no
+  links yet just make the icons"), so until one is set its icon is a mark, not a link, and
+  says "coming soon" to a pointer and to a screen reader; filling the address in makes it
+  a link. Below 640 pixels only Discord shows, so the wordmark stays centred and nothing
+  sticks out at 320 pixels.
 - **The wordmark leads to the dashboard on every page:** the public pages, sign-in and
   sign-up, the members' area and "page not found". Someone signed out is sent to sign in
   first. It does not pre-load the dashboard: for a signed-out visitor that pre-load is

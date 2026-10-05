@@ -146,20 +146,27 @@ let clickingAProtectedLink = false;
       ? "no Discord link in the header (no invite configured on this server)"
       : `the header links to Discord (${new URL(href).host})`,
   );
-  // YouTube and X sit beside Discord once their addresses are set (owner, 2026-10-05).
+  // YouTube and X sit beside Discord (owner, 2026-10-05): links once their addresses are
+  // set, "coming soon" marks until then.
   for (const [name, pattern] of [
     ["YouTube", /^https:\/\/(www\.)?youtube\.com\//],
     ["X", /^https:\/\/x\.com\//],
   ]) {
     const link = page.locator("header").getByRole("link", { name: `ZeroCorps on ${name}` });
-    if ((await link.count()) === 0) {
-      console.log(`  (no ${name} link in the header: its address is not set yet)`);
-      continue;
+    if ((await link.count()) > 0) {
+      note(
+        pattern.test((await link.first().getAttribute("href")) ?? ""),
+        `the header links to ${name}`,
+      );
+    } else {
+      const mark = page
+        .locator("header")
+        .getByRole("img", { name: `ZeroCorps on ${name}: coming soon` });
+      note(
+        (await mark.count()) > 0 && (await mark.first().isVisible()),
+        `the header shows ${name}'s mark, marked coming soon (no address yet)`,
+      );
     }
-    note(
-      pattern.test((await link.first().getAttribute("href")) ?? ""),
-      `the header links to ${name}`,
-    );
   }
   // The wordmark leads to the dashboard on every page (owner, 2026-10-05).
   const wordmarkHref = () =>

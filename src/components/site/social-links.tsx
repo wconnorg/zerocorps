@@ -4,7 +4,8 @@ import { cn } from "@/lib/cn";
 /**
  * The ways to ZeroCorps elsewhere, at the right of every header: YouTube and X (owner,
  * 2026-10-05) beside Discord (owner, 2026-10-04), all in the muted colours the theme switch
- * had. A network without an address draws nothing.
+ * had. Until their addresses are set, YouTube and X show their marks as "coming soon",
+ * not as links (owner, 2026-10-05: "no links yet just make the icons").
  *
  * The marks are the networks' own, from Simple Icons (CC0). The headers pass the Discord
  * invite, because `DISCORD_INVITE_URL` may override it on a server.
@@ -62,14 +63,54 @@ export function SocialIconLink({
   );
 }
 
-/** The header's row: YouTube, X, then Discord, which alone stays on a phone. */
+/**
+ * A network's mark before its address exists: drawn like the links, in the same colours,
+ * but not a link, and it says "coming soon" to a pointer and to a screen reader.
+ */
+export function SocialIconComingSoon({
+  network,
+  onPhones = true,
+}: {
+  network: Network;
+  onPhones?: boolean;
+}) {
+  const { name, path } = NETWORKS[network];
+  return (
+    <span
+      role="img"
+      aria-label={`ZeroCorps on ${name}: coming soon`}
+      title={`ZeroCorps on ${name}: coming soon`}
+      className={cn(
+        onPhones ? "inline-flex" : "hidden sm:inline-flex",
+        "size-9 items-center justify-center text-muted",
+      )}
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="size-[18px]">
+        <path d={path} />
+      </svg>
+    </span>
+  );
+}
+
+/**
+ * The header's row: YouTube, X, then Discord, which alone stays on a phone. YouTube and X
+ * are links once their addresses are set in `src/config/site.ts`, and marks until then.
+ */
 export function SocialLinks({ discord }: { discord: string | undefined }) {
   const youtube: string = site.youtube;
   const x: string = site.x;
   return (
     <>
-      <SocialIconLink network="youtube" href={youtube || undefined} onPhones={false} />
-      <SocialIconLink network="x" href={x || undefined} onPhones={false} />
+      {youtube ? (
+        <SocialIconLink network="youtube" href={youtube} onPhones={false} />
+      ) : (
+        <SocialIconComingSoon network="youtube" onPhones={false} />
+      )}
+      {x ? (
+        <SocialIconLink network="x" href={x} onPhones={false} />
+      ) : (
+        <SocialIconComingSoon network="x" onPhones={false} />
+      )}
       <SocialIconLink network="discord" href={discord} />
     </>
   );

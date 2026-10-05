@@ -1,7 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { site } from "../../config/site";
-import { SocialIconLink, SocialLinks } from "./social-links";
+import { SocialIconComingSoon, SocialIconLink, SocialLinks } from "./social-links";
 import { Wordmark } from "./wordmark";
 
 /** The header's ways to ZeroCorps elsewhere, and its wordmark, drawn as text. */
@@ -42,17 +42,40 @@ describe("the header's ways to ZeroCorps elsewhere", () => {
     expect(discordClasses.split(" ")).not.toContain("hidden");
   });
 
-  it("draws YouTube, X and Discord in that order, each only once it has an address", () => {
+  it("draws YouTube, X and Discord in that order: links once their addresses are set, marks until then", () => {
     const html = renderToStaticMarkup(<SocialLinks discord="https://discord.gg/example" />);
     const youtube: string = site.youtube;
     const x: string = site.x;
-    expect(html.includes("ZeroCorps on YouTube")).toBe(youtube !== "");
-    expect(html.includes("ZeroCorps on X")).toBe(x !== "");
-    expect(html).toContain("ZeroCorps on Discord");
-    const order = ["YouTube", "X", "Discord"]
-      .map((name) => html.indexOf(`ZeroCorps on ${name}"`))
-      .filter((at) => at !== -1);
+    for (const [name, address] of [
+      ["YouTube", youtube],
+      ["X", x],
+    ] as const) {
+      expect(html).toContain(
+        address
+          ? `aria-label="ZeroCorps on ${name}"`
+          : `aria-label="ZeroCorps on ${name}: coming soon"`,
+      );
+    }
+    expect(html).toContain('aria-label="ZeroCorps on Discord"');
+    const order = ["YouTube", "X", "Discord"].map((name) =>
+      html.indexOf(`aria-label="ZeroCorps on ${name}`),
+    );
+    expect(order.every((at) => at !== -1)).toBe(true);
     expect(order).toEqual([...order].sort((a, b) => a - b));
+  });
+
+  it("a mark without an address is not a link, and says it is coming soon", () => {
+    const html = renderToStaticMarkup(<SocialIconComingSoon network="youtube" onPhones={false} />);
+    expect(html).toMatch(/^<span /);
+    expect(html).not.toContain("<a ");
+    expect(html).not.toContain("href=");
+    expect(html).toContain('role="img"');
+    expect(html).toContain('aria-label="ZeroCorps on YouTube: coming soon"');
+    expect(html).toContain('title="ZeroCorps on YouTube: coming soon"');
+    // The same muted colour as the links, with nothing that reacts to the pointer.
+    expect(html).toContain("text-muted");
+    expect(html).not.toContain("hover:");
+    expect(html).toContain("hidden sm:inline-flex");
   });
 
   it("always has the owner's permanent Discord invite to fall back on, written as a real invite", () => {
