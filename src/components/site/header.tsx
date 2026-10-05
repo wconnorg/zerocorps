@@ -1,3 +1,4 @@
+import { site } from "@/config/site";
 import { env } from "@/env";
 import { DiscordIconLink } from "./discord-icon-link";
 import { Wordmark } from "./wordmark";
@@ -17,7 +18,7 @@ export function Header() {
         <span aria-hidden="true" />
         <Wordmark markClassName="text-fg" />
         <div className="flex items-center justify-end gap-2">
-          <DiscordIconLink href={env.DISCORD_INVITE_URL} />
+          <DiscordIconLink href={env.DISCORD_INVITE_URL ?? site.discordInvite} />
         </div>
       </div>
     </header>

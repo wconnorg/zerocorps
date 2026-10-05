@@ -100,7 +100,7 @@ for (const key of ["SECURITY_CONTACT", "PRIVACY_CONTACT"]) {
 }
 plain("DISCORD_INVITE_URL", {
   check: (value) => (value.startsWith("https://") ? null : "Must start with https://"),
-  note: "Optional.",
+  note: "Optional: the invite in src/config/site.ts is used when this is blank.",
 });
 databaseUrl("BRAIN_DATABASE_URL", "brain", false, {
   role: "brain_reader",

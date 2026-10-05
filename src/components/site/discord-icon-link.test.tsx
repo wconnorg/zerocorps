@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
+import { site } from "../../config/site";
 import { DiscordIconLink } from "./discord-icon-link";
 
 /** The header's way to Discord, drawn as text. */
@@ -18,5 +19,11 @@ describe("the Discord link in the header", () => {
 
   it("is not there at all without an invite", () => {
     expect(renderToStaticMarkup(<DiscordIconLink href={undefined} />)).toBe("");
+  });
+
+  it("always has the owner's permanent invite to fall back on, written as a real invite", () => {
+    expect(site.discordInvite).toMatch(
+      /^https:\/\/(discord\.gg|discord\.com\/invite)\/[A-Za-z0-9-]+$/,
+    );
   });
 });

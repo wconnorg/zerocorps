@@ -1,5 +1,6 @@
 import { DiscordIconLink } from "@/components/site/discord-icon-link";
 import { Wordmark } from "@/components/site/wordmark";
+import { site } from "@/config/site";
 import { env } from "@/env";
 
 /** Centred single-card layout shared by sign in, sign up and, later, the other auth screens. */
@@ -11,7 +12,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           <span aria-hidden="true" />
           <Wordmark markClassName="text-fg" />
           <div className="flex items-center justify-end gap-2">
-            <DiscordIconLink href={env.DISCORD_INVITE_URL} />
+            <DiscordIconLink href={env.DISCORD_INVITE_URL ?? site.discordInvite} />
           </div>
         </div>
       </header>

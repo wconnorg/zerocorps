@@ -1516,8 +1516,13 @@ dashboard", the three tones, the Academy as the way in.
 - **Built:** the theme switch, `src/lib/theme.ts` (the `zc-theme` cookie and the script
   that applied it before the first paint) and their tests are gone; `<html>` carries no
   theme. In every header (the public pages, sign-in, the members' area) the switch's place
-  holds `DiscordIconLink`: Discord's mark (Simple Icons, CC0) in the switch's own colours,
-  linking to `DISCORD_INVITE_URL`, and nothing when that is not set. The light palette
+  holds `DiscordIconLink`: Discord's mark (Simple Icons, CC0) in the switch's own colours.
+  **The invite** is the owner's permanent one, given the same day
+  (`https://discord.gg/6cpMcFEPEt`), kept in `src/config/site.ts` as `discordInvite`: it is
+  public by nature (it is on every page), so it needs no host setting, and the laptop shows
+  it too. `DISCORD_INVITE_URL`, when set on a server, overrides it. The same invite is
+  behind "Join the Discord" on `/sign-up`; the live site had never had one set, so that
+  button had been hidden. The light palette
   stays in `globals.css` for one job only: the two-factor QR code, which a phone must read
   dark-on-light. The privacy page no longer lists a theme cookie. The browser check now
   proves the page is dark even for a visitor holding an old light-theme cookie, that no

@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { AccountMenu } from "@/components/app/profile-menu";
 import { DiscordIconLink } from "@/components/site/discord-icon-link";
 import { Wordmark } from "@/components/site/wordmark";
+import { site } from "@/config/site";
 import { env } from "@/env";
 
 /**
@@ -22,7 +23,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span aria-hidden="true" />
           <Wordmark markClassName="text-fg" />
           <div className="flex items-center justify-end gap-2">
-            <DiscordIconLink href={env.DISCORD_INVITE_URL} />
+            <DiscordIconLink href={env.DISCORD_INVITE_URL ?? site.discordInvite} />
             <AccountMenu />
           </div>
         </div>

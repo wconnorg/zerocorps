@@ -131,7 +131,8 @@ only the owner changes it in production.
 - **Dark only** (owner, 2026-10-04): no theme switch, no theme script, no theme
   cookie. The light palette in `globals.css` exists only for a panel that must be
   dark-on-light whatever the page (the two-factor QR code), marked `data-theme="light"`.
-  The header's right-hand control is the way to Discord (`DISCORD_INVITE_URL`).
+  The header's right-hand control is the way to Discord: the owner's permanent invite
+  in `src/config/site.ts`, which `DISCORD_INVITE_URL` overrides when set.
 - **Environment variables** are declared in `src/env-schema.ts` (parsed once by
   `src/env.ts`) and listed in `.env.example`. A test fails if the two lists differ. A key becomes required in
   the milestone that first needs it. Import `env` instead of reading `process.env`.

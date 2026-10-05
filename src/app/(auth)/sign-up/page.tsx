@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SignUpForm } from "@/components/auth/sign-up-form";
 import { ButtonLink, buttonClasses } from "@/components/ui/button";
+import { site } from "@/config/site";
 import { env } from "@/env";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
  * courtesy; it is not the control.
  */
 export default function SignUpPage() {
+  const discordInvite = env.DISCORD_INVITE_URL ?? site.discordInvite;
   if (env.SIGNUP_MODE === "closed") {
     return (
       <>
@@ -24,15 +26,13 @@ export default function SignUpPage() {
           you never need a site account to be part of it.
         </p>
         <div className="mt-8 flex flex-col gap-3">
-          {env.DISCORD_INVITE_URL ? (
-            <a
-              href={env.DISCORD_INVITE_URL}
-              rel="noopener noreferrer"
-              className={buttonClasses({ size: "lg", className: "w-full" })}
-            >
-              Join the Discord
-            </a>
-          ) : null}
+          <a
+            href={discordInvite}
+            rel="noopener noreferrer"
+            className={buttonClasses({ size: "lg", className: "w-full" })}
+          >
+            Join the Discord
+          </a>
           <ButtonLink href="/sign-in" variant="secondary" className="w-full">
             I already have an account
           </ButtonLink>
@@ -48,10 +48,7 @@ export default function SignUpPage() {
         An email address and a password. We email you a 6-digit code to confirm the address, and
         nothing is created until you enter it.
       </p>
-      <SignUpForm
-        inviteOnly={env.SIGNUP_MODE === "allowlist"}
-        discordInviteUrl={env.DISCORD_INVITE_URL}
-      />
+      <SignUpForm inviteOnly={env.SIGNUP_MODE === "allowlist"} discordInviteUrl={discordInvite} />
     </>
   );
 }
