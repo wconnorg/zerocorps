@@ -1201,7 +1201,7 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `cfa8bf7` since 2026-10-05, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `ab1a4c2` since 2026-10-05, same tree as `dev` then):**
 
 - **The Academy's tabs, the header's links and the wordmark** (since 2026-10-05, second
   release that day): the tabs Learn and Progress (Ranks left them in the third release that
@@ -1660,6 +1660,12 @@ dashboard", the three tones, the Academy as the way in.
 - **Ranks left the tabs the same day** (owner, looking at the live site: "remove the ranks
   header"). The tabs are Learn and Progress. The Ranks page stays, reached from "How ranks
   work" on the rank card, and its tab bar marks Progress as the section it belongs to.
+  **Released the same day, the third release that day, on the owner's "apply to live":**
+  `dev` (`6e2184a`) merged into `main` as `ab1a4c2` (parents `cfa8bf7` and `6e2184a`),
+  scanned, pushed; GitHub recorded the production deployment as a success within a
+  minute, and the browser check against the live site passed (78 checks). Before the
+  push: all 530 tests, the typecheck, lint, the build and the browser check against it
+  (76 checks).
 - **Progress:** the rank card, **"Your progress"** (formerly "Your record": lessons
   completed, checkpoints passed, active days in the last 30) and the activity heatmap, now a
   year wide because the page has the room. The Academy's home no longer loads the activity.
@@ -1683,6 +1689,22 @@ dashboard", the three tones, the Academy as the way in.
   two pages, and the YouTube and X marks). The members' pages were rendered
   from the real lesson catalog at 1280, 390 and 320 pixels: nothing sticks out, the wordmark
   is centred, and YouTube and X show on a desktop only.
+
+### The Academy's home, pared down (owner, 2026-10-05)
+
+- **The owner's words:** "remove the text underneath academy where it says from your first
+  order", "the red part that says zerocorps academy \* free remove that too just make the
+  white academy letters red and everything is gonna be free", "the resume change it to say
+  continue and insutead of continute chapter 01 lesson 1 of 1 just say chapter 1 lesson 1
+  or something make it look good", and "removethe part that says open to everyone".
+- **Built:** the title "Academy" in the brand red over its rule, with no kicker and no
+  tagline. The next-step card reads "Chapter 1 · Lesson 1" ("Chapter 2 · Checkpoint" when a
+  checkpoint is next) and its button says **Continue** ("Start" for a checkpoint). A level's
+  line reads "4 chapters · 15 lessons": everything in the Academy is free, so nothing says
+  so.
+- **Checks:** all 531 tests, the typecheck, lint, formatting, the production build and the
+  browser check against it (76 checks). The Learn page was rendered from the real lesson
+  catalog at 1280, 390 and 320 pixels: nothing sticks out.
 
 ### Released on 2026-10-04, fourth: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
 
