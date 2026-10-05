@@ -31,7 +31,7 @@ export default async function RanksPage() {
   }
   return (
     <AppShell>
-      <AcademyTabs current="ranks" />
+      <AcademyTabs current="progress" onPage={false} />
       <RanksView academy={loaded.academy} />
     </AppShell>
   );

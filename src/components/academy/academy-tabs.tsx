@@ -4,20 +4,25 @@ import { cn } from "@/lib/cn";
 
 /**
  * The Academy's tabs, under the header on its top-level pages (owner, 2026-10-05): Learn
- * (the Academy's home, with "Resume"), Progress (the rank, the member's progress and the
- * activity heatmap) and Ranks. The owner has named a Journal and a Calculator as tabs to
- * come; they join this list when they are built.
+ * (the Academy's home, with "Resume") and Progress (the rank, the member's progress and the
+ * activity heatmap). Ranks left the tabs the same day ("remove the ranks header"): its page
+ * is reached from the rank card on Progress, and marks Progress as its section. The owner
+ * has named a Backtest, a Journal and a Calculator as tabs to come; they join this list
+ * when they are built.
  */
 
 export const ACADEMY_TABS = [
   { key: "learn", label: "Learn", href: "/academy" },
   { key: "progress", label: "Progress", href: "/academy/progress" },
-  { key: "ranks", label: "Ranks", href: "/academy/ranks" },
 ] as const satisfies readonly { key: string; label: string; href: Route }[];
 
 export type AcademyTab = (typeof ACADEMY_TABS)[number]["key"];
 
-export function AcademyTabs({ current }: { current: AcademyTab }) {
+/**
+ * `onPage={false}` for a page inside a tab's section, such as Ranks under Progress: the tab
+ * is then marked as the current section, not as the page itself.
+ */
+export function AcademyTabs({ current, onPage = true }: { current: AcademyTab; onPage?: boolean }) {
   return (
     <nav aria-label="Academy" className="border-b border-line/70">
       {/* A phone too narrow for every tab scrolls them sideways rather than the page. */}
@@ -29,7 +34,7 @@ export function AcademyTabs({ current }: { current: AcademyTab }) {
               <Link
                 href={tab.href}
                 prefetch={false}
-                aria-current={active ? "page" : undefined}
+                aria-current={active ? (onPage ? "page" : "true") : undefined}
                 className={cn(
                   "relative inline-flex min-h-12 items-center px-3 font-mono text-xs tracking-[0.22em] uppercase transition-colors",
                   active ? "text-fg" : "text-subtle hover:text-fg",

@@ -1204,7 +1204,8 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
 **Live on zerocorps.org (`main` = `cfa8bf7` since 2026-10-05, same tree as `dev` then):**
 
 - **The Academy's tabs, the header's links and the wordmark** (since 2026-10-05, second
-  release that day): Learn, Progress and Ranks; YouTube and X beside Discord, "coming soon"
+  release that day): the tabs Learn and Progress (Ranks left them in the third release that
+  day); YouTube and X beside Discord, "coming soon"
   until their addresses exist; the wordmark leads to the dashboard; see "The Academy's
   tabs, the header's links and the wordmark" below.
 - **The Academy's levels and the Bronze rank** (since 2026-10-05, first release that day): finishing Level 1,
@@ -1656,6 +1657,9 @@ dashboard", the three tones, the Academy as the way in.
   **Journal and Calculator are tabs to come**, each designed with the owner first: a journal
   holds members' own trading records, which is personal data, so what it records, who can
   see it and how it is deleted are the owner's decisions.
+- **Ranks left the tabs the same day** (owner, looking at the live site: "remove the ranks
+  header"). The tabs are Learn and Progress. The Ranks page stays, reached from "How ranks
+  work" on the rank card, and its tab bar marks Progress as the section it belongs to.
 - **Progress:** the rank card, **"Your progress"** (formerly "Your record": lessons
   completed, checkpoints passed, active days in the last 30) and the activity heatmap, now a
   year wide because the page has the room. The Academy's home no longer loads the activity.
