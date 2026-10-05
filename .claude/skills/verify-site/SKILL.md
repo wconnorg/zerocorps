@@ -1,6 +1,6 @@
 ---
 name: verify-site
-description: Launch the zerocorps.org app (or target the live site) and drive it in headless Edge - response headers, both themes, navigation, phone-width overflow, console errors and full-page screenshots. Use to run, start or screenshot the app, or to confirm a change works in the real app before finishing a milestone.
+description: Launch the zerocorps.org app (or target the live site) and drive it in headless Edge - response headers, the dark-only look and the header's Discord link, navigation, phone-width overflow, console errors and full-page screenshots. Use to run, start or screenshot the app, or to confirm a change works in the real app before finishing a milestone.
 ---
 
 # Verify the site in a real browser
@@ -51,9 +51,8 @@ node scripts/verify-site.mjs https://zerocorps.org live
 
 Every line is `PASS` or `FAIL`, and the exit code is non-zero on any failure.
 Screenshots land in `.verify/<label>/` (gitignored), as
-`<page>-<desktop|mobile>-<dark|light>.png`. Open a few with the Read tool:
-always a phone one, and always the light theme, because that is where problems
-hide.
+`<page>-<desktop|mobile>.png`. Open a few with the Read tool, always a phone one,
+because that is where problems hide. The site is dark only since 2026-10-04.
 
 The script uses the installed Microsoft Edge through `playwright-core`
 (`channel: "msedge"`), so no browser download is needed.

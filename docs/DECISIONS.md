@@ -1507,6 +1507,35 @@ dashboard", the three tones, the Academy as the way in.
   divisions in order and each in its tone, one screen on a desktop, stacked on a phone,
   both ways in at least 44 pixels tall, nothing sticking out at 320 pixels.
 
+### Dark only, a Discord link in every header, and private notes in the lessons vault (owner, 2026-10-04)
+
+- **The owner's words:** "we need a discord icon on the header make it the same color as
+  the light mode icon and also remove the light mode icon"; then, asked what becomes of
+  light mode, **"Dark only"**: the whole site is always dark, and the theme code is
+  deleted.
+- **Built:** the theme switch, `src/lib/theme.ts` (the `zc-theme` cookie and the script
+  that applied it before the first paint) and their tests are gone; `<html>` carries no
+  theme. In every header (the public pages, sign-in, the members' area) the switch's place
+  holds `DiscordIconLink`: Discord's mark (Simple Icons, CC0) in the switch's own colours,
+  linking to `DISCORD_INVITE_URL`, and nothing when that is not set. The light palette
+  stays in `globals.css` for one job only: the two-factor QR code, which a phone must read
+  dark-on-light. The privacy page no longer lists a theme cookie. The browser check now
+  proves the page is dark even for a visitor holding an old light-theme cookie, that no
+  theme switch is left, and that the live header links to Discord.
+- **The repository's visibility:** the owner first chose to make it private, then: "it
+  will mess up supabase bare minimum just make sure its in the gitignore or something idc
+  i dont want any obi files being public". (Making it private would not touch Supabase,
+  which never reads GitHub; that was explained.) **It stays public for now.** What was
+  done instead: `content/academy/_private/` is the owner's private notes folder inside the
+  lessons vault (a journal, research), git-ignored, skipped by the site (it skips folders
+  starting with `_`), by the hidden-character test and by ESLint; `.obsidian/` and
+  `.trash/` were already ignored. **The lesson files themselves cannot be ignored:** the
+  site deploys them from the repository, so ignoring them would empty the live Academy.
+  Drafts stay on the laptop until the owner asks for a release, as before; published
+  lessons are readable on GitHub while it is public. If the owner wants those hidden too,
+  making it private is the switch (GitHub's free secret scanning is then lost, and the
+  deploy confirmation must read the live site instead of GitHub's anonymous API).
+
 ### Released on 2026-10-04, fourth: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
 
 The owner asked whether everything was up to date and "state of the art". `npm outdated`,

@@ -1,11 +1,12 @@
 import type { ReactNode } from "react";
 import { AccountMenu } from "@/components/app/profile-menu";
+import { DiscordIconLink } from "@/components/site/discord-icon-link";
 import { Wordmark } from "@/components/site/wordmark";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { env } from "@/env";
 
 /**
  * The signed-in area's frame: the wordmark in the middle, a bar under it as on the home
- * page, the theme switch and the profile button with its menu (settings and sign out).
+ * page, the way to Discord and the profile button with its menu (settings and sign out).
  * The dashboard's layout uses it, and so do the Academy's pages.
  *
  * It checks no session: a layout is not re-rendered on every navigation, so each
@@ -21,7 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span aria-hidden="true" />
           <Wordmark markClassName="text-fg" />
           <div className="flex items-center justify-end gap-2">
-            <ThemeToggle />
+            <DiscordIconLink href={env.DISCORD_INVITE_URL} />
             <AccountMenu />
           </div>
         </div>

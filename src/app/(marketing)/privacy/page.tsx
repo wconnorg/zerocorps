@@ -79,9 +79,8 @@ export default function PrivacyPage() {
           <li>
             with two-factor on: a short-lived cookie while you type your code (10 minutes), and,
             only if you tick &ldquo;trust this browser&rdquo;, a cookie that skips the code there
-            for 30 days;
+            for 30 days.
           </li>
-          <li>your choice of light or dark theme.</li>
         </LegalList>
         <p>There are no advertising cookies, no analytics cookies and no third-party trackers.</p>
       </LegalSection>

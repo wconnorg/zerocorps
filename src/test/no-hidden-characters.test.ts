@@ -36,10 +36,17 @@ const RISKY = [
 const describeCharacter = (code: number) =>
   RISKY.find((range) => code >= range.from && code <= range.to)?.what ?? "invisible character";
 
+/**
+ * Folders that are never committed, so nobody else ever reads them: the dependencies, and in
+ * the lessons vault Obsidian's own settings and trash and the owner's private notes, where
+ * text pasted from anywhere may live.
+ */
+const NEVER_COMMITTED = new Set(["node_modules", ".obsidian", ".trash", "_private"]);
+
 function sourceFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const path = join(directory, entry.name);
-    if (entry.isDirectory()) return entry.name === "node_modules" ? [] : sourceFiles(path);
+    if (entry.isDirectory()) return NEVER_COMMITTED.has(entry.name) ? [] : sourceFiles(path);
     return /\.(ts|tsx|mts|mjs|js|css|json|md)$/.test(entry.name) ? [path] : [];
   });
 }

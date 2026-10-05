@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { site } from "@/config/site";
 import { env } from "@/env";
-import { DEFAULT_THEME, themeInitScript } from "@/lib/theme";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -37,19 +36,9 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    // The server always renders the default theme. The inline script below runs
-    // while the HTML is parsed and swaps in the visitor's saved theme before the
-    // first paint. `suppressHydrationWarning` tells React to keep that attribute.
-    // Reading the cookie on the server instead would make every page dynamic.
-    <html
-      lang="en"
-      data-theme={DEFAULT_THEME}
-      suppressHydrationWarning
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
-      </head>
+    // Dark only (owner, 2026-10-04): no theme switch, no script, no cookie. The palette is
+    // the one on `:root` in globals.css.
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col">
         <a
           href="#main"

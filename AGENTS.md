@@ -124,14 +124,14 @@ only the owner changes it in production.
 
 ## Conventions
 
-- **Colours are semantic tokens only**, defined per theme in
-  `src/app/globals.css` (`bg-surface`, `text-muted`, `bg-accent`, ...). Tailwind's
-  built-in palette is removed on purpose, so `bg-red-500` does not exist. Anything
-  new must work in both themes. `src/styles/tokens.test.ts` enforces WCAG AA
-  contrast, so keep token values as 6-digit hex.
-- **Theme**: `data-theme` on `<html>`, dark by default, saved in the `zc-theme`
-  cookie and applied by an inline script before first paint. Do not read that
-  cookie in a layout on the server: it would make every page dynamic.
+- **Colours are semantic tokens only**, defined in `src/app/globals.css`
+  (`bg-surface`, `text-muted`, `bg-accent`, ...). Tailwind's built-in palette is
+  removed on purpose, so `bg-red-500` does not exist. `src/styles/tokens.test.ts`
+  enforces WCAG AA contrast, so keep token values as 6-digit hex.
+- **Dark only** (owner, 2026-10-04): no theme switch, no theme script, no theme
+  cookie. The light palette in `globals.css` exists only for a panel that must be
+  dark-on-light whatever the page (the two-factor QR code), marked `data-theme="light"`.
+  The header's right-hand control is the way to Discord (`DISCORD_INVITE_URL`).
 - **Environment variables** are declared in `src/env-schema.ts` (parsed once by
   `src/env.ts`) and listed in `.env.example`. A test fails if the two lists differ. A key becomes required in
   the milestone that first needs it. Import `env` instead of reading `process.env`.

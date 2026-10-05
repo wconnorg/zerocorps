@@ -1,5 +1,6 @@
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { DiscordIconLink } from "@/components/site/discord-icon-link";
 import { Wordmark } from "@/components/site/wordmark";
+import { env } from "@/env";
 
 /** Centred single-card layout shared by sign in, sign up and, later, the other auth screens. */
 export default function AuthLayout({ children }: LayoutProps<"/">) {
@@ -10,7 +11,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           <span aria-hidden="true" />
           <Wordmark markClassName="text-fg" />
           <div className="flex items-center justify-end gap-2">
-            <ThemeToggle />
+            <DiscordIconLink href={env.DISCORD_INVITE_URL} />
           </div>
         </div>
       </header>
