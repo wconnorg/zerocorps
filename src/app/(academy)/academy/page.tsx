@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { AcademyHome } from "@/components/academy/academy-home";
+import { AcademyTabs } from "@/components/academy/academy-tabs";
 import { AcademyProblems } from "@/components/academy/ui";
 import { AppShell } from "@/components/app/app-shell";
 import { Unavailable } from "@/components/site/unavailable";
 import { site } from "@/config/site";
-import { loadAcademy, loadActivity } from "@/lib/academy/load";
+import { loadAcademy } from "@/lib/academy/load";
 import { getSessionState } from "@/lib/auth/session";
 
 export const metadata: Metadata = {
@@ -45,10 +46,10 @@ export default async function AcademyPage() {
       </AppShell>
     );
   }
-  const activity = await loadActivity(state.user.id);
   return (
     <AppShell>
-      <AcademyHome academy={loaded.academy} activity={activity} />
+      <AcademyTabs current="learn" />
+      <AcademyHome academy={loaded.academy} />
     </AppShell>
   );
 }

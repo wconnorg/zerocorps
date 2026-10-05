@@ -146,6 +146,7 @@ describe("every mistake is caught, and named", () => {
         "02-b.md": lesson("Has_Capitals"),
         "03-c.md": lesson("double--hyphen"),
         "04-d.md": lesson("checkpoint"),
+        "05-e.md": lesson("progress"),
       }),
     );
     expect(problems.join("\n")).toMatch(/01-a\.md: "id" is missing/);
@@ -153,6 +154,10 @@ describe("every mistake is caught, and named", () => {
     expect(problems.join("\n")).toMatch(/03-c\.md: the id "double--hyphen"/);
     expect(problems.join("\n")).toMatch(
       /04-d\.md: the id "checkpoint" is a word the site's addresses use/,
+    );
+    // The Progress tab's address (owner, 2026-10-05).
+    expect(problems.join("\n")).toMatch(
+      /05-e\.md: the id "progress" is a word the site's addresses use/,
     );
   });
 

@@ -1,0 +1,117 @@
+import { site } from "@/config/site";
+import { cn } from "@/lib/cn";
+
+/**
+ * The ways to ZeroCorps elsewhere, at the right of every header: YouTube and X (owner,
+ * 2026-10-05) beside Discord (owner, 2026-10-04), all in the muted colours the theme switch
+ * had. Until their addresses are set, YouTube and X show their marks as "coming soon",
+ * not as links (owner, 2026-10-05: "no links yet just make the icons").
+ *
+ * The marks are the networks' own, from Simple Icons (CC0). The headers pass the Discord
+ * invite, because `DISCORD_INVITE_URL` may override it on a server.
+ */
+
+const NETWORKS = {
+  youtube: {
+    name: "YouTube",
+    path: "M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z",
+  },
+  x: {
+    name: "X",
+    path: "M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z",
+  },
+  discord: {
+    name: "Discord",
+    path: "M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z",
+  },
+} as const;
+
+export type Network = keyof typeof NETWORKS;
+
+/**
+ * One network's mark, linking to ZeroCorps there. Nothing at all without an address.
+ * `onPhones={false}` keeps it for screens from 640 pixels up: a phone's header has room for
+ * the wordmark, one mark and the profile button, and no more without pushing the wordmark
+ * off centre.
+ */
+export function SocialIconLink({
+  network,
+  href,
+  onPhones = true,
+}: {
+  network: Network;
+  href: string | undefined;
+  onPhones?: boolean;
+}) {
+  if (!href) return null;
+  const { name, path } = NETWORKS[network];
+  return (
+    <a
+      href={href}
+      rel="noopener noreferrer"
+      aria-label={`ZeroCorps on ${name}`}
+      title={`ZeroCorps on ${name}`}
+      className={cn(
+        onPhones ? "inline-flex" : "hidden sm:inline-flex",
+        "size-9 items-center justify-center rounded-lg text-muted transition-colors hover:bg-raised hover:text-fg",
+      )}
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="size-[18px]">
+        <path d={path} />
+      </svg>
+    </a>
+  );
+}
+
+/**
+ * A network's mark before its address exists: drawn like the links, in the same colours,
+ * but not a link, and it says "coming soon" to a pointer and to a screen reader.
+ */
+export function SocialIconComingSoon({
+  network,
+  onPhones = true,
+}: {
+  network: Network;
+  onPhones?: boolean;
+}) {
+  const { name, path } = NETWORKS[network];
+  return (
+    <span
+      role="img"
+      aria-label={`ZeroCorps on ${name}: coming soon`}
+      title={`ZeroCorps on ${name}: coming soon`}
+      className={cn(
+        onPhones ? "inline-flex" : "hidden sm:inline-flex",
+        "size-9 items-center justify-center text-muted",
+      )}
+    >
+      <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" className="size-[18px]">
+        <path d={path} />
+      </svg>
+    </span>
+  );
+}
+
+/**
+ * The header's row: YouTube, X, then Discord, which alone stays on a phone. YouTube and X
+ * are links once their addresses are set in `src/config/site.ts`, and marks until then.
+ */
+export function SocialLinks({ discord }: { discord: string | undefined }) {
+  const youtube: string = site.youtube;
+  const x: string = site.x;
+  return (
+    <>
+      {youtube ? (
+        <SocialIconLink network="youtube" href={youtube} onPhones={false} />
+      ) : (
+        <SocialIconComingSoon network="youtube" onPhones={false} />
+      )}
+      {x ? (
+        <SocialIconLink network="x" href={x} onPhones={false} />
+      ) : (
+        <SocialIconComingSoon network="x" onPhones={false} />
+      )}
+      <SocialIconLink network="discord" href={discord} />
+    </>
+  );
+}

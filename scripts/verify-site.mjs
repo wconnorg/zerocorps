@@ -146,10 +146,44 @@ let clickingAProtectedLink = false;
       ? "no Discord link in the header (no invite configured on this server)"
       : `the header links to Discord (${new URL(href).host})`,
   );
+  // YouTube and X sit beside Discord (owner, 2026-10-05): links once their addresses are
+  // set, "coming soon" marks until then.
+  for (const [name, pattern] of [
+    ["YouTube", /^https:\/\/(www\.)?youtube\.com\//],
+    ["X", /^https:\/\/x\.com\//],
+  ]) {
+    const link = page.locator("header").getByRole("link", { name: `ZeroCorps on ${name}` });
+    if ((await link.count()) > 0) {
+      note(
+        pattern.test((await link.first().getAttribute("href")) ?? ""),
+        `the header links to ${name}`,
+      );
+    } else {
+      const mark = page
+        .locator("header")
+        .getByRole("img", { name: `ZeroCorps on ${name}: coming soon` });
+      note(
+        (await mark.count()) > 0 && (await mark.first().isVisible()),
+        `the header shows ${name}'s mark, marked coming soon (no address yet)`,
+      );
+    }
+  }
+  // The wordmark leads to the dashboard on every page (owner, 2026-10-05).
+  const wordmarkHref = () =>
+    page
+      .locator("header")
+      .getByRole("link", { name: "ZeroCorps dashboard" })
+      .first()
+      .getAttribute("href");
+  note((await wordmarkHref()) === "/dashboard", "the header's wordmark leads to the dashboard");
   await page.goto(`${base}/sign-in`, { waitUntil: "networkidle" });
   note(
     (await discordIn(page).count()) === links,
     "the sign-in pages' header has the same way to Discord",
+  );
+  note(
+    (await wordmarkHref()) === "/dashboard",
+    "the sign-in pages' wordmark leads to the dashboard too",
   );
   await context.close();
 }

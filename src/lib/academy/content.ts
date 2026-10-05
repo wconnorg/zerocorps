@@ -109,7 +109,7 @@ export class ContentError extends Error {
 export const ID_SHAPE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ID_MAX = 80;
 /** Words the site's own addresses use, so no chapter or lesson can hide a page. */
-const RESERVED_IDS = new Set(["checkpoint", "ranks"]);
+const RESERVED_IDS = new Set(["checkpoint", "progress", "ranks"]);
 const ORDERED = /^(\d+)-(.+)$/;
 
 type Header = Record<string, string>;
