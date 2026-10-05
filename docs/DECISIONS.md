@@ -1201,8 +1201,11 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `43c7515` since 2026-10-04, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `90e5f77` since 2026-10-05, same tree as `dev` then):**
 
+- **The Academy's levels and the Bronze rank** (since 2026-10-05): finishing Level 1,
+  Fundamentals, and Level 2, Order Flow Software, earns Bronze, the first and only rank;
+  see "The Academy's levels and the Bronze rank" below.
 - **Dark only, with the owner's Discord invite in every header** (since 2026-10-04, fifth
   release that day); see "Dark only, a Discord link in every header" below.
 - **Better Auth 1.7.7 and sharp 0.35.5, with a gate before the image library** (since
@@ -1222,8 +1225,9 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
   password, backup codes, trusted browsers; app codes only, no phone numbers. Untested by
   the owner at the time of writing: see "The owner's, next".
 - **The Academy (milestone 7):** 42 lessons in first draft (the owner rewrites them), 9
-  chapter checkpoints, quick checks, progress, heatmap. **Rookie** is earned by completing
-  Chapter 1 and **claimed by linking Discord**; each finished level is a step.
+  chapter checkpoints, quick checks, progress, heatmap. **Bronze** (since 2026-10-05, in
+  place of Rookie) is earned by finishing Levels 1 and 2 and **claimed by linking
+  Discord**; each finished level is a step.
 - **Settings (milestone 4):** password, devices, security activity, delete account.
 - **Discord linking (milestone 6)**, switched on by the owner's `DISCORD_CLIENT_ID` and
   `DISCORD_CLIENT_SECRET` ("ZeroCorps Web", linking only, no bot on the site).
@@ -1258,6 +1262,14 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
    mailbox, run `npm run db:restore:check`, delete the `backup-dev-before-squash` branch;
    before public promotion, a paid database plan so it never pauses; redirect
    `zerocorps.vercel.app` to the domain.
+5. **Agent Zero and the Bronze rank (since 2026-10-05):** in the bot's own session, make a
+   Bronze role in the server, put its id in the bot's environment and `bronze` in its
+   config, and drop `rookie` (INTERNAL-API.md, "Changed on 2026-10-05"). Until then the bot
+   gives no rank role. The role must not unlock anything valuable: the answer keys are
+   public.
+6. **The lessons:** the owner writes Fundamentals, then Quantower, in their own vault and
+   says when a section is ready; the session converts it, shows it, and it goes live on
+   "push" (see "The Academy's levels and the Bronze rank").
 
 **Live since 2026-10-01:** `GET /api/avatar` answers an empty 204 instead of 401
 or 404 when there is no picture or nobody is signed in. The live browser check after the
@@ -1551,6 +1563,11 @@ dashboard", the three tones, the Academy as the way in.
 
 ### The Academy's levels and the Bronze rank (owner, 2026-10-05)
 
+- **Released the same day, on the owner's "push"** ("lets push it to the main branch where
+  ill test more"): `dev` (`7087e66`) merged into `main` as `90e5f77` (parents `43c7515` and
+  `7087e66`), scanned, pushed; GitHub recorded the production deployment as a success
+  within a minute, and the browser check against the live site passed (74 checks, 0
+  failures). The checks before the push are listed at the end of this section.
 - **The owner's words**, with screenshots of the first two folders of their own lesson
   vault: "these first two chapters should be displayed like the first two levels order flow
   software is only gonna have one subsection for quantower the other subsection will say
