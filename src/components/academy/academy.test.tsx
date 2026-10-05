@@ -76,14 +76,25 @@ const BOTH = buildCatalog({
 const EVERYTHING = ["m1", "m2", "r1", "q1"];
 
 describe("the Academy's home (the Learn tab)", () => {
-  it("has one heading, both levels by their names, and Resume", () => {
+  it("has one heading, both levels by their names, and Continue", () => {
     const html = home(member(ACADEMY, ["m1"]));
     expect(html.match(/<h1/g)).toHaveLength(1);
     expect(html).toContain("Fundamentals");
     expect(html).toContain("Order Flow Software");
-    expect(html).toContain("Resume");
+    expect(html).toContain("Continue");
+    expect(html).not.toContain("Resume");
     expect(html).not.toMatch(/Rookie/i);
     expect(html).toContain("Education only. Nothing in the Academy is financial advice.");
+  });
+
+  it("keeps its top to the red title and the next step (owner, 2026-10-05)", () => {
+    const html = home(member(ACADEMY, ["m1"]));
+    expect(html).toMatch(/<h1 class="[^"]*\btext-accent\b[^"]*">Academy<\/h1>/);
+    expect(html).not.toContain("ZeroCorps Academy · Free");
+    expect(html).not.toContain("From your first order");
+    expect(html).not.toContain("Open to everyone");
+    expect(html).toContain("Chapter 1 · Lesson 2");
+    expect(html).not.toMatch(/Lesson \d+ of \d+/);
   });
 
   it("leaves the rank, the member's progress and the activity to the Progress tab", () => {
@@ -101,6 +112,7 @@ describe("the Academy's home (the Learn tab)", () => {
     const ready = home(member(ACADEMY, ["m1", "m2", "r1"]));
     expect(ready).toContain('href="/academy/risk/checkpoint"');
     expect(ready).toContain("Take the checkpoint");
+    expect(ready).toContain("Chapter 2 · Checkpoint");
   });
 
   it("says the first lessons are on the way when nothing is open yet", () => {

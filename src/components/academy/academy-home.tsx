@@ -9,7 +9,9 @@ import { Arrow, Bar, ComingSoonTag, Kicker, Label, type LessonState, Rule, Statu
  * The Academy's home for a signed-in member, its Learn tab: where to go next, and the
  * whole map of levels and chapters. The design is the prototype the owner approved
  * (DECISIONS.md, 2026-09-28). The rank, the member's progress and the activity heatmap
- * moved to the Progress tab (owner, 2026-10-05); "Resume" stays here.
+ * moved to the Progress tab (owner, 2026-10-05). The same day the owner pared the top down
+ * to the red title and the "Continue" card: no kicker, no tagline, no "Open to everyone"
+ * (everything in the Academy is free).
  *
  * It draws what it is given and reads nothing itself, so it can be rendered in a test.
  */
@@ -67,13 +69,10 @@ export function AcademyHome({ academy }: { academy: MemberAcademy }) {
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 py-12 lg:py-16">
         <section className="grid grid-cols-1 items-end gap-8 lg:grid-cols-12">
           <div className="flex flex-col gap-5 lg:col-span-6">
-            <Kicker>ZeroCorps Academy · Free</Kicker>
-            <h1 className="text-4xl font-light tracking-[0.2em] uppercase sm:text-5xl">Academy</h1>
+            <h1 className="text-4xl font-light tracking-[0.2em] text-accent uppercase sm:text-5xl">
+              Academy
+            </h1>
             <Rule />
-            <p className="max-w-xl text-base/7 text-muted sm:text-lg/8">
-              From your first order to a process you have tested yourself. Finish a chapter, pass
-              its checkpoint, and your rank follows.
-            </p>
           </div>
           <div className="lg:col-span-6">
             <ContinueCard academy={academy} />
@@ -120,8 +119,8 @@ function ContinueCard({ academy }: { academy: MemberAcademy }) {
       <div className="flex min-w-0 flex-1 flex-col gap-2">
         <Label>
           {lesson
-            ? `Continue · Chapter ${two(chapter.number)} · Lesson ${lesson.number} of ${chapter.lessons.length}`
-            : `Checkpoint ready · Chapter ${two(chapter.number)}`}
+            ? `Chapter ${chapter.number} · Lesson ${lesson.number}`
+            : `Chapter ${chapter.number} · Checkpoint`}
         </Label>
         <span className="text-xl font-medium tracking-tight sm:text-2xl">
           {lesson ? lesson.title : "Take the checkpoint"}
@@ -129,7 +128,7 @@ function ContinueCard({ academy }: { academy: MemberAcademy }) {
         <span className="text-sm text-muted">{chapter.title}</span>
       </div>
       <span className="inline-flex h-12 shrink-0 items-center justify-center gap-2.5 bg-accent px-6 text-base font-semibold text-accent-fg transition-colors group-hover:bg-accent/90">
-        {lesson ? "Resume" : "Start"}
+        {lesson ? "Continue" : "Start"}
         <Arrow />
       </span>
     </Link>
@@ -156,9 +155,7 @@ function LevelSection({ level, academy }: { level: LevelStanding; academy: Membe
           </h2>
         </div>
         <p className="text-sm text-muted">
-          {level.courses.length > 1
-            ? `${level.courses.length} platforms · `
-            : "Open to everyone · "}
+          {level.courses.length > 1 ? `${level.courses.length} platforms · ` : ""}
           {chapterCount} chapters · {lessonCount} lessons
         </p>
       </div>

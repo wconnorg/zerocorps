@@ -1690,6 +1690,22 @@ dashboard", the three tones, the Academy as the way in.
   from the real lesson catalog at 1280, 390 and 320 pixels: nothing sticks out, the wordmark
   is centred, and YouTube and X show on a desktop only.
 
+### The Academy's home, pared down (owner, 2026-10-05)
+
+- **The owner's words:** "remove the text underneath academy where it says from your first
+  order", "the red part that says zerocorps academy \* free remove that too just make the
+  white academy letters red and everything is gonna be free", "the resume change it to say
+  continue and insutead of continute chapter 01 lesson 1 of 1 just say chapter 1 lesson 1
+  or something make it look good", and "removethe part that says open to everyone".
+- **Built:** the title "Academy" in the brand red over its rule, with no kicker and no
+  tagline. The next-step card reads "Chapter 1 · Lesson 1" ("Chapter 2 · Checkpoint" when a
+  checkpoint is next) and its button says **Continue** ("Start" for a checkpoint). A level's
+  line reads "4 chapters · 15 lessons": everything in the Academy is free, so nothing says
+  so.
+- **Checks:** all 531 tests, the typecheck, lint, formatting, the production build and the
+  browser check against it (76 checks). The Learn page was rendered from the real lesson
+  catalog at 1280, 390 and 320 pixels: nothing sticks out.
+
 ### Released on 2026-10-04, fourth: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
 
 The owner asked whether everything was up to date and "state of the art". `npm outdated`,
