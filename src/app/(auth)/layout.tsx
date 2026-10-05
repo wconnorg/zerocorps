@@ -1,4 +1,4 @@
-import { DiscordIconLink } from "@/components/site/discord-icon-link";
+import { SocialLinks } from "@/components/site/social-links";
 import { Wordmark } from "@/components/site/wordmark";
 import { site } from "@/config/site";
 import { env } from "@/env";
@@ -12,7 +12,7 @@ export default function AuthLayout({ children }: LayoutProps<"/">) {
           <span aria-hidden="true" />
           <Wordmark markClassName="text-fg" />
           <div className="flex items-center justify-end gap-2">
-            <DiscordIconLink href={env.DISCORD_INVITE_URL ?? site.discordInvite} />
+            <SocialLinks discord={env.DISCORD_INVITE_URL ?? site.discordInvite} />
           </div>
         </div>
       </header>

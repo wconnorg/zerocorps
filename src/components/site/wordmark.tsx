@@ -12,6 +12,11 @@ export function ZeroMark({ className }: { className?: string }) {
   );
 }
 
+/**
+ * The name with its mark. It leads to the dashboard on every page of the site (owner,
+ * 2026-10-05); someone who is not signed in is sent to sign in first, and on to the
+ * dashboard after.
+ */
 export function Wordmark({
   className,
   markClassName = "text-accent",
@@ -22,8 +27,11 @@ export function Wordmark({
 }) {
   return (
     <Link
-      href="/"
-      aria-label={`${site.name} home`}
+      href="/dashboard"
+      // A protected page: pre-loading it would send a signed-out visitor's browser to
+      // sign-in in the background and abort, on every page.
+      prefetch={false}
+      aria-label={`${site.name} dashboard`}
       className={cn("inline-flex items-center gap-2.5 text-fg", className)}
     >
       <ZeroMark className={markClassName} />

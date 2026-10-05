@@ -1,13 +1,13 @@
 import { site } from "@/config/site";
 import { env } from "@/env";
-import { DiscordIconLink } from "./discord-icon-link";
+import { SocialLinks } from "./social-links";
 import { Wordmark } from "./wordmark";
 
 /**
  * The public pages' header. It runs the full width of the window, with the same side
  * padding as the landing page's panels, so its hairline meets theirs (owner, 2026-10-02).
- * At the right, the way to Discord (owner, 2026-10-04: the site is dark only, so the theme
- * switch that stood there is gone).
+ * At the right, the ways to ZeroCorps elsewhere: Discord (owner, 2026-10-04: the site is
+ * dark only, so the theme switch that stood there is gone), YouTube and X (2026-10-05).
  */
 export function Header() {
   return (
@@ -18,7 +18,7 @@ export function Header() {
         <span aria-hidden="true" />
         <Wordmark markClassName="text-fg" />
         <div className="flex items-center justify-end gap-2">
-          <DiscordIconLink href={env.DISCORD_INVITE_URL ?? site.discordInvite} />
+          <SocialLinks discord={env.DISCORD_INVITE_URL ?? site.discordInvite} />
         </div>
       </div>
     </header>

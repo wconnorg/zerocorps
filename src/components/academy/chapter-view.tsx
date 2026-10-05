@@ -1,4 +1,6 @@
+import type { Route } from "next";
 import Link from "next/link";
+import { BrandName } from "@/components/site/wordmark";
 import { isOpen } from "@/lib/academy/content";
 import { checkpointHref, lessonHref, type MemberAcademy } from "@/lib/academy/member";
 import { RANK_TITLE } from "@/lib/academy/ranks";
@@ -27,16 +29,24 @@ export function ChapterView({ academy, chapterId }: { academy: MemberAcademy; ch
         className="pointer-events-none absolute inset-x-0 top-0 h-[30rem] hero-glow"
       />
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-10 px-6 py-12 lg:py-16">
+        {/* Where this chapter sits, each step a way back (owner, 2026-10-05: branded as
+            ZeroCorps Academy). The level leads to its place on the Academy's home. */}
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[0.6875rem] tracking-[0.2em] text-subtle uppercase">
             <li>
               <Link href="/academy" prefetch={false} className="hover:text-fg">
-                Academy
+                <BrandName /> Academy
               </Link>
             </li>
             <li aria-hidden="true">/</li>
             <li>
-              Level {two(course.level)} · {level?.name}
+              <Link
+                href={`/academy#level-${course.level}` as Route}
+                prefetch={false}
+                className="hover:text-fg"
+              >
+                Level {two(course.level)} · {level?.name}
+              </Link>
             </li>
             {course.platform ? (
               <>

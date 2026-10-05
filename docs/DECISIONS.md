@@ -1627,6 +1627,40 @@ dashboard", the three tones, the Academy as the way in.
   Bronze not yet claimed, Bronze claimed) and photographed at desktop and phone widths:
   nothing sticks out, and the heatmap opens on this week.
 
+### The Academy's tabs, the header's links and the wordmark (owner, 2026-10-05)
+
+- **The owner's words:** "lets redisplay the no rank yet icon the your record change that to
+  say your progress and the activity those three icons need to go on a seperate page i like
+  the resume here button though"; "can we get a youtube icon same color as discord and a
+  twitter / x icon"; "lets make the header redirect to the dashboard on every single page on
+  the site"; of the chapter page's trail, "brand it with zerocorps academy"; and "one of the
+  tabs can be journal another tab can be Calculator".
+- **Tabs:** the Academy's top-level pages share a tab bar under the header: **Learn**
+  (`/academy`, the home, with Resume and the levels), **Progress** (`/academy/progress`,
+  new) and **Ranks**. `progress` joins the words no chapter or lesson id may take.
+  **Journal and Calculator are tabs to come**, each designed with the owner first: a journal
+  holds members' own trading records, which is personal data, so what it records, who can
+  see it and how it is deleted are the owner's decisions.
+- **Progress:** the rank card, **"Your progress"** (formerly "Your record": lessons
+  completed, checkpoints passed, active days in the last 30) and the activity heatmap, now a
+  year wide because the page has the room. The Academy's home no longer loads the activity.
+- **The header:** YouTube and X sit beside Discord in the same muted colours, from
+  `site.youtube` and `site.x` in `src/config/site.ts`. Both are empty until the owner gives
+  the addresses, and an icon shows only once its address is there. Below 640 pixels only
+  Discord shows, so the wordmark stays centred and nothing sticks out at 320 pixels.
+- **The wordmark leads to the dashboard on every page:** the public pages, sign-in and
+  sign-up, the members' area and "page not found". Someone signed out is sent to sign in
+  first. It does not pre-load the dashboard: for a signed-out visitor that pre-load is
+  redirected and aborted on every page, which the browser check counted as failures the
+  first time.
+- **The chapter page's trail** reads "ZEROCORPS ACADEMY / LEVEL 01 · FUNDAMENTALS / CHAPTER
+  02", the brand in its colours, and the level now leads to its place on the Academy's
+  home (`/academy#level-1`).
+- **Checks:** all 528 tests, the typecheck, lint, the production build and the browser check
+  against it (74 checks, two of them new, for the wordmark). The members' pages were rendered
+  from the real lesson catalog at 1280, 390 and 320 pixels: nothing sticks out, the wordmark
+  is centred, and YouTube and X show on a desktop only.
+
 ### Released on 2026-10-04, fourth: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
 
 The owner asked whether everything was up to date and "state of the art". `npm outdated`,

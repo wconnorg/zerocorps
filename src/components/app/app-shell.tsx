@@ -1,13 +1,14 @@
 import type { ReactNode } from "react";
 import { AccountMenu } from "@/components/app/profile-menu";
-import { DiscordIconLink } from "@/components/site/discord-icon-link";
+import { SocialLinks } from "@/components/site/social-links";
 import { Wordmark } from "@/components/site/wordmark";
 import { site } from "@/config/site";
 import { env } from "@/env";
 
 /**
- * The signed-in area's frame: the wordmark in the middle, a bar under it as on the home
- * page, the way to Discord and the profile button with its menu (settings and sign out).
+ * The signed-in area's frame: the wordmark in the middle, leading to the dashboard, a bar
+ * under it as on the home page, the ways to ZeroCorps on YouTube, X and Discord, and the
+ * profile button with its menu (settings and sign out).
  * The dashboard's layout uses it, and so do the Academy's pages.
  *
  * It checks no session: a layout is not re-rendered on every navigation, so each
@@ -23,7 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           <span aria-hidden="true" />
           <Wordmark markClassName="text-fg" />
           <div className="flex items-center justify-end gap-2">
-            <DiscordIconLink href={env.DISCORD_INVITE_URL ?? site.discordInvite} />
+            <SocialLinks discord={env.DISCORD_INVITE_URL ?? site.discordInvite} />
             <AccountMenu />
           </div>
         </div>

@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 import { AcademyTabs } from "@/components/academy/academy-tabs";
-import { RanksView } from "@/components/academy/ranks-view";
+import { PROGRESS_WEEKS, ProgressView } from "@/components/academy/progress-view";
 import { AcademyProblems } from "@/components/academy/ui";
 import { AppShell } from "@/components/app/app-shell";
 import { Unavailable } from "@/components/site/unavailable";
-import { loadAcademy, requireMember } from "@/lib/academy/load";
+import { loadAcademy, loadActivity, requireMember } from "@/lib/academy/load";
 
-export const metadata: Metadata = { title: "Ranks", robots: { index: false } };
+export const metadata: Metadata = { title: "Progress", robots: { index: false } };
 
-export default async function RanksPage() {
-  const member = await requireMember("/academy/ranks");
+/** The Academy's Progress tab (owner, 2026-10-05): the rank, progress and activity. */
+export default async function ProgressPage() {
+  const member = await requireMember("/academy/progress");
   if (!member) {
     return (
       <AppShell>
@@ -29,10 +30,11 @@ export default async function RanksPage() {
       </AppShell>
     );
   }
+  const activity = await loadActivity(member.id, PROGRESS_WEEKS);
   return (
     <AppShell>
-      <AcademyTabs current="ranks" />
-      <RanksView academy={loaded.academy} />
+      <AcademyTabs current="progress" />
+      <ProgressView academy={loaded.academy} activity={activity} />
     </AppShell>
   );
 }
