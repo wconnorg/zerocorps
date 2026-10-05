@@ -1201,8 +1201,11 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `ab1a4c2` since 2026-10-05, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `75f029c` since 2026-10-05, same tree as `dev` then):**
 
+- **The Academy's home, pared down** (since 2026-10-05, fourth release that day): the red
+  title, "Continue" under "Chapter 1 · Lesson 1", and no kicker, tagline or "Open to
+  everyone"; see "The Academy's home, pared down" below.
 - **The Academy's tabs, the header's links and the wordmark** (since 2026-10-05, second
   release that day): the tabs Learn and Progress (Ranks left them in the third release that
   day); YouTube and X beside Discord, "coming soon"
@@ -1692,6 +1695,10 @@ dashboard", the three tones, the Academy as the way in.
 
 ### The Academy's home, pared down (owner, 2026-10-05)
 
+- **Released the same day, the fourth release that day, on the owner's "push to live":**
+  `dev` (`e3d8172`) merged into `main` as `75f029c` (parents `ab1a4c2` and `e3d8172`),
+  scanned, pushed; GitHub recorded the production deployment as a success within a minute,
+  and the browser check against the live site passed (78 checks).
 - **The owner's words:** "remove the text underneath academy where it says from your first
   order", "the red part that says zerocorps academy \* free remove that too just make the
   white academy letters red and everything is gonna be free", "the resume change it to say
