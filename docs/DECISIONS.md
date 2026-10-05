@@ -1201,9 +1201,13 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `90e5f77` since 2026-10-05, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `cfa8bf7` since 2026-10-05, same tree as `dev` then):**
 
-- **The Academy's levels and the Bronze rank** (since 2026-10-05): finishing Level 1,
+- **The Academy's tabs, the header's links and the wordmark** (since 2026-10-05, second
+  release that day): Learn, Progress and Ranks; YouTube and X beside Discord, "coming soon"
+  until their addresses exist; the wordmark leads to the dashboard; see "The Academy's
+  tabs, the header's links and the wordmark" below.
+- **The Academy's levels and the Bronze rank** (since 2026-10-05, first release that day): finishing Level 1,
   Fundamentals, and Level 2, Order Flow Software, earns Bronze, the first and only rank;
   see "The Academy's levels and the Bronze rank" below.
 - **Dark only, with the owner's Discord invite in every header** (since 2026-10-04, fifth
@@ -1270,6 +1274,12 @@ This replaces "Where things stand on 2026-09-28" and the older status sections b
 6. **The lessons:** the owner writes Fundamentals, then Quantower, in their own vault and
    says when a section is ready; the session converts it, shows it, and it goes live on
    "push" (see "The Academy's levels and the Bronze rank").
+7. **The YouTube channel and X account:** when the owner has them, their addresses go in
+   `src/config/site.ts` (`youtube`, `x`) and the marks become links. **Then the Academy's
+   redesign** ("turn this into a revolutionary educational platform but trading is the
+   sole focus right now"), with the Journal and Calculator tabs: the owner's answers on
+   what a journal entry holds and what the calculator does, then a clickable prototype
+   before any site code.
 
 **Live since 2026-10-01:** `GET /api/avatar` answers an empty 204 instead of 401
 or 404 when there is no picture or nobody is signed in. The live browser check after the
@@ -1629,6 +1639,11 @@ dashboard", the three tones, the Academy as the way in.
 
 ### The Academy's tabs, the header's links and the wordmark (owner, 2026-10-05)
 
+- **Released the same day, the second release that day, on the owner's "push all
+  changes":** `dev` (`546811d`) merged into `main` as `cfa8bf7` (parents `90e5f77` and
+  `546811d`), scanned, pushed; GitHub recorded the production deployment as a success
+  within a minute, and the browser check against the live site passed (78 checks, 0
+  failures, among them the YouTube and X marks and the wordmark leading to the dashboard).
 - **The owner's words:** "lets redisplay the no rank yet icon the your record change that to
   say your progress and the activity those three icons need to go on a seperate page i like
   the resume here button though"; "can we get a youtube icon same color as discord and a
@@ -1658,8 +1673,10 @@ dashboard", the three tones, the Academy as the way in.
 - **The chapter page's trail** reads "ZEROCORPS ACADEMY / LEVEL 01 · FUNDAMENTALS / CHAPTER
   02", the brand in its colours, and the level now leads to its place on the Academy's
   home (`/academy#level-1`).
-- **Checks:** all 528 tests, the typecheck, lint, the production build and the browser check
-  against it (74 checks, two of them new, for the wordmark). The members' pages were rendered
+- **Checks before the push:** all 529 tests, the typecheck, lint, the production build, the
+  audit report (the same nine advisories in development tools), `npm run academy:check`,
+  and the browser check against that build (76 checks, four of them new: the wordmark on
+  two pages, and the YouTube and X marks). The members' pages were rendered
   from the real lesson catalog at 1280, 390 and 320 pixels: nothing sticks out, the wordmark
   is centred, and YouTube and X show on a desktop only.
 
