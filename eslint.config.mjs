@@ -16,6 +16,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "coverage/**",
+    // The lessons hold no code; an Obsidian plugin's files there are the owner's, local only.
+    "content/**",
   ]),
 ]);
 

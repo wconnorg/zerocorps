@@ -33,7 +33,7 @@ export function ProgressChart() {
   return (
     <div
       aria-hidden="true"
-      className="min-w-0 rounded-2xl border border-line bg-surface p-5 shadow-2xl sm:p-6 light:shadow-xl"
+      className="min-w-0 rounded-2xl border border-line bg-surface p-5 shadow-2xl sm:p-6"
     >
       <div className="mb-4 flex items-center justify-between font-mono text-[11px] tracking-[0.18em] text-subtle">
         <span>PROGRESS</span>

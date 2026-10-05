@@ -1,23 +1,21 @@
 @import "tailwindcss";
 
 /*
- * Theme system
- * ────────────
- * Exactly two themes, switched by the `data-theme` attribute on <html>.
- * Dark is the default and is what the server renders.
+ * Colours
+ * ───────
+ * The site is dark only (owner, 2026-10-04): the palette on `:root` is the one every page
+ * uses, and there is no theme switch. The light palette below stays for one job: a panel
+ * that must be dark-on-light whatever the page, such as the two-factor QR code a phone has
+ * to read. Such a panel carries `data-theme="light"`.
  *
  * Every colour in the app comes from the semantic tokens below. Tailwind's
  * built-in palette is removed (see `--color-*: initial`), so a class like
- * `bg-red-500` does not exist: use `bg-danger`. That is what keeps both themes
- * complete: a colour that is not a token cannot be used.
+ * `bg-red-500` does not exist: use `bg-danger`. A colour that is not a token cannot be used.
  *
  * Token values are plain 6-digit hex on purpose. `src/styles/tokens.test.ts`
  * parses this file and fails if any text/background pair drops below WCAG AA
- * contrast (4.5:1) in either theme, so the accent can be swapped safely.
+ * contrast (4.5:1) in either palette, so the accent can be swapped safely.
  */
-
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
-@custom-variant light (&:where([data-theme="light"], [data-theme="light"] *));
 
 :root,
 [data-theme="dark"] {
@@ -61,6 +59,7 @@
   --chart-glow: drop-shadow(0 0 10px color-mix(in oklab, var(--accent) 45%, transparent));
 }
 
+/* The light palette: only inside a panel that must be dark-on-light (see above). */
 [data-theme="light"] {
   color-scheme: light;
 

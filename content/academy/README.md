@@ -81,6 +81,9 @@ coming soon (Sierra Chart, for now).
   do not: turn off "Use [[Wikilinks]]" in Obsidian's settings (Files and links) so it
   writes ordinary links instead. A link to another lesson is its address on the site,
   `[the text](/academy/<chapter id>/<lesson id>)`, not a link to its file.
+- **Your own notes go in `_private/`** (make the folder in Obsidian): a journal, research,
+  half-ideas. It is never committed, never published and never read by the site. Every
+  other file in this folder becomes public when lessons are released.
 - **Images do not work in lessons yet.** The site has no place to serve a lesson's picture
   from, so a `![what it shows](file.png)` shows as a broken image. It is a small change,
   made when the first lesson needs a picture: ask for it then.

@@ -57,6 +57,9 @@ Thumbs.db
 # and Obsidian's own trash, so a deleted lesson is never published from it
 .obsidian/
 .trash/
+# The owner's private notes inside the lessons vault (a journal, research): never committed,
+# never published, and never read by the site (it skips folders starting with "_")
+/content/academy/_private/
 
 # local-only Claude Code settings
 .claude/settings.local.json

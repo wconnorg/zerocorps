@@ -1,5 +1,5 @@
 // Drives the site in headless Microsoft Edge and checks what a visitor would see:
-// response headers, both themes, no flash on reload, navigation, horizontal
+// response headers, the dark-only look and the way to Discord, navigation, horizontal
 // overflow on desktop and phone sizes, and browser console errors. It also saves
 // full-page screenshots to look at afterwards.
 //
@@ -99,12 +99,17 @@ let clickingAProtectedLink = false;
   await context.close();
 }
 
-// ── 2. Theme: default, toggle, persistence, no flash ────────────────────────
+// ── 2. Dark only, and the way to Discord in the header ──────────────────────
+// The site is dark only (owner, 2026-10-04). A visitor who once chose the light theme still
+// carries its old cookie, so this visit does too: it must change nothing.
 {
-  console.log("\n== theme behaviour ==");
+  console.log("\n== dark only, and Discord ==");
   const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+  await context.addCookies([
+    { name: "zc-theme", value: "light", domain: new URL(base).hostname, path: "/" },
+  ]);
   const page = await context.newPage();
-  watch(page, "theme-flow");
+  watch(page, "dark-only");
 
   const firstResponse = await page.goto(`${base}/`, { waitUntil: "networkidle" });
   const tls = await firstResponse.securityDetails();
@@ -115,39 +120,37 @@ let clickingAProtectedLink = false;
     note(days > 0, "certificate is valid");
   }
 
-  const theme = () => page.getAttribute("html", "data-theme");
-  const background = () => page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-
-  note((await theme()) === "dark", "first visit renders the dark theme");
-  const darkBackground = await background();
-
-  await page.getByRole("button", { name: "Switch colour theme" }).click();
-  note((await theme()) === "light", "toggle switches to light");
-  note(darkBackground !== (await background()), "the background actually changes");
-
-  const cookie = (await context.cookies()).find((entry) => entry.name === "zc-theme");
-  note(cookie?.value === "light", `cookie zc-theme=${cookie?.value}, sameSite=${cookie?.sameSite}`);
-
-  // Reload. Record the attribute the instant the DOM is parsed, before React
-  // hydrates, and again once everything has settled.
-  await page.addInitScript(() => {
-    document.addEventListener("DOMContentLoaded", () => {
-      window.__themeAtParse = document.documentElement.getAttribute("data-theme");
-    });
-  });
-  await page.reload({ waitUntil: "networkidle" });
-  await page.waitForTimeout(500);
-  const atParse = await page.evaluate(() => window.__themeAtParse);
-  note(atParse === "light", `saved theme applied before hydration (at parse: ${atParse})`);
-  note((await theme()) === "light", "saved theme survives hydration");
-
-  // The HTML the server sends must stay the static dark default.
+  const background = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  note(
+    background === "rgb(5, 5, 5)",
+    `the page is dark, even with an old light-theme cookie (${background})`,
+  );
+  note(
+    (await page.getByRole("button", { name: "Switch colour theme" }).count()) === 0,
+    "there is no theme switch",
+  );
   const html = await (await context.request.get(`${base}/`)).text();
-  note(/<html[^>]*data-theme="dark"/.test(html), "server HTML carries the dark default (static)");
+  note(!html.includes("zc-theme"), "the server sends no theme script");
 
-  await page.getByRole("link", { name: "Terms", exact: true }).first().click();
-  await page.waitForURL("**/terms");
-  note((await theme()) === "light", "theme persists across client-side navigation");
+  // The way to Discord, at the header's right. The live site must have it; a server without
+  // an invite configured shows none.
+  const discordIn = (where) =>
+    where.locator("header").getByRole("link", { name: "ZeroCorps on Discord" });
+  const links = await discordIn(page).count();
+  const href = links > 0 ? await discordIn(page).first().getAttribute("href") : null;
+  note(
+    links === 0
+      ? !base.startsWith("https:")
+      : /^https:\/\/(discord\.gg|discord\.com\/invite)\//.test(href ?? ""),
+    links === 0
+      ? "no Discord link in the header (no invite configured on this server)"
+      : `the header links to Discord (${new URL(href).host})`,
+  );
+  await page.goto(`${base}/sign-in`, { waitUntil: "networkidle" });
+  note(
+    (await discordIn(page).count()) === links,
+    "the sign-in pages' header has the same way to Discord",
+  );
   await context.close();
 }
 
@@ -460,10 +463,9 @@ let clickingAProtectedLink = false;
   await context.close();
 }
 
-// ── 5. Screenshots: both themes, desktop and phone ──────────────────────────
+// ── 5. Screenshots: desktop and phone (the site is dark only) ───────────────
 {
   console.log("\n== screenshots ==");
-  const { hostname } = new URL(base);
   const devices = [
     ["desktop", { width: 1440, height: 900 }],
     ["mobile", { width: 390, height: 844 }],
@@ -482,29 +484,23 @@ let clickingAProtectedLink = false;
   ];
 
   for (const [device, viewport] of devices) {
-    for (const theme of ["dark", "light"]) {
-      const context = await browser.newContext({
-        viewport,
-        deviceScaleFactor: device === "mobile" ? 2 : 1,
-        reducedMotion: "reduce",
-      });
-      await context.addCookies([{ name: "zc-theme", value: theme, domain: hostname, path: "/" }]);
-      const page = await context.newPage();
-      watch(page, `${device}-${theme}`);
+    const context = await browser.newContext({
+      viewport,
+      deviceScaleFactor: device === "mobile" ? 2 : 1,
+      reducedMotion: "reduce",
+    });
+    const page = await context.newPage();
+    watch(page, device);
 
-      for (const [name, path] of pages) {
-        await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
-        const overflow = await page.evaluate(
-          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
-        );
-        note(overflow <= 0, `${device}/${theme} ${path}: no horizontal overflow (${overflow}px)`);
-        await page.screenshot({
-          path: join(shots, `${name}-${device}-${theme}.png`),
-          fullPage: true,
-        });
-      }
-      await context.close();
+    for (const [name, path] of pages) {
+      await page.goto(`${base}${path}`, { waitUntil: "networkidle" });
+      const overflow = await page.evaluate(
+        () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      );
+      note(overflow <= 0, `${device} ${path}: no horizontal overflow (${overflow}px)`);
+      await page.screenshot({ path: join(shots, `${name}-${device}.png`), fullPage: true });
     }
+    await context.close();
   }
 }
 
