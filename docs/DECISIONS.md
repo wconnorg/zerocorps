@@ -1201,8 +1201,10 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `87e7b2a` since 2026-10-04, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `43c7515` since 2026-10-04, same tree as `dev` then):**
 
+- **Dark only, with the owner's Discord invite in every header** (since 2026-10-04, fifth
+  release that day); see "Dark only, a Discord link in every header" below.
 - **Better Auth 1.7.7 and sharp 0.35.5, with a gate before the image library** (since
   2026-10-04, fourth release that day); see its section below.
 - **The privacy page names profile pictures** among what the owner's analytics look at
@@ -1509,6 +1511,12 @@ dashboard", the three tones, the Academy as the way in.
 
 ### Dark only, a Discord link in every header, and private notes in the lessons vault (owner, 2026-10-04)
 
+- **Released the same evening, the fifth that day, on the owner's "push":** `dev`
+  (`eb78cdc`) merged into `main` as `43c7515` (parents `87e7b2a` and `eb78cdc`), scanned,
+  pushed; GitHub recorded the production deployment as a success within a minute, and the
+  browser check against the live site passed (74 checks, 0 failures: dark even for an old
+  light-theme cookie, no theme switch, the header linking to discord.gg). Before: all 515
+  tests, the production build and the browser check against it (72 checks).
 - **The owner's words:** "we need a discord icon on the header make it the same color as
   the light mode icon and also remove the light mode icon"; then, asked what becomes of
   light mode, **"Dark only"**: the whole site is always dark, and the theme code is
