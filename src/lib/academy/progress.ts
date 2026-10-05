@@ -2,7 +2,7 @@ import { and, count, eq, gte, sql } from "drizzle-orm";
 import { checkpointPasses, lessonProgress, rankHistory } from "../../db/schema.ts";
 import type { AuthDatabase } from "../auth/create-auth.ts";
 import { type Catalog, isOpen } from "./content.ts";
-import { type Standing, standing } from "./standing.ts";
+import { type Standing, standing, stepsEarned } from "./standing.ts";
 
 /**
  * What a member has done in the Academy, read from and written to the database.
@@ -54,7 +54,7 @@ async function recordSteps(
   already: Map<string, Date>,
   now: Date,
 ): Promise<string[]> {
-  const fresh = current.earnedSteps.filter((step) => !already.has(step));
+  const fresh = stepsEarned(current, already).filter((step) => !already.has(step));
   if (fresh.length === 0) return [];
   const inserted = await db
     .insert(rankHistory)

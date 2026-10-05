@@ -14,7 +14,7 @@ import { createTestDatabase, type TestDatabase } from "../../test/test-database.
 const DISCORD_ID = "123456789012345678";
 const OTHER_DISCORD_ID = "223456789012345678";
 const GUILD = "323456789012345678";
-const ROOKIE_ROLE = "423456789012345678";
+const BRONZE_ROLE = "423456789012345678";
 
 type Call = { method: string; url: string; body: string; authorization: string | null };
 let calls: Call[] = [];
@@ -92,13 +92,14 @@ beforeAll(async () => {
   database = await createTestDatabase();
   const discord = {
     app: { clientId: "client-id-123", clientSecret: "client-secret-xyz" },
-    roles: { botToken: "bot-token-abc", guildId: GUILD, roleIds: { rookie: ROOKIE_ROLE } },
+    roles: { botToken: "bot-token-abc", guildId: GUILD, roleIds: { bronze: BRONZE_ROLE } },
     fetch: fakeDiscord,
   };
-  // Chapter 1 has one lesson, so completing it earns the Rookie rank.
+  // Each level has one lesson, so completing both earns Bronze.
   const academy = buildCatalog({
     courses: [
       { id: "foundations", level: 1, chapters: [{ id: "markets", lessons: [{ id: "m1" }] }] },
+      { id: "quantower", level: 2, chapters: [{ id: "setup", lessons: [{ id: "q1" }] }] },
     ],
   });
   t = createTestAuth(database, { discord, academyCatalog: () => academy });
@@ -144,9 +145,10 @@ describe("starting a link", () => {
 });
 
 describe("coming back from Discord", () => {
-  it("links the member, stores id, username and date only, revokes the token, gives the Rookie role", async () => {
+  it("links the member, stores id, username and date only, revokes the token, gives the Bronze role", async () => {
     const member = await signedIn(t, "discord.happy@example.com");
-    await member.post("/academy/complete", { lessonId: "m1" }); // Chapter 1: Rookie
+    await member.post("/academy/complete", { lessonId: "m1" });
+    await member.post("/academy/complete", { lessonId: "q1" }); // Both levels: Bronze
     calls = [];
     const state = await startLink(member);
     const back = await member.get(`/discord/callback?code=good-code-1&state=${state}`);
@@ -176,7 +178,7 @@ describe("coming back from Discord", () => {
     ).toEqual([]);
 
     const put = calls.find((call) => call.method === "PUT");
-    expect(put?.url).toContain(`/guilds/${GUILD}/members/${DISCORD_ID}/roles/${ROOKIE_ROLE}`);
+    expect(put?.url).toContain(`/guilds/${GUILD}/members/${DISCORD_ID}/roles/${BRONZE_ROLE}`);
     expect(put?.authorization).toBe("Bot bot-token-abc");
   });
 
@@ -271,7 +273,7 @@ describe("coming back from Discord", () => {
 });
 
 describe("the role follows the rank", () => {
-  it("linked before Chapter 1: no role yet, and the page says how to earn it", async () => {
+  it("linked before Bronze: no role yet, and the page says how to earn it", async () => {
     identity = "823456789012345678";
     const member = await signedIn(t, "discord.early@example.com");
     const back = await member.get(
@@ -281,15 +283,19 @@ describe("the role follows the rank", () => {
     expect(calls.filter((call) => call.method === "PUT")).toEqual([]);
   });
 
-  it("completing Chapter 1 later gives the Rookie role at that moment", async () => {
+  it("finishing both levels later gives the Bronze role at that moment", async () => {
     identity = "923456789012345678";
     const member = await signedIn(t, "discord.later@example.com");
     await member.get(`/discord/callback?code=good-code-12&state=${await startLink(member)}`);
     calls = [];
-    const done = await member.post("/academy/complete", { lessonId: "m1" });
-    expect(done.json).toMatchObject({ ok: true, newSteps: ["rookie", "rookie-level-1"] });
+    const first = await member.post("/academy/complete", { lessonId: "m1" });
+    expect(first.json).toMatchObject({ ok: true, newSteps: ["level-1"] });
+    // One level is a step, not the rank: no role yet.
+    expect(calls.filter((call) => call.method === "PUT")).toEqual([]);
+    const done = await member.post("/academy/complete", { lessonId: "q1" });
+    expect(done.json).toMatchObject({ ok: true, newSteps: ["level-2", "bronze"] });
     const put = calls.find((call) => call.method === "PUT");
-    expect(put?.url).toContain(`/members/923456789012345678/roles/${ROOKIE_ROLE}`);
+    expect(put?.url).toContain(`/members/923456789012345678/roles/${BRONZE_ROLE}`);
   });
 });
 
@@ -305,7 +311,7 @@ describe("unlinking", () => {
     expect(await rows("SELECT 1 FROM discord_links WHERE user_id = $1::uuid", [userId])).toEqual(
       [],
     );
-    expect(calls.find((call) => call.method === "DELETE")?.url).toContain(`/roles/${ROOKIE_ROLE}`);
+    expect(calls.find((call) => call.method === "DELETE")?.url).toContain(`/roles/${BRONZE_ROLE}`);
   });
 
   it("cannot be done by another website, even with the member's cookies", async () => {

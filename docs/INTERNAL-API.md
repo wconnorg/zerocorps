@@ -10,7 +10,7 @@ not already public.
   Discord" button: Discord's authorize screen tells the website which Discord user a
   member is (scope `identify`). It has no bot and no power in the server.
 - **Agent Zero is the only bot.** It lets people in and gives the **verified** role by a
-  reaction to one of its messages, and it gives the **rank** roles (today only Rookie,
+  reaction to one of its messages, and it gives the **rank** roles (today only Bronze,
   earned by completing Chapter 1 and claimed by linking Discord). The website never holds
   the bot's token.
 - **How the bot knows ranks:** it asks the website. On start and every few minutes it
@@ -42,7 +42,7 @@ answer is `429` with `retryAfterSeconds`.
 
 | Status | Body                                                            | Meaning                                           |
 | ------ | --------------------------------------------------------------- | ------------------------------------------------- |
-| 200    | `{ "linked": true, "username": "trader_99", "rank": "rookie" }` | Linked. `rank` is `null` before a rank is earned. |
+| 200    | `{ "linked": true, "username": "trader_99", "rank": "bronze" }` | Linked. `rank` is `null` before a rank is earned. |
 | 404    | `{ "linked": false }`                                           | This Discord account is not linked to any member. |
 | 400    | `{ "error": "invalid_discord_id" }`                             | Not a Discord id.                                 |
 
@@ -50,17 +50,17 @@ answer is `429` with `retryAfterSeconds`.
 number or anything else is ever returned.
 
 **What the bot does with it:** on a member joining, call this; if `rank` is not null, give
-the Discord role configured for that rank. Rank keys today: `rookie`.
+the Discord role configured for that rank. Rank keys today: `bronze` (since 2026-10-05; `rookie` before, never earned by anyone).
 
 ## GET /api/internal/discord/ranks
 
 | Status | Body                                                                                                           | Meaning                                                    |
 | ------ | -------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| 200    | `{ "members": [{ "discordId": "123456789012345678", "rank": "rookie" }, { "discordId": "…", "rank": null }] }` | Every linked member, once. Discord ids and rank keys only. |
+| 200    | `{ "members": [{ "discordId": "123456789012345678", "rank": "bronze" }, { "discordId": "…", "rank": null }] }` | Every linked member, once. Discord ids and rank keys only. |
 
 A member who unlinks disappears from the list, so the bot takes their rank roles away on
 its next sync; a listed member keeps every rank role they hold, even with `rank: null`.
-Rank keys today: `rookie`. The bot also names its "Academy Users: N" channel after the
+Rank keys today: `bronze` (since 2026-10-05; `rookie` before, never earned by anyone). The bot also names its "Academy Users: N" channel after the
 length of this list (linked Discord accounts), so it does not use `/stats`.
 
 ## GET /api/internal/stats
@@ -99,6 +99,8 @@ From the bot's own handoff, 2026-09-29. Breaking one of these stops the role syn
   nothing for the members holding it. A new rank needs a line in the bot's config, a role
   id in its environment and the role in Discord, so the owner sets those up before the
   site sends the key. The site's keys come from `rankKeyOf` in
-  `src/lib/academy/standing.ts`; today only `rookie`.
+  `src/lib/academy/standing.ts`; today only `bronze`. **Changed on 2026-10-05:** the key
+  was `rookie` (never earned by anyone, so no member holds it); the bot needs a Bronze
+  role, its id in its environment, and `bronze` in its config, and can drop `rookie`.
 - **Verified is the bot's own:** a ✅ on its welcome message gives it, removing the ✅
   takes it away. The website plays no part.

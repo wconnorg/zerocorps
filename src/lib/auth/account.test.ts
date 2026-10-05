@@ -15,7 +15,7 @@ const PASSWORD = "a long enough passphrase";
 const NEW_PASSWORD = "a brand new passphrase";
 const DISCORD_ID = "123456789012345678";
 const GUILD = "223456789012345678";
-const ROOKIE_ROLE = "323456789012345678";
+const BRONZE_ROLE = "323456789012345678";
 
 let database: TestDatabase;
 let t: TestAuth;
@@ -55,7 +55,7 @@ beforeAll(async () => {
   t = createTestAuth(database, {
     discord: {
       app: { clientId: "client-id", clientSecret: "client-secret" },
-      roles: { botToken: "bot-token", guildId: GUILD, roleIds: { rookie: ROOKIE_ROLE } },
+      roles: { botToken: "bot-token", guildId: GUILD, roleIds: { bronze: BRONZE_ROLE } },
       fetch: async (input, init) => {
         discordCalls.push({ method: init?.method ?? "GET", url: String(input) });
         return new Response(null, { status: 204 });
@@ -282,7 +282,7 @@ describe("deleting the account", () => {
       "INSERT INTO lesson_progress (user_id, lesson_id) VALUES ($1::uuid, 'orders-and-fills')",
       [userId],
     );
-    await rows("INSERT INTO rank_history (user_id, rank) VALUES ($1::uuid, 'rookie')", [userId]);
+    await rows("INSERT INTO rank_history (user_id, rank) VALUES ($1::uuid, 'bronze')", [userId]);
     await rows(
       "INSERT INTO discord_links (user_id, discord_id, discord_username) VALUES ($1::uuid, $2, 'trader')",
       [userId, DISCORD_ID],
@@ -316,7 +316,7 @@ describe("deleting the account", () => {
     expect(String(event?.identifier_hash ?? "")).not.toContain("@");
     expect(String(event?.identifier_hash ?? "").length).toBeGreaterThan(20);
     expect(discordCalls.find((call) => call.method === "DELETE")?.url).toContain(
-      `/members/${DISCORD_ID}/roles/${ROOKIE_ROLE}`,
+      `/members/${DISCORD_ID}/roles/${BRONZE_ROLE}`,
     );
     // The address is free again: the same person can come back.
     await signUp(email);

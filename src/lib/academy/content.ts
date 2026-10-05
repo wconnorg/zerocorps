@@ -253,7 +253,7 @@ export function splitLesson(body: string, file: string, problems: string[]): Les
  * which lesson to send a member back to when they miss it.
  *
  * The answers are in this file, and this repository is public, so anyone can read them
- * on GitHub. The owner accepted that for the Rookie stage (DECISIONS.md). The site still
+ * on GitHub. The owner accepted that for the first levels (DECISIONS.md). The site still
  * never sends the answers to the browser.
  */
 export function parseCheckpoint(text: string, file: string, problems: string[]): Checkpoint | null {

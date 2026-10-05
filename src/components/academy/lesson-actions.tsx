@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FormMessage } from "@/components/ui/field";
+import { celebrated } from "@/lib/academy/ranks";
 import { authFetch } from "@/lib/auth/auth-fetch";
 
 /**
@@ -30,7 +31,7 @@ export function LessonActions({
   const [done, setDone] = useState(initiallyDone);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [earned, setEarned] = useState<"rank" | "level" | null>(null);
+  const [earned, setEarned] = useState<ReturnType<typeof celebrated>>(null);
 
   async function complete() {
     setBusy(true);
@@ -45,7 +46,7 @@ export function LessonActions({
     }
     setDone(true);
     const steps = result.data.newSteps;
-    setEarned(steps.includes("rookie") ? "rank" : steps.length > 0 ? "level" : null);
+    setEarned(celebrated(steps));
     // The rail, the chapter and the Academy's home read progress on the server.
     router.refresh();
   }
@@ -60,15 +61,17 @@ export function LessonActions({
         >
           <div aria-hidden="true" className="void-glow pointer-events-none absolute inset-0" />
           <p className="relative font-mono text-xs tracking-[0.42em] text-accent">
-            {earned === "rank" ? "RANK EARNED" : "LEVEL COMPLETE"}
+            {earned.kind === "rank" ? "RANK EARNED" : "LEVEL COMPLETE"}
           </p>
-          <p className="relative mt-3 text-3xl font-light tracking-[0.24em] text-fg">ROOKIE</p>
+          <p className="relative mt-3 text-3xl font-light tracking-[0.24em] text-fg uppercase">
+            {earned.title}
+          </p>
           <Link
-            href={earned === "rank" && !claimed ? "/settings#connections" : "/academy/ranks"}
+            href={earned.kind === "rank" && !claimed ? "/settings#connections" : "/academy/ranks"}
             prefetch={false}
             className="relative mt-4 inline-block text-sm text-accent hover:text-accent/80"
           >
-            {earned === "rank" && !claimed ? "Link Discord to claim it" : "See your rank"}
+            {earned.kind === "rank" && !claimed ? "Link Discord to claim it" : "See your rank"}
           </Link>
         </div>
       ) : null}

@@ -1201,8 +1201,10 @@ stated, nothing is recommended, and every sizing example was recalculated.
 
 This replaces "Where things stand on 2026-09-28" and the older status sections below it.
 
-**Live on zerocorps.org (`main` = `87e7b2a` since 2026-10-04, same tree as `dev` then):**
+**Live on zerocorps.org (`main` = `43c7515` since 2026-10-04, same tree as `dev` then):**
 
+- **Dark only, with the owner's Discord invite in every header** (since 2026-10-04, fifth
+  release that day); see "Dark only, a Discord link in every header" below.
 - **Better Auth 1.7.7 and sharp 0.35.5, with a gate before the image library** (since
   2026-10-04, fourth release that day); see its section below.
 - **The privacy page names profile pictures** among what the owner's analytics look at
@@ -1509,6 +1511,12 @@ dashboard", the three tones, the Academy as the way in.
 
 ### Dark only, a Discord link in every header, and private notes in the lessons vault (owner, 2026-10-04)
 
+- **Released the same evening, the fifth that day, on the owner's "push":** `dev`
+  (`eb78cdc`) merged into `main` as `43c7515` (parents `87e7b2a` and `eb78cdc`), scanned,
+  pushed; GitHub recorded the production deployment as a success within a minute, and the
+  browser check against the live site passed (74 checks, 0 failures: dark even for an old
+  light-theme cookie, no theme switch, the header linking to discord.gg). Before: all 515
+  tests, the production build and the browser check against it (72 checks).
 - **The owner's words:** "we need a discord icon on the header make it the same color as
   the light mode icon and also remove the light mode icon"; then, asked what becomes of
   light mode, **"Dark only"**: the whole site is always dark, and the theme code is
@@ -1540,6 +1548,67 @@ dashboard", the three tones, the Academy as the way in.
   lessons are readable on GitHub while it is public. If the owner wants those hidden too,
   making it private is the switch (GitHub's free secret scanning is then lost, and the
   deploy confirmation must read the live site instead of GitHub's anonymous API).
+
+### The Academy's levels and the Bronze rank (owner, 2026-10-05)
+
+- **The owner's words**, with screenshots of the first two folders of their own lesson
+  vault: "these first two chapters should be displayed like the first two levels order flow
+  software is only gonna have one subsection for quantower the other subsection will say
+  coming soon sierra charts and the foundation is what were most gonna work on today but
+  completing those two sections gives user the bronze rank". Asked four questions, the
+  owner chose **"Bronze only"**, **"Hide until written"**, **"Replace as you go"** and
+  **"I bring them over"**.
+- **Bronze is the first and only rank; Rookie is gone.** It is earned by finishing Level 1,
+  **Fundamentals**, and Level 2, **Order Flow Software**: every chapter of every open course
+  in both levels, each with its checkpoint. Each finished level is a step on the way. The
+  steps are stored once in `rank_history` as `level-1`, `level-2` and `bronze`, and never
+  taken away; a level step stored earlier still counts towards Bronze, even if a lesson is
+  added to that level later. The rank is still claimed by linking Discord.
+- **Level 2 has one open course, Quantower** (its course title, "Backtesting School", is the
+  caption); **Sierra Chart shows as coming soon** and does not count until it opens. Whether
+  Level 2 then needs either platform or both is decided when Sierra opens; the owner's rule
+  of 2026-09-28 stands: ranks come from chapters and lessons, never from a platform.
+- **Chapters 3 to 10 of the owner's outline stay hidden until written.** Nothing for them is
+  in the lessons folder, so nothing shows.
+- **The 42 first-draft lessons stay live** until the owner's own versions replace them,
+  section by section.
+- **How lessons reach the site:** the owner writes in their own Obsidian vault
+  (`Documents\Zero Corps Academy`, outside the repository). When a section is ready, the
+  session converts it into the `content/academy` format (ids, frontmatter, quick checks as
+  `> [!check]`, checkpoints as `_checkpoint.md`), shows the owner, and it goes live on the
+  owner's "push". The session reads that vault only for a section the owner has asked to
+  bring over.
+- **Built:** `src/lib/academy/ranks.ts` holds the level names, `BRONZE_LEVELS`, the keys and
+  `celebrated()` (the "RANK EARNED" or "LEVEL COMPLETE" moment) with no server code, so the
+  lesson and checkpoint buttons can use it in the browser. `standing.ts` adds `bronze` when
+  both levels are finished. The Academy home's rank card, the ranks page, the chapter page,
+  the lesson and checkpoint moments, the Discord link's messages and the brain's rank notes
+  (Bronze, `#cd7f32`) all say Bronze. Level 1's course is titled "Fundamentals"; its id
+  stays `foundations`, so no progress moves.
+- **No migration.** Rank keys are text, the database's shape check on them
+  (`rank_history_rank_shape`) already accepts `bronze` and `level-1`, and `rank_history`
+  held no rows when the change was made (nobody had earned Rookie), so nothing in the
+  database is renamed.
+- **Agent Zero:** the internal API reports `bronze` from now on. The bot ignores a key it has
+  no role for, so nothing breaks in the meantime. To give the role, the bot's own session
+  sets up a Bronze role in the server, puts its id in the bot's environment and `bronze` in
+  its config, and drops `rookie` ([INTERNAL-API.md](INTERNAL-API.md), "Changed on
+  2026-10-05"). The website's own role sync stays off: the site holds no bot token.
+- **Accepted, carried over:** the checkpoint answer keys are in the public repository, so
+  Bronze proves reading, not skill, and its role must not unlock anything valuable
+  (SECURITY.md, "Forging Academy progress or a rank").
+- **Found and fixed on the way:** the Academy home stuck out sideways on a phone, because
+  the 26-week heatmap widened its column; the heatmap now scrolls inside its box and opens
+  on the current week. The rank card's level captions keep their width, a level's caption
+  on the ranks page sits under its name on a phone, and the ranks page's sentence gained a
+  comma.
+- **Checks before the release:** formatting, all 518 tests, the typecheck, lint, the
+  production build, the audit report (the same nine advisories in development tools as on
+  2026-10-04), `npm run academy:check` (42 lessons, 9 checkpoints), and the browser check
+  against that build on port 3100 (72 checks, 0 failures). The members' pages were also
+  rendered from the real lesson catalog in five states (new, some progress, Level 1 done,
+  Bronze not yet claimed, Bronze claimed) and photographed at desktop and phone widths:
+  nothing sticks out, and the heatmap opens on this week.
 
 ### Released on 2026-10-04, fourth: Better Auth 1.7.7, sharp 0.35.5, and a gate before the image library
 

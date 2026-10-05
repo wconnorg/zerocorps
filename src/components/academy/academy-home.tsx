@@ -8,14 +8,13 @@ import {
   rankClaimed,
 } from "@/lib/academy/member";
 import {
+  BRONZE_KEY,
+  BRONZE_LEVELS,
   type ChapterStanding,
   type LevelStanding,
   levelStepKey,
   RANK_TITLE,
   rankKeyOf,
-  ROOKIE_CHAPTER_NUMBER,
-  ROOKIE_KEY,
-  ROOKIE_LEVELS,
 } from "@/lib/academy/standing";
 import { cn } from "@/lib/cn";
 import {
@@ -32,7 +31,8 @@ import {
 /**
  * The Academy's home for a signed-in member: where they are, where to go next, what they
  * have done, and the whole map of levels and chapters. The design is the prototype the
- * owner approved (DECISIONS.md, 2026-09-28), with the Rookie structure.
+ * owner approved (DECISIONS.md, 2026-09-28), with the ranks of 2026-10-05: Bronze for
+ * finishing Levels 1 and 2.
  *
  * It draws what it is given and reads nothing itself, so it can be rendered in a test.
  */
@@ -86,7 +86,7 @@ export function AcademyHome({
   activity: ReadonlyMap<string, number>;
 }) {
   const { standing, steps } = academy;
-  const rookieDone = ROOKIE_LEVELS.filter((level) => steps.has(levelStepKey(level))).length;
+  const levelsDone = BRONZE_LEVELS.filter((level) => steps.has(levelStepKey(level))).length;
 
   return (
     <div className="relative">
@@ -95,7 +95,7 @@ export function AcademyHome({
         className="pointer-events-none absolute inset-x-0 top-0 h-[36rem] hero-glow"
       />
       <div className="relative mx-auto flex w-full max-w-6xl flex-col gap-16 px-6 py-12 lg:py-16">
-        <section className="grid gap-8 lg:grid-cols-12">
+        <section className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           <div className="flex flex-col justify-between gap-10 lg:col-span-7">
             <div className="flex flex-col gap-5">
               <Kicker>ZeroCorps Academy · Free</Kicker>
@@ -110,10 +110,10 @@ export function AcademyHome({
             </div>
             <ContinueCard academy={academy} />
           </div>
-          <RankCard academy={academy} rookieDone={rookieDone} />
+          <RankCard academy={academy} levelsDone={levelsDone} />
         </section>
 
-        <section className="grid gap-8 lg:grid-cols-12">
+        <section className="grid grid-cols-1 gap-8 lg:grid-cols-12">
           <div className="flex flex-col gap-5 border border-line bg-surface p-6 sm:p-8 lg:col-span-8">
             <div className="flex items-baseline justify-between gap-4">
               <h2 className="font-mono text-xs font-medium tracking-[0.22em]">ACTIVITY</h2>
@@ -189,16 +189,23 @@ function ContinueCard({ academy }: { academy: MemberAcademy }) {
   );
 }
 
-function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone: number }) {
+function RankCard({ academy, levelsDone }: { academy: MemberAcademy; levelsDone: number }) {
   const levels = academy.standing.levels.filter((level) =>
-    (ROOKIE_LEVELS as readonly number[]).includes(level.level),
+    (BRONZE_LEVELS as readonly number[]).includes(level.level),
   );
-  const isRookie = rankKeyOf(academy.steps) === ROOKIE_KEY;
+  const isBronze = rankKeyOf(academy.steps) === BRONZE_KEY;
   // Earned in the Academy, claimed by linking Discord (owner, 2026-09-29).
-  const claimed = isRookie && rankClaimed(academy);
-  const firstChapter = [...academy.standing.chapters.values()].find(
-    (entry) => entry.chapter.number === ROOKIE_CHAPTER_NUMBER,
+  const claimed = isBronze && rankClaimed(academy);
+  // How far along both levels the member is, chapter by chapter, before Bronze.
+  const chaptersTotal = levels.reduce(
+    (sum, level) =>
+      sum +
+      level.courses
+        .filter((course) => !course.comingSoon)
+        .reduce((n, course) => n + course.chapters.length, 0),
+    0,
   );
+  const chaptersDone = levels.reduce((sum, level) => sum + level.chaptersComplete, 0);
   return (
     <aside
       aria-label="Your rank"
@@ -209,20 +216,22 @@ function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone:
         className="pointer-events-none absolute -right-28 -bottom-40 size-[26rem] rounded-full bg-accent/10 blur-3xl"
       />
       <div className="relative flex items-center justify-between">
-        <Label>{claimed ? "Current rank" : isRookie ? "Rank earned" : "No rank yet"}</Label>
-        <Label>Levels {rookieDone} of 3</Label>
+        <Label>{claimed ? "Current rank" : isBronze ? "Rank earned" : "No rank yet"}</Label>
+        <Label>
+          Levels {levelsDone} of {BRONZE_LEVELS.length}
+        </Label>
       </div>
       <p
         className={cn(
           "relative text-4xl leading-none font-light tracking-[0.2em] uppercase sm:text-5xl",
-          !isRookie && "text-subtle",
+          !isBronze && "text-subtle",
         )}
       >
         {RANK_TITLE}
       </p>
       {claimed ? (
-        <SegmentMeter total={3} filled={rookieDone} className="relative" />
-      ) : isRookie ? (
+        <SegmentMeter total={BRONZE_LEVELS.length} filled={levelsDone} className="relative" />
+      ) : isBronze ? (
         <p className="relative text-sm/6 text-muted">
           {academy.discord.available ? (
             <>
@@ -239,35 +248,16 @@ function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone:
             "Link Discord to claim it, once Discord linking opens. Your rank is kept for you."
           )}
         </p>
-      ) : firstChapter ? (
+      ) : chaptersTotal > 0 ? (
         <div className="relative flex flex-col gap-2.5">
-          <Bar
-            value={
-              firstChapter.openLessons
-                ? (firstChapter.doneLessons + (firstChapter.checkpointPassed ? 1 : 0)) /
-                  (firstChapter.openLessons + (firstChapter.hasCheckpoint ? 1 : 0))
-                : 0
-            }
-          />
+          <Bar value={chaptersDone / chaptersTotal} />
           <p className="text-sm text-muted">
-            Finish Chapter 1,{" "}
-            {firstChapter.open ? (
-              <Link
-                href={chapterHref(firstChapter.chapter)}
-                prefetch={false}
-                className="text-fg underline-offset-4 hover:underline"
-              >
-                {firstChapter.chapter.title}
-              </Link>
-            ) : (
-              <span className="text-fg">{firstChapter.chapter.title}</span>
-            )}
-            , {firstChapter.hasCheckpoint ? "and pass its checkpoint " : ""}to earn it.
+            Finish both levels below, every chapter and its checkpoint, to earn it.
           </p>
         </div>
       ) : null}
       <ul className="relative flex flex-col gap-2.5 text-sm">
-        {ROOKIE_LEVELS.map((number) => {
+        {BRONZE_LEVELS.map((number) => {
           const level = levels.find((candidate) => candidate.level === number);
           const earned = academy.steps.has(levelStepKey(number));
           return (
@@ -278,7 +268,7 @@ function RankCard({ academy, rookieDone }: { academy: MemberAcademy; rookieDone:
               </span>
               <span
                 className={cn(
-                  "font-mono text-xs tracking-[0.14em]",
+                  "shrink-0 font-mono text-xs tracking-[0.14em]",
                   earned ? "text-success" : "text-subtle",
                 )}
               >
@@ -522,9 +512,10 @@ export function Heatmap({
       <div
         role="img"
         aria-label={`${total} lessons completed on ${days} days in the last ${weeks} weeks`}
-        className="-mx-1 overflow-x-auto px-1 pb-1"
+        // Reversed, so a phone too narrow for 26 weeks starts at this week and scrolls back.
+        className="-mx-1 flex flex-row-reverse overflow-x-auto px-1 pb-1"
       >
-        <div className="flex w-max gap-1">
+        <div className="mr-auto flex w-max gap-1">
           {columns.map((column, index) => (
             <div key={index} className="flex flex-col gap-1">
               {column.map((cell, weekday) =>

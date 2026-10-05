@@ -418,7 +418,7 @@ describe("syncBrainPictures", () => {
 
 describe("the graph's colour groups", () => {
   const ours: ColorGroup[] = [
-    { query: "tag:#zc/rank/rookie", color: { a: 1, rgb: 0xff3b47 } },
+    { query: "tag:#zc/rank/bronze", color: { a: 1, rgb: 0xff3b47 } },
     { query: "tag:#zc/lesson", color: { a: 1, rgb: 0x4da3ff } },
   ];
 
@@ -431,7 +431,7 @@ describe("the graph's colour groups", () => {
       showTags: true,
       scale: 1.2,
       colorGroups: [
-        { query: "tag:#zc/rank/rookie", color: { a: 1, rgb: 1 } },
+        { query: "tag:#zc/rank/bronze", color: { a: 1, rgb: 1 } },
         { query: "path:Daily", color: { a: 1, rgb: 2 } },
       ],
     });

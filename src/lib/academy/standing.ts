@@ -1,4 +1,5 @@
 import { type Catalog, type Chapter, type Course, isOpen, type Lesson } from "./content.ts";
+import { BRONZE_KEY, BRONZE_LEVELS, LEVEL_NAMES, levelStepKey } from "./ranks.ts";
 
 /**
  * Where a member stands: which chapters are complete, which levels are finished, and so
@@ -15,35 +16,27 @@ import { type Catalog, type Chapter, type Course, isOpen, type Lesson } from "./
  *   left) and complete. A course that is coming soon does not count, so while Sierra Chart
  *   is coming soon, finishing Level 2 means finishing the Quantower course. A level that is
  *   not fully written yet cannot be finished: nobody earns a step for half a level.
- * - **The Rookie rank is earned by completing Chapter 1** (owner, 2026-09-29): the chapter
- *   the site shows as "Chapter 01", its lessons done and its checkpoint passed. Before
- *   that a member has no rank. The Discord role follows the rank.
- * - **Levels 1, 2 and 3 are the Rookie stage:** each finished level is a step within it,
- *   earned in any order, since The Platform is open from the start. What comes after
- *   Rookie is not defined yet.
+ * - **Bronze is the rank, and the only one so far** (owner, 2026-10-05: "completing those
+ *   two sections gives user the bronze rank", and no Rookie before it): earned by finishing
+ *   Level 1, Fundamentals, and Level 2, Order Flow Software, in any order, since both are
+ *   open from the start. Each finished level is a step towards it. Before Bronze a member
+ *   has no rank. The Discord role follows the rank.
  * - **Nothing is ever taken away.** The rank and the steps are stored once earned
- *   (`rank_history`), so a lesson added later does not undo anyone's rank.
+ *   (`rank_history`), so a lesson added later does not undo anyone's rank, and a level
+ *   finished before still counts towards Bronze after it has grown.
  */
 
-export const LEVEL_NAMES: Readonly<Record<number, string>> = {
-  1: "Foundations",
-  2: "The Platform",
-  3: "Level 3",
-};
-
-/** The levels that make up the Rookie stage. */
-export const ROOKIE_LEVELS = [1, 2, 3] as const;
-
-export const RANK_TITLE = "Rookie";
-
-/** The key stored in `rank_history` when Chapter 1 is complete: the Rookie rank itself. */
-export const ROOKIE_KEY = "rookie";
-
-/** Which chapter earns the Rookie rank: the one numbered 1, the first in the Academy. */
-export const ROOKIE_CHAPTER_NUMBER = 1;
-
-/** The key stored in `rank_history` when a level is finished. */
-export const levelStepKey = (level: number) => `rookie-level-${level}`;
+// The names and keys live in `ranks.ts`, which the browser can load too.
+export {
+  BRONZE_KEY,
+  BRONZE_LEVELS,
+  celebrated,
+  LEVEL_NAMES,
+  levelName,
+  levelOfStep,
+  levelStepKey,
+  RANK_TITLE,
+} from "./ranks.ts";
 
 /**
  * The member's rank key from the steps stored for them, or null before they have one. It
@@ -52,7 +45,23 @@ export const levelStepKey = (level: number) => `rookie-level-${level}`;
  * relies on"); until then the bot changes nothing for members holding it.
  */
 export const rankKeyOf = (steps: { has(key: string): boolean }): string | null =>
-  steps.has(ROOKIE_KEY) ? ROOKIE_KEY : null;
+  steps.has(BRONZE_KEY) ? BRONZE_KEY : null;
+
+/**
+ * Every step to hold now: the levels finished by what the member has done, and Bronze
+ * once every level it needs is finished, counting levels stored before (a level that has
+ * grown since still counts: nothing earned is taken away).
+ */
+export function stepsEarned(
+  current: Pick<Standing, "earnedSteps">,
+  stored: { has(key: string): boolean },
+): string[] {
+  const steps = [...current.earnedSteps];
+  const finished = (level: number) =>
+    stored.has(levelStepKey(level)) || steps.includes(levelStepKey(level));
+  if (!steps.includes(BRONZE_KEY) && BRONZE_LEVELS.every(finished)) steps.push(BRONZE_KEY);
+  return steps;
+}
 
 export type ChapterStanding = {
   chapter: Chapter;
@@ -152,17 +161,13 @@ export function standing(
     };
   });
 
-  const rookieChapter = [...chapters.values()].find(
-    (entry) => entry.chapter.number === ROOKIE_CHAPTER_NUMBER,
+  const finishedSteps = levels
+    .filter((level) => level.finished)
+    .map((level) => levelStepKey(level.level));
+  const bronzeNow = BRONZE_LEVELS.every((number) =>
+    levels.some((level) => level.level === number && level.finished),
   );
-  const earnedSteps = [
-    ...(rookieChapter?.complete ? [ROOKIE_KEY] : []),
-    ...levels
-      .filter(
-        (level) => level.finished && (ROOKIE_LEVELS as readonly number[]).includes(level.level),
-      )
-      .map((level) => levelStepKey(level.level)),
-  ];
+  const earnedSteps = [...finishedSteps, ...(bronzeNow ? [BRONZE_KEY] : [])];
 
   return { chapters, levels, earnedSteps, lessonsOpen, lessonsDone, checkpointsPassed, next };
 }

@@ -206,61 +206,75 @@ describe("a chapter's checkpoint", () => {
   });
 });
 
-describe("the Rookie steps", () => {
-  it("Chapter 1 earns the rank, Level 1 the step: each stored once, when it was earned", async () => {
+describe("the steps and the Bronze rank", () => {
+  /** Level 1 (with a checkpoint) and Level 2, both fully written. */
+  const BOTH = buildCatalog({
+    courses: [
+      {
+        id: "foundations",
+        level: 1,
+        chapters: [
+          { id: "markets", lessons: [{ id: "m1" }] },
+          { id: "risk", lessons: [{ id: "r1" }], checkpoint: TWO_QUESTIONS },
+        ],
+      },
+      { id: "quantower", level: 2, chapters: [{ id: "setup", lessons: [{ id: "q1" }] }] },
+    ],
+  });
+
+  it("each level is a step and both make Bronze: each stored once, when it was earned", async () => {
     const userId = await member();
-    const chapterOne = await completeLesson(database.db, WRITTEN, {
-      userId,
-      lessonId: "m1",
-      now: NOW,
-    });
-    // Chapter 1 (one lesson, no checkpoint here) is complete: the Rookie rank.
-    expect(chapterOne).toMatchObject({ ok: true, newSteps: ["rookie"] });
-    const lessonsDone = await completeLesson(database.db, WRITTEN, {
-      userId,
-      lessonId: "r1",
-      now: NOW,
-    });
+    expect(
+      await completeLesson(database.db, BOTH, { userId, lessonId: "m1", now: NOW }),
+    ).toMatchObject({ ok: true, newSteps: [] });
     // Not yet: the chapter with a checkpoint is not complete until it is passed.
-    expect(lessonsDone).toMatchObject({ ok: true, newSteps: [] });
+    expect(
+      await completeLesson(database.db, BOTH, { userId, lessonId: "r1", now: NOW }),
+    ).toMatchObject({ ok: true, newSteps: [] });
 
     const later = new Date(NOW.getTime() + 3_600_000);
-    const pass = await submitCheckpoint(database.db, WRITTEN, {
+    const pass = await submitCheckpoint(database.db, BOTH, {
       userId,
       chapterId: "risk",
       answers: [1, 0],
       now: later,
     });
-    expect(pass).toMatchObject({ ok: true, passed: true, newSteps: ["rookie-level-1"] });
+    expect(pass).toMatchObject({ ok: true, passed: true, newSteps: ["level-1"] });
 
-    const again = await completeLesson(database.db, WRITTEN, {
+    const latest = new Date(NOW.getTime() + 7_200_000);
+    const second = await completeLesson(database.db, BOTH, {
       userId,
-      lessonId: "m1",
-      now: later,
+      lessonId: "q1",
+      now: latest,
     });
+    expect(second).toMatchObject({ ok: true, newSteps: ["level-2", "bronze"] });
+
+    const again = await completeLesson(database.db, BOTH, { userId, lessonId: "m1", now: latest });
     expect(again).toMatchObject({ ok: true, newSteps: [] });
     expect(
       await rows(
-        "SELECT rank, achieved_at FROM rank_history WHERE user_id = $1::uuid ORDER BY achieved_at",
+        "SELECT rank, achieved_at FROM rank_history WHERE user_id = $1::uuid ORDER BY achieved_at, rank",
         [userId],
       ),
     ).toEqual([
-      { rank: "rookie", achieved_at: NOW },
-      { rank: "rookie-level-1", achieved_at: later },
+      { rank: "level-1", achieved_at: later },
+      { rank: "bronze", achieved_at: latest },
+      { rank: "level-2", achieved_at: latest },
     ]);
   });
 
-  it("a step once earned is kept, even when the level grows a lesson the member has not done", async () => {
+  it("a level finished before still counts towards Bronze after it has grown", async () => {
     const userId = await member();
-    await completeLesson(database.db, WRITTEN, { userId, lessonId: "m1", now: NOW });
-    await completeLesson(database.db, WRITTEN, { userId, lessonId: "r1", now: NOW });
-    await submitCheckpoint(database.db, WRITTEN, {
+    await completeLesson(database.db, BOTH, { userId, lessonId: "m1", now: NOW });
+    await completeLesson(database.db, BOTH, { userId, lessonId: "r1", now: NOW });
+    await submitCheckpoint(database.db, BOTH, {
       userId,
       chapterId: "risk",
       answers: [1, 0],
       now: NOW,
     });
 
+    // Level 1 has since grown a lesson this member has not done.
     const grown = buildCatalog({
       courses: [
         {
@@ -271,10 +285,30 @@ describe("the Rookie steps", () => {
             { id: "risk", lessons: [{ id: "r1" }], checkpoint: TWO_QUESTIONS },
           ],
         },
+        { id: "quantower", level: 2, chapters: [{ id: "setup", lessons: [{ id: "q1" }] }] },
       ],
     });
-    await completeLesson(database.db, grown, { userId, lessonId: "r1", now: NOW });
-    expect((await readProgress(database.db, userId)).steps.has("rookie-level-1")).toBe(true);
+    const second = await completeLesson(database.db, grown, {
+      userId,
+      lessonId: "q1",
+      now: NOW,
+    });
+    expect(second).toMatchObject({ ok: true, newSteps: ["level-2", "bronze"] });
+    expect((await readProgress(database.db, userId)).steps.has("level-1")).toBe(true);
+  });
+
+  it("one level alone earns no rank", async () => {
+    const userId = await member();
+    await completeLesson(database.db, WRITTEN, { userId, lessonId: "m1", now: NOW });
+    await completeLesson(database.db, WRITTEN, { userId, lessonId: "r1", now: NOW });
+    const pass = await submitCheckpoint(database.db, WRITTEN, {
+      userId,
+      chapterId: "risk",
+      answers: [1, 0],
+      now: NOW,
+    });
+    expect(pass).toMatchObject({ ok: true, passed: true, newSteps: ["level-1"] });
+    expect((await readProgress(database.db, userId)).steps.has("bronze")).toBe(false);
   });
 });
 

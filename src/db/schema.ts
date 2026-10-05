@@ -373,7 +373,7 @@ export const checkpointPasses = pgTable(
  * Every step a member has earned, once, with when (the brief's `rank_history`). A step
  * is never taken away, which is why it is stored rather than worked out each time: a
  * lesson added to a finished level later must not undo anyone's step. Today the steps
- * are `rookie-level-1` to `rookie-level-3` (`src/lib/academy/standing.ts`).
+ * are `level-1` and `level-2`, and `bronze` for the rank (`src/lib/academy/standing.ts`).
  */
 export const rankHistory = pgTable(
   "rank_history",

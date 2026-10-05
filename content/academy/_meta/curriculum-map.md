@@ -4,7 +4,7 @@ Tick a lesson when it is written. Ids are permanent - rename titles and files fr
 
 Every lesson has a first draft by Claude Code (2026-09-28), live on the site, so the Academy works end to end. **Tick a lesson when you have rewritten or approved it.** A new lesson starts with `draft: true` in its header, which the site shows as coming soon; delete that line when it is written.
 
-## Level 1 · Foundations
+## Level 1 · Fundamentals
 
 ### 01 How markets work
 
@@ -33,7 +33,7 @@ Every lesson has a first draft by Claude Code (2026-09-28), live on the site, so
 - [ ] 03 The trading journal - `the-trading-journal` - [01-foundations/04-risk-and-records/03-the-trading-journal.md](../01-foundations/04-risk-and-records/03-the-trading-journal.md)
 - [ ] 04 What backtesting is - `what-backtesting-is` - [01-foundations/04-risk-and-records/04-what-backtesting-is.md](../01-foundations/04-risk-and-records/04-what-backtesting-is.md)
 
-## Level 2 · The Platform · Quantower (Backtesting School)
+## Level 2 · Order Flow Software · Quantower (Backtesting School)
 
 ### 01 Quantower setup
 
@@ -65,7 +65,7 @@ Every lesson has a first draft by Claude Code (2026-09-28), live on the site, so
 - [ ] 02 The daily routine - `the-daily-routine` - [02-backtesting-school/05-sim-trading/02-the-daily-routine.md](../02-backtesting-school/05-sim-trading/02-the-daily-routine.md)
 - [ ] 03 When you are done - `when-you-are-done` - [02-backtesting-school/05-sim-trading/03-when-you-are-done.md](../02-backtesting-school/05-sim-trading/03-when-you-are-done.md)
 
-## Level 2 · The Platform · Sierra Chart (coming soon)
+## Level 2 · Order Flow Software · Sierra Chart (coming soon)
 
 ### 01 Sierra setup
 

@@ -10,7 +10,7 @@ import type { AuthDatabase } from "../auth/create-auth.ts";
 import type { Limiter } from "../auth/limits.ts";
 import type { Catalog } from "./content.ts";
 import { completeLesson, submitCheckpoint } from "./progress.ts";
-import { ROOKIE_KEY } from "./standing.ts";
+import { BRONZE_KEY } from "./standing.ts";
 
 /**
  * The Academy's two writes: marking a lesson complete, and submitting a checkpoint.
@@ -29,7 +29,7 @@ export type AcademyPluginOptions = {
   limiter: Limiter;
   catalog: () => Catalog;
   /**
-   * Called when a member earns a rank (today: Rookie, for completing Chapter 1), so the
+   * Called when a member earns a rank (today: Bronze, for finishing Levels 1 and 2), so the
    * Discord role can follow straight away. Must not throw.
    */
   onRankChange?: (userId: string) => Promise<void>;
@@ -53,7 +53,7 @@ const idField = z.string().min(1).max(80);
 export function academyPlugin(options: AcademyPluginOptions) {
   const { db, limiter, catalog, onRankChange } = options;
   const rankChanged = async (userId: string, newSteps: string[]) => {
-    if (onRankChange && newSteps.includes(ROOKIE_KEY)) await onRankChange(userId);
+    if (onRankChange && newSteps.includes(BRONZE_KEY)) await onRankChange(userId);
   };
 
   return {

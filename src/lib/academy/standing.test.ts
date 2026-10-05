@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { buildCatalog as build, TWO_QUESTIONS } from "../../test/academy-fixture.ts";
-import { levelStepKey, rankKeyOf, ROOKIE_KEY, standing } from "./standing.ts";
+import { celebrated } from "./ranks.ts";
+import { BRONZE_KEY, levelStepKey, rankKeyOf, standing, stepsEarned } from "./standing.ts";
 
 /**
  * The rank rules, on a small made-up Academy: Level 1 with two chapters, Level 2 with a
@@ -67,12 +68,12 @@ describe("a chapter", () => {
   });
 });
 
-describe("a level, and the Rookie steps", () => {
+describe("a level, a step towards Bronze", () => {
   it("Level 1 is finished when all its chapters are complete, and that is step 1", () => {
     const s = standing(ACADEMY, done("m1", "m2", "r1"), done("risk"));
     expect(s.levels.find((l) => l.level === 1)?.finished).toBe(true);
-    // Chapter 1 is complete too, so the rank comes with it.
-    expect(s.earnedSteps).toEqual([ROOKIE_KEY, levelStepKey(1)]);
+    // One level is a step, not the rank.
+    expect(s.earnedSteps).toEqual([levelStepKey(1)]);
   });
 
   it("a level with a draft left in it cannot be finished yet, even with everything open done", () => {
@@ -96,14 +97,10 @@ describe("a level, and the Rookie steps", () => {
         },
       ],
     });
-    // Here the Quantower chapter is the Academy's first, so it is Chapter 1 as well.
-    expect(standing(written, done("q1"), done()).earnedSteps).toEqual([
-      ROOKIE_KEY,
-      levelStepKey(2),
-    ]);
+    expect(standing(written, done("q1"), done()).earnedSteps).toEqual([levelStepKey(2)]);
   });
 
-  it("levels can be finished in any order: The Platform is open from the start", () => {
+  it("levels can be finished in any order: Order Flow Software is open from the start", () => {
     const written = build({
       courses: [
         { id: "foundations", level: 1, chapters: [{ id: "markets", lessons: [{ id: "m1" }] }] },
@@ -132,35 +129,75 @@ describe("a level, and the Rookie steps", () => {
   });
 });
 
-describe("the Rookie rank", () => {
-  it("is earned by completing Chapter 1: its lessons AND its checkpoint", () => {
-    const withCheckpoint = build({
+describe("the Bronze rank", () => {
+  /** Both levels fully written, Level 1 with a checkpoint. */
+  const TWO_LEVELS = build({
+    courses: [
+      {
+        id: "foundations",
+        level: 1,
+        chapters: [
+          { id: "markets", lessons: [{ id: "m1" }, { id: "m2" }], checkpoint: TWO_QUESTIONS },
+        ],
+      },
+      { id: "quantower", level: 2, chapters: [{ id: "setup", lessons: [{ id: "q1" }] }] },
+      {
+        id: "sierra",
+        level: 2,
+        comingSoon: true,
+        chapters: [{ id: "sierra-setup", lessons: [{ id: "s1" }] }],
+      },
+    ],
+  });
+
+  it("is earned by finishing both levels, every chapter and its checkpoint", () => {
+    expect(standing(TWO_LEVELS, done("m1", "m2"), done("markets")).earnedSteps).toEqual([
+      levelStepKey(1),
+    ]);
+    expect(standing(TWO_LEVELS, done("m1", "m2", "q1"), done()).earnedSteps).toEqual([
+      levelStepKey(2),
+    ]);
+    expect(standing(TWO_LEVELS, done("m1", "m2", "q1"), done("markets")).earnedSteps).toEqual([
+      levelStepKey(1),
+      levelStepKey(2),
+      BRONZE_KEY,
+    ]);
+  });
+
+  it("is not earned by finishing the first chapter, as Rookie used to be", () => {
+    expect(standing(ACADEMY, done("m1", "m2"), done()).earnedSteps).toEqual([]);
+  });
+
+  it("counts a level finished before, even after it has grown: nothing is taken away", () => {
+    // Level 1 was finished and stored; it has since grown a lesson the member has not done.
+    const grown = build({
       courses: [
         {
           id: "foundations",
           level: 1,
-          chapters: [
-            { id: "markets", lessons: [{ id: "m1" }, { id: "m2" }], checkpoint: TWO_QUESTIONS },
-            { id: "risk", lessons: [{ id: "r1" }] },
-          ],
+          chapters: [{ id: "markets", lessons: [{ id: "m1" }, { id: "m-new" }] }],
         },
+        { id: "quantower", level: 2, chapters: [{ id: "setup", lessons: [{ id: "q1" }] }] },
       ],
     });
-    expect(standing(withCheckpoint, done("m1"), done()).earnedSteps).toEqual([]);
-    expect(standing(withCheckpoint, done("m1", "m2"), done()).earnedSteps).toEqual([]);
-    expect(standing(withCheckpoint, done("m1", "m2"), done("markets")).earnedSteps).toEqual([
-      ROOKIE_KEY,
-    ]);
-  });
-
-  it("is not earned by completing some other chapter first", () => {
-    expect(standing(ACADEMY, done("r1"), done("risk")).earnedSteps).toEqual([]);
+    const now = standing(grown, done("m1", "q1"), done());
+    expect(now.earnedSteps).toEqual([levelStepKey(2)]);
+    expect(stepsEarned(now, new Set([levelStepKey(1)]))).toEqual([levelStepKey(2), BRONZE_KEY]);
+    // Without the stored step, no Bronze.
+    expect(stepsEarned(now, new Set())).toEqual([levelStepKey(2)]);
   });
 
   it("is what Discord's roles follow: the rank key, or none before it is earned", () => {
-    expect(rankKeyOf(new Set([ROOKIE_KEY, levelStepKey(1)]))).toBe(ROOKIE_KEY);
-    expect(rankKeyOf(new Set([levelStepKey(2)]))).toBeNull();
+    expect(rankKeyOf(new Set([BRONZE_KEY, levelStepKey(1)]))).toBe(BRONZE_KEY);
+    expect(rankKeyOf(new Set([levelStepKey(1), levelStepKey(2)]))).toBeNull();
     expect(rankKeyOf(new Set())).toBeNull();
+  });
+
+  it("is what the moment celebrates when it comes, and a level otherwise", () => {
+    expect(celebrated([levelStepKey(2), BRONZE_KEY])).toEqual({ kind: "rank", title: "Bronze" });
+    expect(celebrated([levelStepKey(1)])).toEqual({ kind: "level", title: "Fundamentals" });
+    expect(celebrated([levelStepKey(2)])).toEqual({ kind: "level", title: "Order Flow Software" });
+    expect(celebrated([])).toBeNull();
   });
 });
 

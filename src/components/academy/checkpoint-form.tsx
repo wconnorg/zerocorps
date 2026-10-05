@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { FormMessage } from "@/components/ui/field";
+import { celebrated } from "@/lib/academy/ranks";
 import { authFetch } from "@/lib/auth/auth-fetch";
 import { cn } from "@/lib/cn";
 
@@ -73,6 +74,9 @@ export function CheckpointForm({
     setAnswers(questions.map(() => null));
     setError(null);
   }
+
+  // What a pass that earned something celebrates: the rank, or the level just finished.
+  const moment = result ? celebrated(result.newSteps) : null;
 
   return (
     <div className="flex flex-col gap-8">
@@ -219,13 +223,13 @@ export function CheckpointForm({
           <p className="relative font-mono text-xs tracking-[0.3em] text-success">
             PASSED · {result.score} OF {result.outOf} · CHAPTER COMPLETE
           </p>
-          {result.newSteps.length > 0 ? (
+          {moment ? (
             <>
               <p className="relative font-mono text-xs tracking-[0.42em] text-accent">
-                {result.newSteps.includes("rookie") ? "RANK EARNED" : "LEVEL COMPLETE"}
+                {moment.kind === "rank" ? "RANK EARNED" : "LEVEL COMPLETE"}
               </p>
-              <p className="relative text-5xl font-light tracking-[0.24em] text-fg sm:text-6xl">
-                ROOKIE
+              <p className="relative text-5xl font-light tracking-[0.24em] text-fg uppercase sm:text-6xl">
+                {moment.title}
               </p>
             </>
           ) : (
@@ -239,19 +243,15 @@ export function CheckpointForm({
             >
               Back to the Academy
             </Link>
-            {result.newSteps.length > 0 ? (
+            {moment ? (
               <Link
                 href={
-                  result.newSteps.includes("rookie") && !claimed
-                    ? "/settings#connections"
-                    : "/academy/ranks"
+                  moment.kind === "rank" && !claimed ? "/settings#connections" : "/academy/ranks"
                 }
                 prefetch={false}
                 className="inline-flex h-12 items-center border border-line-strong px-6 text-fg hover:bg-raised"
               >
-                {result.newSteps.includes("rookie") && !claimed
-                  ? "Link Discord to claim it"
-                  : "See your rank"}
+                {moment.kind === "rank" && !claimed ? "Link Discord to claim it" : "See your rank"}
               </Link>
             ) : null}
           </div>

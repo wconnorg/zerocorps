@@ -81,7 +81,7 @@ describe("wikilink", () => {
 
 describe("fileBase", () => {
   it("passes usernames, member numbers and Academy ids", () => {
-    for (const name of ["trader_99", "_under", "member-3", "orders-and-fills", "rookie"]) {
+    for (const name of ["trader_99", "_under", "member-3", "orders-and-fills", "bronze"]) {
       expect(fileBase(name)).toBe(name);
     }
   });
